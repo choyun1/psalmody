@@ -333,7 +333,7 @@ function renderPicker() {
         <div class="facts"><b>${esc(keyName(c))}</b> · ${c.double ? "double" : "single"} ${stars(val(c, "rating"))} · last used ${esc(lastUsed(c.id) || "never")}${recent.has(c.id) ? " <b>(recent)</b>" : ""}</div>
         <div class="moodrow">${val(c, "mood").map(t => chip(t, hits.includes(t) ? "on" : "")).join("")}</div>
         ${c.img ? `<img loading="lazy" src="notation/${encodeURIComponent(c.id)}.png" alt="">` : ""}
-        ${val(c, "notes") ? `<div class="notes" style="font-size:15px">${esc(val(c, "notes"))}</div>` : ""}
+        ${notesBox(val(c, "notes"), false)}
       </div>`).join("")}
       ${list.length > 80 ? '<p class="hint">Showing the first 80: narrow the filters to see others.</p>' : ""}
     </div></div>`;

@@ -14,8 +14,8 @@ async function refreshGit() {
     const last = CHANGES[0];
     $("#gitbar").innerHTML = (last ? ` <button class="small" title="Undo: ${esc(last.message)}" onclick="undoChange(0)">↶ Undo</button>
       <button class="small" onclick="showChanges()">Changes</button>` : "")
-      + ` <button class="small sync" title="${n ? n + " change(s) not on GitHub yet" : synced ? "Everything here is on GitHub" : "No GitHub copy is set up for this folder"}: click for more" onclick="showSync()">${SYNC_ICON} Sync with GitHub${
-        n ? ` <span class="badge">${n}</span>` : synced ? ' <span class="ok">✓</span>' : ""}</button>`;
+      + ` <button class="small sync" title="${n ? n + " change(s) not on GitHub yet" : synced ? "Everything here is on GitHub" : "No GitHub copy is set up for this folder"}" onclick="showSync()">${SYNC_ICON} Sync with GitHub${
+        n ? ` <span class="badge">${n}</span>` : synced ? ' <span class="ok">✓</span>' : ""}</button><span class="info" style="cursor:pointer" title="${esc(SYNC_WHY)}" onclick="showSyncWhy()">i</span>`;
     PENDING = {n, files: g.repos.flatMap(r => r.files.map(f => r.repo + ": " + f))};
     if (dlg.open && $("#changes")) showChanges();
   } catch (e) {}
@@ -44,28 +44,39 @@ async function undoChange(i) {
   if (!j.ok) { window.alert("Could not undo: " + (j.error || "something went wrong")); return refreshGit(); }
   location.reload();                    // the page was rebuilt without that change
 }
-// why and what: a dialog before syncing, and the outcome in it after
-function showSync(result) {
-  const waiting = CHANGES.filter(c => !c.pushed);
-  $("#dlgbody").innerHTML = `<h3>${SYNC_ICON} Sync with GitHub</h3>
-    <p>Everything you save here is kept on this computer at once, and Undo works without GitHub. Syncing does three more things:</p>
-    <ul>
-      <li><b>A backup.</b> Your Sunday files, chant notes, pointing and anthem words go to your own GitHub account, safe if this computer is lost or replaced.</li>
-      <li><b>Your other computers.</b> What you saved on another computer comes here, and what you saved here goes there. Sync before you start on another computer, and when you finish.</li>
-      <li><b>Updates.</b> Fixes and improvements to the tools come in (then restart the launcher).</li>
-    </ul>
-    ${result ? `<div class="card" style="margin:10px 0">${/^(Already in sync|[^:]+: \d+ change)/.test(result) ? '<span class="ok">✓</span> ' : ""}${esc(result).replace(/\n/g, "<br>")}</div>` :
-      PENDING.n ? `<p class="hint">Not on GitHub yet (${PENDING.n}):</p><ul class="hint" style="margin-top:0">${waiting.slice(0, 8).map(c => `<li>${esc(c.message)} <span class="muted">· ${whenText(c.time)}</span></li>`).join("")}${PENDING.files.length ? `<li>files changed outside the browser: ${esc(PENDING.files.slice(0, 5).join(", "))}${PENDING.files.length > 5 ? "…" : ""}</li>` : ""}${waiting.length > 8 ? `<li>and ${waiting.length - 8} more</li>` : ""}</ul>`
-      : '<p class="hint"><span class="ok">✓</span> Nothing waiting to go up. Syncing still brings in anything new from your other computers and the tools.</p>'}
-    ${result ? "" : `<p><button class="small primary" onclick="commitAll()">${SYNC_ICON} Sync now</button></p>`}`;
-  if (!dlg.open) dlg.showModal();
+// Sync with GitHub: the button asks right beside it, then syncs; the (i) beside it says why one would
+const SYNC_WHY = "Everything you save here is kept on this computer at once, and Undo works without GitHub. Syncing adds:\n" +
+  "• a backup of your parish folder in your own GitHub account, safe if this computer is lost;\n" +
+  "• your other computers: their changes come here, and yours go there (sync before you switch);\n" +
+  "• updates to the tools (restart the launcher after).";
+function syncPop(html, keep) {
+  let pop = $("#syncpop");
+  if (!pop) { pop = Object.assign(document.createElement("div"), {id: "syncpop", className: "pop"}); document.body.appendChild(pop); }
+  const b = $("button.sync"), r = b ? b.getBoundingClientRect() : {right: innerWidth - 16, bottom: 60};
+  pop.style.top = (r.bottom + 6) + "px";
+  pop.style.right = Math.max(8, innerWidth - r.right) + "px";
+  pop.innerHTML = html; pop.hidden = false;
+  clearTimeout(syncPop.t);
+  if (!keep) syncPop.t = setTimeout(() => { pop.hidden = true; }, 5000);
 }
+function closeSyncPop() { const p = $("#syncpop"); if (p) p.hidden = true; }
+document.addEventListener("click", e => { if (!e.target.closest("#syncpop, button.sync")) closeSyncPop(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeSyncPop(); });
+function showSync() {
+  const waiting = CHANGES.filter(c => !c.pushed);
+  syncPop(`<div>${PENDING.n ? `Send <b>${PENDING.n}</b> change${PENDING.n > 1 ? "s" : ""} to GitHub, and bring in anything new?` : "Nothing to send. Bring in anything new from GitHub?"}</div>
+    ${waiting.length ? `<div class="hint" style="margin-top:4px">${waiting.slice(0, 3).map(c => esc(c.message)).join("<br>")}${waiting.length > 3 ? `<br>and ${waiting.length - 3} more` : ""}</div>` : ""}
+    <div style="margin-top:8px;text-align:right"><button class="small" onclick="closeSyncPop()">Cancel</button> <button class="small primary" onclick="commitAll()">Sync</button></div>`, true);
+}
+function showSyncWhy() { $("#dlgbody").innerHTML = `<h3>${SYNC_ICON} Why sync with GitHub</h3><p style="white-space:pre-line">${esc(SYNC_WHY)}</p>`; dlg.showModal(); }
 async function commitAll() {
-  $("#dlgbody").querySelector("button.primary")?.replaceWith(Object.assign(document.createElement("span"), {className: "hint", textContent: "Syncing with GitHub…"}));
+  syncPop('<span class="hint">Syncing with GitHub…</span>', true);
   let j;
   try { j = await post("/api/commit", {}); } catch (e) { j = {ok: false, error: "the launcher didn't answer: is it still running?"}; }
   if (j.ok && /brought in/.test(j.log || "")) { location.reload(); return; }     // new things came: show them
-  showSync(j.ok ? (j.log || "Done.") : "Could not sync: " + (j.error || j.log || "something went wrong"));
+  if (j.ok) syncPop(`<span class="ok">✓</span> ${esc(j.log || "Done.").replace(/\n/g, "<br>")}`);
+  else syncPop(`<span class="warn">Could not sync:</span> ${esc(j.error || j.log || "something went wrong").replace(/\n/g, "<br>")}
+    <div style="margin-top:8px;text-align:right"><button class="small" onclick="closeSyncPop()">Close</button></div>`, true);
   refreshGit();
 }
 setInterval(refreshGit, 30000);

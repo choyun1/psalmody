@@ -58,7 +58,7 @@ It was built for the weekly use of one parish, St. Peter's Episcopal Church in C
 
 <img src="docs/images/plainchant-page.png" alt="Psalm 22 set to Tone VIIa" width="640">
 
-**The Chants tab.** Every chant in a list, with its key, your rating, when you last used it and its moods; click one to open it: the music, Play, the psalm the Anglican Chant Psalter sets it to, and your notes.
+**The Chants tab.** Every chant in a list, with its key, your rating, when you last used it and its moods; click a column's heading to sort by it (again to reverse), and a chant to open it: the music, Play, the psalm the Anglican Chant Psalter sets it to, and your notes (where a chant they mention, Turle-2, shows by its name, Turle in D minor).
 
 ![The Chants tab](docs/images/chants.png)
 
@@ -71,7 +71,7 @@ Double-click **Psalter.bat** and open the **Service planner** tab.
 3. **Check it.** *Preview* shows the page straight away; **Exact PDF preview** runs LilyPond and shows the real thing. *Before on Proper 27* shows what was sung the last time these readings came round, three or six years ago, and the same day in the other years of the cycle.
 4. **The rest of the service.** Fill in the prelude, hymns, anthems and postlude. Type a hymn number (`390`, `LEVAS 114`) and its title appears with when it was last sung; the voluntary and anthem boxes suggest everything done before; service music carries on from the last service of the same kind. Paste an anthem's words once and they're kept in `parish/anthems/`.
 5. **Save & build.** The PDF and the images for the leaflet appear as links. Any cards your parish's plugins add (a weekly email, a music schedule) come below.
-6. **Sync with GitHub.** Saving keeps everything on your computer at once, and Undo works without GitHub. The button at the top (the number on it is how many changes aren't online yet) does three more things: a **backup** of your parish folder in your own GitHub account; your **other computers**, whose changes come here and yours go there (sync before you switch computers); and **updates** to the tools (restart the launcher after).
+6. **Sync with GitHub.** Saving keeps everything on your computer at once, and Undo works without GitHub. The button at the top (the number on it is how many changes aren't online yet; a green ✓ when there are none) asks right beside it, then syncs; the ⓘ next to it says why. Syncing does three more things: a **backup** of your parish folder in your own GitHub account; your **other computers**, whose changes come here and yours go there (sync before you switch computers); and **updates** to the tools (restart the launcher after).
 
 **Undo.** Every save is kept on your computer as you go: a Sunday, chant notes or a pin, a verse's pointing, an anthem's words, marking a service as sung. **↶ Undo** at the top takes back the last one; **Changes** lists them all, newest first, each with its own Undo. An undo is a change too, so it can be undone. (This uses git in your `parish/` folder; if that folder isn't a git repository yet, the launcher starts one there, kept on your computer only.)
 

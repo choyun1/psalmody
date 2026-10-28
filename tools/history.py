@@ -213,7 +213,7 @@ def _sync(message, log):
                                + f':\n{out.strip()}')
         came = int(before.strip() or 0) if before.strip().isdigit() else 0
         if came:
-            log.append(f'{name}: brought in {came} change(s) from GitHub')
+            log.append(f"{name}: brought in {came} change{'s' if came != 1 else ''} from GitHub")
             STALE['site'] = True                       # build the pages again with what came in
             if d == paths.CORE:
                 log.append('(the tools were updated: stop the launcher and start it again to use them)')
@@ -226,7 +226,7 @@ def _sync(message, log):
                 continue
             if code != 0:
                 return False, f'{name}: could not send to GitHub:\n{out.strip()}'
-            log.append(f'{name}: {n} change(s) saved to GitHub')
+            log.append(f"{name}: {n} change{'s' if n != 1 else ''} saved to GitHub")
     return True, '\n'.join(log) or 'Already in sync with GitHub.'
 
 

@@ -12,7 +12,7 @@ function chantCard(c, opts = {}) {
       ${c.range ? " · soprano " + esc(c.range.join("–")) : ""} ${c.acp ? " · ACP sets it to Ps " + esc(c.acp) : ""} ${stars(val(c, "rating"))}</div>
     <div class="moodrow">${mood.length ? mood.map(t => chip(t)).join("") : '<span class="hint">no mood tags yet</span>'}</div>
     ${c.img ? `<div class="notation"><img loading="lazy" src="notation/${encodeURIComponent(c.id)}.png" alt="${esc(c.id)}"></div>` : ""}
-    ${val(c, "notes") ? `<div class="notes">${esc(val(c, "notes"))}</div>` : ""}
+    ${notesBox(val(c, "notes"))}
     <div class="used">${usedTxt} ${uses.length > 1 ? `<span class="link" onclick="showUses('${esc(c.id)}')">all</span>` : ""}</div>
     ${editing ? editBox(c) : `<p style="margin:6px 0 0"><span class="link" onclick="openEdit('${esc(c.id)}')">Edit mood, rating, notes</span>
       · <span class="link" onclick="dlg.close(); useInBuilder('${esc(c.id)}')">Use in the Service planner</span></p>`}
@@ -80,6 +80,22 @@ function keyAt(c, shift) {
 }
 function shiftWords(s) { return s ? `${s > 0 ? "up" : "down"} ${Math.abs(s)}` : ""; }
 function CN(id) { return (C[id] && C[id].label) || id; }
+// your notes, with the chants they mention by file name (Turle-2, or an old name such as Turle-5) named as on screen
+let NOTE_REFS = null;
+function notesHTML(text, links = true) {
+  if (!NOTE_REFS) {
+    const names = Object.keys(C).concat(Object.keys(D.aliases || {})).filter(n => /\d$/.test(n))   // Turle-2, not a bare surname
+      .sort((a, b) => b.length - a.length);
+    const escRe = n => n.replace(/[.*+?^$()|[\]\\{}]/g, "\\$&");
+    NOTE_REFS = names.length ? new RegExp("(?<![\\w-])(" + names.map(escRe).join("|") + ")(?![\\w-])", "g") : null;
+  }
+  const html = esc(text);
+  return NOTE_REFS ? html.replace(NOTE_REFS, m => {
+    const r = chantRef(m), label = CN(r.name) + (r.shift ? ` (in ${keyAt(C[r.name], r.shift)})` : "");
+    return links && C[r.name] ? `<span class="link" title="${esc(m)}" onclick="showChant('${esc(r.name)}')">${esc(label)}</span>` : `<span title="${esc(m)}">${esc(label)}</span>`;
+  }) : html;
+}
+const notesBox = (text, links = true) => text ? `<div class="notes"><span class="nlabel">Notes</span>${notesHTML(text, links)}</div>` : "";
 function chantRef(text) {           // 'Turle-2 down 2' -> {name: 'Turle-2', shift: -2}; an old name is the chant it copied
   const t = String(text || "").trim(), m = t.match(/^(.*?)\s+(up|down)\s+(\d+)$/i);
   let name = m ? m[1].trim() : t, shift = m ? +m[3] * (m[2].toLowerCase() === "up" ? 1 : -1) : 0;
@@ -178,6 +194,14 @@ function sortChanged(view) {
 function sortSet(view, i, f) { SORTS[view].levels[i] = {f, d: SORT_FIELDS[f].dir}; sortChanged(view); }
 function sortDir(view, i) { SORTS[view].levels[i].d *= -1; sortChanged(view); }
 function sortDel(view, i) { SORTS[view].levels.splice(i, 1); sortChanged(view); }
+// a column heading in the Chants list, as in a spreadsheet: sort by it; again, the other way round. The sort
+// levels underneath stay, after it.
+function colSort(f) {
+  const lv = SORTS.chants.levels;
+  if (lv[0].f === f) lv[0].d *= -1;
+  else SORTS.chants.levels = [{f, d: SORT_FIELDS[f].dir}].concat(lv.filter(l => l.f !== f)).slice(0, 5);
+  sortChanged("chants");
+}
 function sortAdd(view) {
   const used = new Set(SORTS[view].levels.map(l => l.f));
   const f = ["mode", "key", "born", "composer", "rating"].find(k => !used.has(k)) || "composer";
@@ -263,7 +287,9 @@ function renderChants() {
   $("#ccount").textContent = `${list.length} of ${D.chants.length} chants · ${tagged} have mood tags`;
   let prevKey = null;
   const heading = SORT_FIELDS[levels[0].f].head;
-  $("#clist").innerHTML = `<div class="clist"><div class="crow head"><span class="meta">Chant</span><span class="meta">Key</span><span class="meta">Rating</span><span class="meta">Last sung</span><span class="meta mo">Moods</span></div>` + list.map(c => {
+  const first = SORTS.chants.levels[0];
+  const col = (f, label, cls = "") => `<span class="meta sortable ${cls} ${first.f === f ? "on" : ""}" title="Sort by ${esc(SORT_FIELDS[f].label)} (click again to reverse)" onclick="colSort('${f}')">${label}${first.f === f ? (first.d > 0 ? " ▲" : " ▼") : ""}</span>`;
+  $("#clist").innerHTML = `<div class="clist"><div class="crow head">${col("composer", "Chant")}${col("key", "Key")}${col("rating", "Rating")}${col("stale", "Last sung")}<span class="meta mo">Moods</span></div>` + list.map(c => {
     let head = "";
     if (heading) {
       const k = heading(c);

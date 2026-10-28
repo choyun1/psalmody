@@ -53,7 +53,8 @@ button.pin.on { color: var(--accent); border-color: var(--accent); }
 .stars { color: var(--bright); letter-spacing: 1px; }
 .notation { margin: 8px 0 4px; overflow-x: auto; }
 .notation img { max-width: 100%; height: auto; max-height: 150px; display: block; }
-.notes { font-style: italic; }
+.notes { background: var(--bg); border-left: 3px solid var(--line); border-radius: 4px; padding: 5px 10px; margin: 6px 0; font-size: 16px; }
+.notes .nlabel { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-right: 8px; }
 .used { font-size: 15px; color: var(--muted); }
 .moodrow { margin: 6px 0; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
 .play { float: right; }
@@ -131,6 +132,8 @@ dialog::backdrop { background: rgba(0,0,0,.35); }
 .crow .nm { font-size: 18px; }
 .crow .meta { font-size: 15px; color: var(--muted); }
 .crow.head { cursor: default; background: var(--bg); }
+.crow.head .sortable { cursor: pointer; user-select: none; }
+.crow.head .sortable:hover, .crow.head .sortable.on { color: var(--ink); }
 .crow.head .meta { text-transform: uppercase; font-size: 12px; letter-spacing: .07em; }
 .clist .card { border: none; border-bottom: 1px solid var(--line); border-radius: 0; margin: 0; padding: 10px 18px 14px 30px; }
 .clist h3.grp { font-weight: normal; margin: 0; padding: 12px 18px 4px; font-size: 15px; color: var(--muted); border-bottom: 1px solid var(--line); }
@@ -143,3 +146,6 @@ dialog::backdrop { background: rgba(0,0,0,.35); }
   aside { position: static; max-height: none; overflow: visible; min-width: 0; }
   header { position: static; }
 }
+/* a small box beside a button: Sync's confirmation and outcome */
+.pop { position: fixed; z-index: 20; max-width: 340px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0,0,0,.15); padding: 10px 12px; font-size: 15px; }
