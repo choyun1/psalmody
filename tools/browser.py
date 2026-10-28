@@ -230,7 +230,8 @@ def service_data():
                                                   for spec, ch in e.get('psalms', [])]})
     # which lectionary day each date was or will be, to find the same Sunday in earlier years
     lect, rows = {}, lectionary.table()
-    days = set(by_date) | {(dt.date.today() + dt.timedelta(days=i)).isoformat() for i in range(-14, 800)}
+    days = set(by_date) | {h['date'][:10] for h in history() if h.get('date')} | \
+        {(dt.date.today() + dt.timedelta(days=i)).isoformat() for i in range(-14, 800)}
     for d in sorted(days):
         try:
             a = lectionary.appointed(dt.date.fromisoformat(d), rows)
