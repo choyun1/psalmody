@@ -378,6 +378,21 @@ def tones_data(redraw=False):
     return endings, groups
 
 
+PAGE = os.path.join(TOOLS, 'browser')       # the page: page.html, style.css and js/*.js, put together into one file
+
+
+def page_html():
+    """index.html: page.html with style.css, the scripts in js/ (in the order of their numbers; they share one
+    scope, so a later file may use what an earlier one defines) and the parish's plugin scripts, inline."""
+    import plugins
+    read = lambda *p: open(os.path.join(PAGE, *p), encoding='utf-8').read()
+    js = ''.join(f'\n// ===== {f} =====\n' + read('js', f) for f in sorted(os.listdir(os.path.join(PAGE, 'js'))) if f.endswith('.js'))
+    fonts = os.path.relpath(os.path.join(ROOT, 'style', 'fonts'), SITE).replace(os.sep, '/')
+    safe = lambda t: t.replace('</script', '<\\/script')
+    return (read('page.html').replace('/*STYLE*/', read('style.css').replace('../style/fonts', fonts))
+            .replace('/*SCRIPT*/', safe(js)).replace('/*PLUGINS*/', safe(plugins.scripts())))
+
+
 def label_chants(chants):
     """How a chant is named on screen, as service sheets name them: 'Turle in D minor'; a number in brackets
     where one composer has two in the same key ('Goss in F (2)'), in the order of the file names."""
@@ -448,11 +463,7 @@ def main():
             }
     with open(os.path.join(SITE, 'data.js'), 'w', encoding='utf-8') as fh:
         fh.write('window.PSALTER = ' + json.dumps(data, ensure_ascii=False, separators=(',', ':')) + ';\n')
-    tpl = open(os.path.join(TOOLS, 'browser_template.html'), encoding='utf-8').read()
-    fonts = os.path.relpath(os.path.join(ROOT, 'style', 'fonts'), SITE).replace(os.sep, '/')
-    import plugins
-    page = tpl.replace('../style/fonts', fonts).replace('/*PLUGINS*/', plugins.scripts().replace('</script', '<\\/script'))
-    open(os.path.join(SITE, 'index.html'), 'w', encoding='utf-8').write(page)
+    open(os.path.join(SITE, 'index.html'), 'w', encoding='utf-8').write(page_html())
     tagged = sum(1 for c in chants if c['mood'])
     print(f'{len(chants)} chants ({tagged} with moods), {len(data["texts"])} texts, {len(data["history"])} history rows')
     if drawn or failed:

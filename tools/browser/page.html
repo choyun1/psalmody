@@ -1,0 +1,39 @@
+<!doctype html>
+<!-- The chant browser. tools/browser.py makes site/index.html from this: style.css goes in at STYLE, the
+     scripts in js/ (one shared scope, in the order of their numbers) at SCRIPT, the parish's plugins at PLUGINS. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chant Browser</title>
+<style>
+/*STYLE*/
+</style>
+</head>
+<body>
+<header>
+  <h1>Chant Browser</h1>
+  <nav>
+    <button data-tab="upcoming" class="on">Coming up</button>
+    <button data-tab="builder">Service planner</button>
+    <button data-tab="chants">Chants</button>
+    <button data-tab="texts">Psalms</button>
+    <button data-tab="history">History</button>
+  </nav>
+  <span id="savebar"></span><span id="gitbar"></span>
+</header>
+<main>
+  <section id="tab-upcoming"></section>
+  <section id="tab-builder" hidden></section>
+  <section id="tab-chants" hidden></section>
+  <section id="tab-texts" hidden></section>
+  <section id="tab-history" hidden></section>
+</main>
+<dialog id="dlg"><div id="dlgbody"></div><p><button class="small" onclick="dlg.close()">Close</button></p></dialog>
+<script src="data.js"></script>
+<script>
+/*SCRIPT*/
+</script>
+<script>/*PLUGINS*/</script>
+</body>
+</html>
