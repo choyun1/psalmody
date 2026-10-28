@@ -1050,7 +1050,8 @@ function quickPreview() {
       });
     });
   });
-  if (gl && D.gloria.length) out.push(pointedHTML(D.gloria));
+  const lastText = (() => { const p = [...B.psalms].reverse().find(p => resolveSpec(p.spec, optOf(p)).length); const r = p ? resolveSpec(p.spec, optOf(p)) : []; return r.length ? TX[r[r.length - 1].id] : null; })();
+  if (gl && D.gloria.length && !(lastText && lastText.noGloria)) out.push(pointedHTML(D.gloria));     // the Te Deum and others take none
   return out.join("") || '<p class="hint">Choose a psalm to see it here.</p>';
 }
 function musicHTML(name) {

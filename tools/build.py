@@ -182,7 +182,7 @@ def resolve(spec, optional=True):
         path = paths.text_file(f) or os.path.join(paths.TEXT_DIRS[0], f + '.txt')
         if not os.path.exists(path):
             raise SystemExit(f'no text file texts/{f}.txt for {spec!r}' +
-                             (' (canticle texts other than 9 and 16 are not in the library yet)' if f.startswith('Canticle') else ''))
+                             (' (the canticles are numbered 1-21, as in the BCP)' if f.startswith('Canticle') else ''))
         if verses is None:
             out.append((path, None))
             continue
@@ -353,6 +353,9 @@ def plan(sunday):
             psalms.append({'id': os.path.basename(path)[:-4], 'doc': doc, 'spec': item['spec'], 'sections': sections,
                            'every': intone_every(item)})
         current = starts[-1][1]
+    # a text whose file says "% no Gloria Patri" (the Te Deum, the Benedicite…) ends without it
+    if psalms and any(c.lower().startswith('no gloria patri') for c in psalms[-1]['doc'].get('comments', [])):
+        sunday['gloria'] = False
     return psalms
 
 

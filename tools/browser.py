@@ -175,6 +175,7 @@ def texts():
         out.append({'id': name, 'title': doc['title'], 'latin': doc.get('latin') or '',
                     'verses': [min(nums), max(nums)] if nums else None, 'first': first,
                     'draft': any('unpointed' in c.lower() for c in doc['comments']),
+                    'noGloria': any(c.lower().startswith('no gloria patri') for c in doc['comments']),
                     'body': [[v['n'], int(v['dagger']), [[ln['text'], ln['half'], int(ln['wrap'])] for ln in v['lines']]]
                              for v in doc['verses']],
                     'sections': moods.get(name, [])})

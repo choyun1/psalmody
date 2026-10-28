@@ -1,0 +1,42 @@
+Canticle 6 | Glory be to God
+% unpointed draft: the words of the 1979 BCP. Pointing for Anglican chant goes in your parish folder
+% (parish/texts/), or use the pointing editor in the chant browser; plainchant tones need none.
+% Rite One (traditional language); Gloria in excelsis
+% the verse division and * are editorial: the BCP prints this canticle as prose
+% no Gloria Patri (the BCP prints none with this canticle)
+
+1   Glory be to God on high, *
+      and on earth peace, good will towards men.
+
+2   We praise thee, we bless thee, *
+      we worship thee,
+
+3   we glorify thee, *
+      we give thanks to thee for thy great glory,
+
+4   O Lord God, heavenly King, *
+      God the Father Almighty.
+
+5   O Lord, the only-begotten Son, *
+      Jesus Christ;
+
+6   O Lord God, Lamb of God, *
+      Son of the Father,
+
+7   that takest away the sins of the world, *
+      have mercy upon us.
+
+8   Thou that takest away the sins of the world, *
+      receive our prayer.
+
+9   Thou that sittest at the right hand of God the Father, *
+      have mercy upon us.
+
+10  For thou only art holy, *
+      thou only art the Lord,
+
+11  thou only, O Christ, *
+      with the Holy Ghost,
+
+12  art most high *
+      in the glory of God the Father. Amen.

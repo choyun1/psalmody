@@ -1,7 +1,26 @@
 text,verses,mood,type,note
+Canticle_1,all,jubilant; majestic,canticle,Benedicite (Rite One); all ye works of the Lord
+Canticle_2,all,majestic; joyful,canticle,Benedictus es (Rite One); blessed art thou
+Canticle_3,all,joyful; tender,canticle,Magnificat (Rite One)
+Canticle_4,all,joyful; triumphant,canticle,Benedictus Dominus (Rite One)
+Canticle_5,all,serene; tender,canticle,Nunc dimittis (Rite One)
+Canticle_6,all,jubilant; majestic,canticle,Gloria in excelsis (Rite One)
+Canticle_7,all,majestic; triumphant,canticle,Te Deum (Rite One)
+Canticle_8,all,triumphant; dramatic,canticle,Song of Moses; horse and rider; Easter
+Canticle_9,all,joyful; confident,canticle,First Song of Isaiah; drawing water with rejoicing
+Canticle_10,all,yearning; confident,canticle,Seek the Lord while he wills to be found; Lent
+Canticle_11,all,bright; majestic,canticle,"Arise, shine; Epiphany"
+Canticle_12,all,jubilant; joyful,canticle,Benedicite; glorify the Lord
+Canticle_13,all,majestic; joyful,canticle,Benedictus es; glory to you
+Canticle_14,all,penitent; plaintive,canticle,Kyrie Pantokrator; Prayer of Manasseh; Lent
+Canticle_15,all,joyful; tender,canticle,Magnificat
 Canticle_16,1-6,joyful; triumphant,canticle,Benedictus; God's mighty saving acts
 Canticle_16,7-10,tender; serene,canticle,"""You, my child""; dawn from on high"
-Canticle_9,all,joyful; confident,canticle,First Song of Isaiah; drawing water with rejoicing
+Canticle_17,all,serene; tender,canticle,Nunc dimittis
+Canticle_18,all,majestic; triumphant,canticle,Dignus es; worthy is the Lamb
+Canticle_19,all,majestic; joyful,canticle,Magna et mirabilia; great and wonderful
+Canticle_20,all,jubilant; majestic,canticle,Gloria in excelsis
+Canticle_21,all,majestic; triumphant,canticle,Te Deum
 Psalm_001,all,stern; serene,wisdom,two ways; tree by streams vs chaff
 Psalm_002,all,stern; majestic; wrathful,royal,God laughs at rebel kings; warning
 Psalm_003,all,confident; plaintive,trust,morning psalm; foes many but God a shield

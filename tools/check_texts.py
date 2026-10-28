@@ -43,7 +43,14 @@ def norm(words):
     return re.sub(r'\s+', ' ', s).strip()
 
 
+CANTICLES = json.load(open(os.path.join(ROOT, 'reference', 'bcp1979_canticles.json'), encoding='utf-8'))
+
+
 def reference(fname):
+    c = re.match(r'Canticle_(\d+)\.txt$', fname)
+    if c:
+        cant = CANTICLES.get(str(int(c.group(1))))
+        return {v['n']: v['text'] for v in cant['verses']} if cant else None
     m = re.match(r'Psalm_(\d+)(?:_Part_(\w+)|_V_(\w+))?\.txt$', fname)
     if not m:
         return None

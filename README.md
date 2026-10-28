@@ -29,7 +29,7 @@ It was built for the weekly use of one parish, St Peter's Episcopal Church in Ca
 
 ## What it's for
 
-- **The texts.** All 150 psalms (and some canticles) in the words of the 1979 BCP, checked word for word against it, in a plain-text format anyone can edit.
+- **The texts.** All 150 psalms and the 21 canticles of the Daily Office in the words of the 1979 BCP, checked word for word against it, in a plain-text format anyone can edit.
 - **Anglican chant.** 103 public-domain chants, single and double, with a catalog (composer, dates, key, mode) and notation and playback for each. The build checks that a double chant comes out even, lets the second half repeat († on a verse) fall where the Sunday needs it, and shows how the key moves at a change of chant.
 - **Plainchant.** The Gregorian psalm tones of the Liber usualis, every tone and ending, set to any text automatically by the natural stress of the words, with the intonation and flex.
 - **The lectionary.** The psalms appointed by the Revised Common Lectionary (Episcopal), Years A, B and C, both tracks, with the verses as printed, optional verses included.
@@ -200,13 +200,16 @@ In this folder: `texts/` and `chants/` (with `catalog.csv`), `moods.txt`, `servi
 
 - **Pointing that can be shared.** Automatic Anglican-chant pointing from word stress, as the plainchant tones already have, checked against printed psalters, so that every psalm comes pointed.
 - **The plainchant tones.** An audit of the tone pointing against printed English plainsong psalters, and a way to move an accent by hand.
-- **Canticles.** All the BCP canticles (1–21) and the Gloria Patri.
 - **More parishes.** A first-run setup that writes `parish.txt`; more hymnals; other psalters (Coverdale, Common Worship) and lectionaries.
 - **A demo** of the chant browser on GitHub Pages.
 - **The corpus.** The chants in LilyPond and MusicXML with their metadata, as a dataset, and the studies it allows: keys and ranges across composers and periods, whether mood tags follow from musical features, and automatic pointing.
+
+Maybe later:
+
+- **Performance marks on the choir copy**, as some printed leaflets have: who sings each verse (Full, Decani, Cantoris) and its dynamic in the margin, a boxed "2nd half" in place of the †, a "new chant" warning box where the chant changes, and ✓ breath marks within long lines.
 
 ## Credits and license
 
 Psalmody grew out of the LilyPond files Adrian Cho made to set the psalms each week at St Peter's, Cambridge, and was developed with Claude (Anthropic) in 2026.
 
-The code is under the MIT License ([LICENSE](LICENSE)). The mood tags, the chant catalog and the other data are under Creative Commons Attribution 4.0 ([LICENSE-DATA.md](LICENSE-DATA.md)). The psalm texts are from the 1979 Book of Common Prayer, which is in the public domain, as are the chants included here. The psalm tones come from the jgabc project (public domain). The EB Garamond fonts are under the SIL Open Font License (`style/fonts/OFL.txt`).
+The code is under the MIT License ([LICENSE](LICENSE)). The mood tags, the chant catalog and the other data are under Creative Commons Attribution 4.0 ([LICENSE-DATA.md](LICENSE-DATA.md)). The psalm texts are from the 1979 Book of Common Prayer, which is in the public domain, as are the chants included here. The canticle texts were taken from the Venite project (MIT) and checked against bcponline.org; the Gloria in excelsis and the Te Deum, printed as prose in the BCP, are divided into verses for chanting by the editor. The psalm tones come from the jgabc project (public domain). The EB Garamond fonts are under the SIL Open Font License (`style/fonts/OFL.txt`).

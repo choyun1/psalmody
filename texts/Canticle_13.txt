@@ -1,0 +1,23 @@
+Canticle 13 | A Song of Praise (Song of the Three Young Men, 29-34)
+% unpointed draft: the words of the 1979 BCP. Pointing for Anglican chant goes in your parish folder
+% (parish/texts/), or use the pointing editor in the chant browser; plainchant tones need none.
+% Benedictus es, Domine
+% no Gloria Patri (the BCP prints none with this canticle)
+
+1   Glory to you, Lord God of our fathers; *
+      you are worthy of praise; glory to you.
+
+2   Glory to you for the radiance of your holy Name; *
+      we will praise you and highly exalt you for ever.
+
+3   Glory to you in the splendor of your temple; *
+      on the throne of your majesty, glory to you.
+
+4   Glory to you, seated between the Cherubim; *
+      we will praise you and highly exalt you for ever.
+
+5   Glory to you, beholding the depths; *
+      in the high vault of heaven, glory to you.
+
+6   Glory to you, Father, Son, and Holy Spirit; *
+      we will praise you and highly exalt you for ever.
