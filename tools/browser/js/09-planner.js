@@ -4,7 +4,7 @@ const B = {date: "", name: "", label: "", year: "", service: "Eucharist", gloria
            psalms: [{spec: "", chants: [{name: "", from: ""}]}], status: "", log: "", files: [], existing: null,
            svc: {}, also: "", note: "", extra: {}, showOpt: new Set(), mode: (() => { try { return localStorage.getItem("psalter-mode") || "service"; } catch (e) { return "service"; } })()};
 function setMode(m) { B.mode = m; try { localStorage.setItem("psalter-mode", m); } catch (e) {} renderBuilder(); }
-function nextSunday() { const d = new Date(); d.setDate(d.getDate() + ((7 - d.getDay()) % 7 || 7)); return d.toISOString().slice(0, 10); }
+function nextSunday() { const d = new Date(); d.setDate(d.getDate() + ((7 - d.getDay()) % 7 || 7)); return ymd(d); }
 function calEntry(date) { return D.calendar.find(c => c.date === date); }
 // a psalm tone's intonation: on verse 1 only, unless set to every verse
 const intoneDefault = p => false;
@@ -54,7 +54,7 @@ function sundayText() {
   if (!B.reprint) L.push("reprint: no");
   if (B.sung) L.push("sung:    yes");
   if (B.choir === false) L.push("choir:   no                       # no choir this week: the psalm is said");
-  const svc = B.mode === "psalm" ? [] : svcLines();
+  const svc = svcLines();                // "Psalm only" hides the rest of the service; it still keeps it
   if (svc.length) L.push("", "# The rest of the service", ...svc);
   return L.join("\n") + "\n";
 }
@@ -108,13 +108,13 @@ async function setDate(date) {
   const c = calEntry(date);
   B.label = c ? c.label : ""; B.year = c ? c.year : "";
   const opts = c ? c.options.filter(o => o.texts.length) : [];
-  const pick = opts.find(o => o.track === "Track 2") || opts[0];
+  const pick = opts.find(o => o.track === "Track " + D.parish.track) || opts[0];
   B.psalms = [{spec: pick ? pick.spec : "", chants: [{name: "", from: ""}], daggers: null}];
   B.service = c && /Ash Wednesday|Good Friday|Maundy|Vigil/.test(c.label) ? c.label : "Eucharist";
   prefillService(date);
   PLUGINS.reset.forEach(f => f());
   if (SERVER) {
-    try { const j = await (await fetch("/api/sunday?name=" + encodeURIComponent(date))).json(); if (j.exists) B.existing = j.text; } catch (e) {}
+    try { const j = await (await fetch("/api/sunday?name=" + encodeURIComponent(date))).json(); if (j.exists && B.date === date) B.existing = j.text; } catch (e) {}   // not if another day was chosen meanwhile
   }
   renderBuilder();
 }
@@ -229,7 +229,8 @@ function fitReport(p, pi) {
   if (!chants.length) { const prev = B.psalms.slice(0, pi).reverse().map(q => q.chants.filter(c => c.name).pop()).find(Boolean); if (prev) chants = [{name: prev.name, from: verses[0][0]}]; }
   const out = [];
   chants.forEach((c, i) => {
-    const to = i + 1 < chants.length ? chants[i + 1].from : 1e9, ch = C[c.name];
+    if (i > 0 && !c.from) { out.push(`<span class="warn">⚠ say from which verse ${esc(CN(c.name))} starts</span>`); return; }
+    const to = i + 1 < chants.length ? (chants[i + 1].from || 1e9) : 1e9, ch = C[c.name];
     const vs = verses.filter(v => v[0] >= c.from && v[0] < to);
     if (!ch || !vs.length) return;
     if (!ch.double) { if (vs.some(v => v[1])) out.push(`<span class="warn">⚠ † in a single chant (${esc(c.name)}): sung as ordinary verses</span>`); return; }
@@ -352,7 +353,7 @@ function pickChant(id) {
 }
 async function useInBuilder(id) {
   if (!B.started) { B.started = true; await setDate(nextSunday()); }      // the builder not opened yet: start it first
-  const cs = B.psalms[0].chants; const slot = cs.find(c => !c.name) || cs[0]; slot.name = id;
+  const cs = B.psalms[0].chants; const slot = cs.find(c => !c.name) || cs[0]; slot.name = id; slot.shift = 0;
   document.querySelector('nav button[data-tab="builder"]').click();
 }
 
@@ -363,7 +364,7 @@ function psalmBlock(p, pi, recent) {
     .sort((a, b) => b.s - a.s || (val(b.ch, "rating") || 0) - (val(a.ch, "rating") || 0) || lastUsed(a.ch.id).localeCompare(lastUsed(b.ch.id))).slice(0, 8) : [];
   return `<div class="card">
     <div class="moodrow">Psalm <input type="text" value="${esc(p.spec)}" placeholder="e.g. 70, 72:1-7,18-19, 119 Aleph" style="width:260px"
-      onchange="B.psalms[${pi}].spec=this.value; renderBuilder()">
+      onchange="Object.assign(B.psalms[${pi}], {spec: this.value, daggers: null, optional: null}); renderBuilder()">
       ${res.length ? res.map(r => `<span class="link" onclick="goText('${esc(r.id)}')">${esc(TX[r.id].title)}</span>`).join(", ") : (p.spec ? '<span class="hint">no matching text</span>' : "")}
       ${mood.map(m => chip(m)).join(" ")}
       ${B.psalms.length > 1 ? `<span class="link" style="margin-left:auto" onclick="B.psalms.splice(${pi},1); renderBuilder()">remove</span>` : ""}</div>
@@ -392,7 +393,7 @@ function psalmBlock(p, pi, recent) {
       : ""}
   </div>`;
 }
-function usePsalm(spec) { B.psalms[0].spec = spec; renderBuilder(); }
+function usePsalm(spec) { Object.assign(B.psalms[0], {spec, daggers: null, optional: null}); renderBuilder(); }   // the †s were the old psalm's
 function addPsalm() { B.psalms.push({spec: "", chants: [{name: "", from: ""}]}); renderBuilder(); }
 function useChant(pi, id) { const cs = B.psalms[pi].chants; const slot = cs.find(c => !c.name) || cs[0]; slot.name = id; slot.shift = 0; renderBuilder(); }
 function loadExisting() { parseSunday(B.existing); B.existing = null; renderBuilder(); }

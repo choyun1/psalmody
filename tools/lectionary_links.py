@@ -49,7 +49,7 @@ def best(cands, label, d):
     """The link for the appointed day among a date's links (a saint may share the date)."""
     def score(c):
         post, date, year, title = c
-        sc = len(words(label) & words(title))
+        sc = 10 * len(words(label) & words(title))       # the day's own name first (All Saints on a Sunday)
         if d.weekday() == 6 and 'sunday' in title.lower():
             sc += 2
         if '/' in year:                       # Sundays and the principal feasts carry the office year too

@@ -71,6 +71,12 @@ def _text(s):
     return out
 
 
+def _rest_after_caps(rest):
+    """What follows a held small-caps word: GOD'S keeps its 'S in small caps (as _text does), the rest as text."""
+    sm = re.match("([’'])S\\b", rest)
+    return ([lystr('’'), '\\scs ' + lystr('S')] + _text(rest[2:])) if sm else _text(rest)
+
+
 def _cat(pieces):
     pieces = [p for p in pieces if p not in ('""',)]
     if len(pieces) == 1:
@@ -87,7 +93,7 @@ def word_markup(w):
     if not m:
         return _cat(_text(w))
     lead, word = m.groups()
-    vm = re.match(r'^([^%s]*)([%s])(.*)$' % (VOWEL, VOWEL), word)
+    vm = re.match(r'^((?:[yY](?=[aeiouAEIOU]))?[^%s]*)([%s])(.*)$' % (VOWEL, VOWEL), word)    # YAHWEH: the A
     if not vm:
         return _cat(_text(lead + word))
     pre, vow, post = vm.groups()
@@ -97,7 +103,7 @@ def word_markup(w):
         return '\\held %s %s %s' % (
             _cat([lystr(lead + cap[0])] + (['\\scs ' + lystr(cap[1:cap.index(vow, 1)])] if cap.index(vow, 1) > 1 else [])),
             '\\scs ' + lystr(vow),
-            _cat(['\\scs ' + lystr(cap[cap.index(vow, 1) + 1:])] + _text(word[len(cap):])))
+            _cat(['\\scs ' + lystr(cap[cap.index(vow, 1) + 1:])] + _rest_after_caps(word[len(cap):])))
     return '\\held %s %s %s' % (_cat([lystr(lead)] + _text(pre)) if (lead or pre) else '""',
                                 lystr(vow), _cat(_text(post)) if post else '""')
 

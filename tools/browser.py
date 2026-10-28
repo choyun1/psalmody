@@ -26,7 +26,7 @@ def read_csv(path):
 
 def vocabulary():
     groups = []
-    for line in open(os.path.join(ROOT, 'moods.txt'), encoding='utf-8'):
+    for line in paths.read(os.path.join(ROOT, 'moods.txt')).splitlines():
         line = line.split('#', 1)[0].strip()
         if ':' in line:
             g, tags = line.split(':', 1)
@@ -72,7 +72,7 @@ def history():
             if not s['choir']:                      # no choir: the psalms, said, with no chant
                 for it in s['items']:
                     for path_, take in build.resolve(it['spec']):
-                        vs = take or [v['n'] for v in pointed.parse(open(path_, encoding='utf-8').read())['verses']]
+                        vs = take or [v['n'] for v in pointed.load(path_)['verses']]
                         rows.append({'date': s['date'], 'text': os.path.basename(path_)[:-4], 'chant': '', 'source': 'new',
                                      'verses': f'{vs[0]}-{vs[-1]}' if len(vs) > 1 else str(vs[0]), 'note': 'no choir that week'})
                 continue
@@ -129,7 +129,7 @@ def schedule_history(have):
         except SystemExit:
             continue
         for path_, take in segs:
-            vs = take or [v['n'] for v in pointed.parse(open(path_, encoding='utf-8').read())['verses']]
+            vs = take or [v['n'] for v in pointed.load(path_)['verses']]
             out.append({'date': r['date'], 'text': os.path.basename(path_)[:-4],
                         'verses': f'{vs[0]}-{vs[-1]}' if len(vs) > 1 else str(vs[0]),
                         'chant': chant, 'source': 'schedule',      # no chant: the psalm was said (no choir that week)
@@ -141,7 +141,7 @@ def gloria_body():
     path = paths.text_file('Gloria') or os.path.join(ROOT, 'texts', 'Gloria.txt')
     if not os.path.exists(path):
         return []
-    doc = pointed.parse(open(path, encoding='utf-8').read())
+    doc = pointed.load(path)
     return [[v['n'], 0, [[ln['text'], ln['half'], int(ln['wrap'])] for ln in v['lines']]] for v in doc['verses']]
 
 
@@ -172,7 +172,7 @@ def texts():
         name = os.path.splitext(os.path.basename(path))[0]
         if name == 'Gloria':
             continue
-        doc = pointed.parse(open(path, encoding='utf-8').read())
+        doc = pointed.load(path)
         nums = [v['n'] for v in doc['verses']]
         first = doc['verses'][0]['lines'][0]['text'] if doc['verses'] else ''
         first = re.sub(r'\s+[|.*]\s*|\s*\*\s*|=', ' ', first)
@@ -207,14 +207,20 @@ def calendar(weeks=110):
         except SystemExit:
             pass
     out, d = [], start
-    feasts = {'christmas_eve', 'christmas1', 'holy_name', 'epiphany', 'all_saints', 'ash_wednesday',
-              'maundy_thursday', 'good_friday', 'easter_vigil', 'ascension'}
+    feasts = {'christmas_eve', 'christmas_day', 'holy_name', 'epiphany', 'presentation', 'ash_wednesday',
+              'maundy_thursday', 'good_friday', 'easter_vigil', 'ascension', 'transfiguration', 'all_saints'}
+    if lectionary.PARISH.get('patronal'):
+        feasts.add(lectionary.PARISH['patronal'].split()[1])       # the patronal feast, on whatever day
     while d < start + dt.timedelta(weeks=weeks):
         key, label = lectionary.day_of(d)
         if d.weekday() == 6 or key in feasts:
             a = lectionary.appointed(d, rows)
+            specs = [(s, '') for s in ([a['psalm']] if a['psalm'] else []) + a['alt']]
+            if (d.month, d.day) == (12, 24) and key != 'christmas_eve':       # Advent 4 in the morning, Christmas Eve at night
+                ce = lectionary.appointed(d, rows, 'christmas_eve')
+                specs += [(s, 'Christmas Eve') for s in ([ce['psalm']] if ce['psalm'] else []) + ce['alt']]
             opts = []
-            for i, spec in enumerate(([a['psalm']] if a['psalm'] else []) + a['alt']):
+            for i, (spec, also) in enumerate(specs):
                 spec = spec.replace('Ps. ', '').strip()
                 try:
                     segs = build.resolve(spec)
@@ -223,8 +229,8 @@ def calendar(weeks=110):
                     err = ''
                 except SystemExit as e:
                     texts, verses, err = [], None, str(e)
-                track = ''
-                if key and key.startswith('proper') and a['alt']:
+                track = also
+                if not also and key and key.startswith('proper') and a['alt']:
                     track = 'Track 1' if i == 0 else ('Track 2' if i == 1 else '')
                 opts.append({'spec': spec, 'texts': texts, 'verses': verses, 'track': track, 'error': err})
             out.append({'date': d.isoformat(), 'label': a['label'], 'year': a['year'], 'options': opts,
@@ -238,14 +244,14 @@ def calendar(weeks=110):
 def service_data():
     """Orders of service, hymnals, past repertoire, anthem texts, and every service on record, for the planner."""
     import service
-    by_date = {}
+    by_date = {}               # every service, by name: its file's name, or its date (and occasion, two in a day)
     for e in service.all_services():
-        by_date.setdefault(e['date'], {'order': e['order'], 'items': e['items'], 'source': e['source'],
-                                       'psalms': [spec + (f" ({', '.join(c.replace('tone:', 'Tone ') for c in ch)})" if ch else '')
-                                                  for spec, ch in e.get('psalms', [])]})
+        by_date[e['name']] = {'date': e['date'], 'order': e['order'], 'items': e['items'], 'source': e['source'],
+                              'psalms': [spec + (f" ({', '.join(c.replace('tone:', 'Tone ') for c in ch)})" if ch else '')
+                                         for spec, ch in e.get('psalms', [])]}
     # which lectionary day each date was or will be, to find the same Sunday in earlier years
     lect, rows = {}, lectionary.table()
-    days = set(by_date) | {h['date'][:10] for h in history() if h.get('date')} | \
+    days = {e['date'] for e in by_date.values()} | {h['date'][:10] for h in history() if h.get('date')} | \
         {(dt.date.today() + dt.timedelta(days=i)).isoformat() for i in range(-14, 800)}
     colors = {}
     for d in sorted(days):
@@ -385,7 +391,7 @@ def page_html():
     """index.html: page.html with style.css, the scripts in js/ (in the order of their numbers; they share one
     scope, so a later file may use what an earlier one defines) and the parish's plugin scripts, inline."""
     import plugins
-    read = lambda *p: open(os.path.join(PAGE, *p), encoding='utf-8').read()
+    read = lambda *p: paths.read(os.path.join(PAGE, *p))
     js = ''.join(f'\n// ===== {f} =====\n' + read('js', f) for f in sorted(os.listdir(os.path.join(PAGE, 'js'))) if f.endswith('.js'))
     fonts = os.path.relpath(os.path.join(ROOT, 'style', 'fonts'), SITE).replace(os.sep, '/')
     safe = lambda t: t.replace('</script', '<\\/script')

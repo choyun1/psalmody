@@ -61,11 +61,22 @@ const PCS = {C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11};
 const SPELLD = {major: ["C", "D♭", "D", "E♭", "E", "F", "F♯", "G", "A♭", "A", "B♭", "B"],
                 minor: ["C", "C♯", "D", "E♭", "E", "F", "F♯", "G", "G♯", "A", "B♭", "B"]};
 function keyAt(c, shift) {
-  const m = (c.key || "").trim().match(/^([A-G])([#b♯♭]?)$/);
-  if (!shift || !m) return keyName(c);
-  const pc = (PCS[m[1]] + (/[#♯]/.test(m[2]) ? 1 : /[b♭]/.test(m[2]) ? -1 : 0) + shift + 120) % 12;
-  const mode = (c.mode || "").toLowerCase().startsWith("min") ? "minor" : "major";
-  return SPELLD[mode][pc] + " " + mode;
+  if (!shift) return keyName(c);
+  const m0 = (c.mode || "").toLowerCase();
+  const moveOne = (k, minor) => {               // 'Bb' up 2 -> 'C'
+    const m = k.trim().match(/^([A-G])([#b♯♭]?)$/); if (!m) return null;
+    const pc = (PCS[m[1]] + (/[#♯]/.test(m[2]) ? 1 : /[b♭]/.test(m[2]) ? -1 : 0) + shift + 120) % 12;
+    return SPELLD[minor ? "minor" : "major"][pc];
+  };
+  const parts = (c.key || "").split("/");
+  if (parts.length === 2 && m0 === "m/m") {     // a chant in two keys: major / minor
+    const a = moveOne(parts[0], false), b = moveOne(parts[1], true);
+    if (a && b) return `${a} major / ${b} minor`;
+  }
+  const minorish = ["min", "dor", "phr", "aeo"].includes(m0.slice(0, 3));
+  const t = moveOne(parts[0], minorish);
+  if (!t) return keyName(c);
+  return t + " " + (m0.startsWith("min") ? "minor" : m0.startsWith("maj") || !m0 ? "major" : MODES[m0.slice(0, 3)] || m0);
 }
 function shiftWords(s) { return s ? `${s > 0 ? "up" : "down"} ${Math.abs(s)}` : ""; }
 function CN(id) { return (C[id] && C[id].label) || id; }
@@ -105,6 +116,7 @@ function togglePin(id, p) {
   const cur = val(C[id], "pins") || [];
   setEdit(id, "pins", cur.includes(p) ? cur.filter(x => x !== p) : PINS.map(x => x[0]).filter(x => x === p || cur.includes(x)));
   document.querySelectorAll(`[data-pins="${CSS.escape(id)}"]`).forEach(el => el.outerHTML = pinButtons(C[id]));
+  if (!$("#tab-chants").hidden && !CV.tones) renderChants();          // the ★ / 📌 in its row
 }
 function pinButtons(c) {
   return `<span data-pins="${esc(c.id)}" style="float:right;margin-right:6px">${PINS.map(([p, on, off, label]) =>
@@ -191,6 +203,10 @@ function renderChantsShell() {
     <div class="seg" style="max-width:440px;margin-bottom:10px"><button class="${CV.tones ? "" : "on"}" onclick="CV.tones=false; renderChantsShell(); renderChants()">Anglican chants</button><button class="${CV.tones ? "on" : ""}" onclick="CV.tones=true; renderChantsShell(); renderChants()">Plainchant psalm tones</button></div>
     <p class="count" id="ccount"></p><div id="clist"></div></div></div>`;
   if (CV.tones) { $("#tab-chants aside").style.display = "none"; $("#tab-chants .layout").style.gridTemplateColumns = "1fr"; }
+  // the controls show the filters still in force (after the tones and back)
+  $("#q").value = F.q; $("#untagged").checked = F.untagged; $("#pinf").value = F.pin || ""; $("#mode").value = F.mode || "";
+  $("#sd").value = F.sd || ""; $("#keyf").value = F.key || ""; $("#rating").value = String(F.minRating || 0);
+  document.querySelectorAll("[data-mood]").forEach(b => b.classList.toggle("on", F.moods.has(b.dataset.mood)));
   $("#q").oninput = e => { F.q = e.target.value.toLowerCase(); renderChants(); };
   document.querySelectorAll("[data-mood]").forEach(b => b.onclick = () => {
     const t = b.dataset.mood; F.moods.has(t) ? F.moods.delete(t) : F.moods.add(t); b.classList.toggle("on"); renderChants(); });

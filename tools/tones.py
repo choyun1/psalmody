@@ -365,6 +365,12 @@ def point_verse(v, t, first=False):
                         line[i]['notes'], line[i]['role'] = [(fx, False)], 'flex'
                     line[a]['flexacc'] = True
                     line[-1]['flexend'] = True
+                if hi == 0 and li == 0 and first:      # the intonation opens the verse, even before a flex
+                    ints = formula(part)['intonation']
+                    if ints and len(line) > len(ints) and all(line[i]['role'] == 'ten' for i in range(len(ints))):
+                        for i, tk in enumerate(ints):
+                            line[i]['notes'], line[i]['role'] = tk['notes'], 'int'
+                        line[0]['int_open'] = line[len(ints) - 1]['int_close'] = True
             else:
                 apply(line, part, t['clef'], intonation=(first and hi == 0 and li == 0))
                 ints = [s for s in line if s['role'] == 'int']
@@ -536,7 +542,7 @@ SCORE_LAYOUT = r'''
     \context { \Staff \remove "Time_signature_engraver"
       \override StaffSymbol.line-count = 4
       \override Clef.font-size = #2
-      \override Accidental.glyph-name-alist = #alteration-vaticana-glyph-name-alist }
+      \override Accidental.alteration-glyph-name-alist = #alteration-vaticana-glyph-name-alist }
     \context { \Voice
       \override NoteHead.style = #'vaticana.punctum
       \override NoteHead.font-size = #3.5

@@ -49,6 +49,7 @@ NAMES = {
     'christmas_sunday2': 'Second Sunday after Christmas', 'epiphany1': 'First Sunday after the Epiphany (Baptism of Our Lord)',
     'epiphany_last': 'Last Sunday after the Epiphany', 'lent': 'Lent {n}', 'palm_sunday': 'Palm Sunday',
     'easter': 'Easter Day', 'pentecost': 'Day of Pentecost', 'trinity': 'Trinity Sunday', 'easter_n': 'Easter {n}',
+    'christmas_eve': 'Christmas Eve',
 }
 
 
@@ -122,8 +123,8 @@ def load_parish():
     import paths
     path = paths.PARISH_TXT
     if os.path.exists(path):
-        for line in open(path, encoding='utf-8'):
-            line = re.sub(r'#(?![0-9a-fA-F]{6}\b).*', '', line).strip()     # a comment (but not a color, #6aa84f)
+        for line in paths.read(path).splitlines():
+            line = re.sub(r'#(?!(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b).*', '', line).strip()   # a comment (not a color: #6aa84f)
             if ':' in line:
                 k, v = line.split(':', 1)
                 out[k.strip().lower()] = v.strip()
@@ -218,8 +219,8 @@ def _pairs(v):
 def season(d):
     """advent, christmas, epiphany, lent, holy_week, easter or pentecost (the season after Pentecost)."""
     y, E = d.year, easter(d.year)
-    if d >= advent1(y):
-        return 'advent' if d < D(y, 12, 24) else 'christmas'
+    if d >= advent1(y):                       # Christmas from Christmas Eve, unless the 24th is Advent 4, a Sunday
+        return 'advent' if d < D(y, 12, 24) or (d == D(y, 12, 24) and d.weekday() == 6) else 'christmas'
     if d < D(y, 1, 6):
         return 'christmas'
     if d < E - dt.timedelta(days=46):
@@ -238,26 +239,27 @@ def color(d, key=None):
     if key is None:
         key = day_of(d)[0]
     days = dict(DAY_COLORS, **_pairs(PARISH.get('day_colors', '')))
-    if key == 'christmas_eve' or (d.month, d.day) == (12, 24):
+    if key is None and (d.month, d.day) == (12, 24):    # a weekday Christmas Eve (a Sunday the 24th is Advent 4)
         key = 'christmas_eve'
     if key and key in days:
         return days[key]
-    if key and key.startswith('proper') and key[6:].isdigit():
-        key = 'pentecost'                                          # an ordinary Sunday after Pentecost
     seasons = dict(SEASON_COLORS, **_pairs(PARISH.get('season_colors', '')))
     return seasons.get(season(d), 'green')
 
 
 def shades():
     """{color: '#rrggbb'}"""
-    return dict(SHADES, **{k: v if v.startswith('#') else '#' + v
-                           for k, v in _pairs(PARISH.get('color_shades', '')).items()})
+    def six(v):                                   # '#fff' -> '#ffffff'
+        v = v.lstrip('#')
+        return '#' + (''.join(c * 2 for c in v) if len(v) == 3 else v).lower()
+    return dict(SHADES, **{k: six(v) for k, v in _pairs(PARISH.get('color_shades', '')).items()})
 
 
-def appointed(d, rows=None):
-    """-> dict(date, key, label, year, psalm, alt) for a date."""
+def appointed(d, rows=None, key=None):
+    """-> dict(date, key, label, year, psalm, alt) for a date (or for another day kept on it: key='christmas_eve'
+    for a Christmas Eve that falls on Advent 4)."""
     rows = rows if rows is not None else table()
-    key, label = day_of(d)
+    key, label = (key, NAMES.get(key, key.replace('_', ' ').title())) if key else day_of(d)
     yr = lect_year(d)
     if key in HOUSE:
         main, others = HOUSE[key]
@@ -281,8 +283,9 @@ def main():
         a = appointed(d + dt.timedelta(days=7 * i), rows)
         fmt = lambda p: ('Psalm ' + p) if p and p[0].isdigit() else (p or '?')
         if a['key'] and a['key'].startswith('proper') and a['alt']:
-            what = f"Track 1: {fmt(a['psalm'])}   Track 2: {fmt(a['alt'][0])}" + \
-                   ''.join(f'  or {fmt(x)}' for x in a['alt'][1:])
+            # the table's order: Track 1's psalm, Track 2's, then the others (Track 1's alternatives, nearly always)
+            what = f"Track 1: {fmt(a['psalm'])}" + ''.join(f' or {fmt(x)}' for x in a['alt'][1:]) + \
+                   f"   Track 2: {fmt(a['alt'][0])}"
         else:
             what = fmt(a['psalm']) + ''.join(f'  or {fmt(x)}' for x in a['alt'])
         print(f"{a['date']}  {a['label']:<38} Year {a['year']}  {what}")

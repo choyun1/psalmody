@@ -14,7 +14,7 @@ import argparse, csv, datetime as dt, os, re, sys
 TOOLS = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(TOOLS)
 sys.path.insert(0, TOOLS)
-import build, lectionary, paths   # noqa: E402
+import build, lectionary, paths, service   # noqa: E402
 
 DEFAULT_TRACK = int(lectionary.PARISH.get('track', '2'))     # set in parish.txt
 RECENT_WEEKS = 12
@@ -30,7 +30,7 @@ def tags(s):
 
 def groups():
     g = {}
-    for line in open(os.path.join(ROOT, 'moods.txt'), encoding='utf-8'):
+    for line in paths.read(os.path.join(ROOT, 'moods.txt')).splitlines():
         line = line.split('#', 1)[0]
         if ':' in line:
             name, ts = line.split(':', 1)
@@ -146,7 +146,8 @@ def main():
     lines = [f"# {a['label']}, Year {a['year']}" + (f" (Track {args.track})" if a['key'] and a['key'].startswith('proper') else ''),
              f"date:    {d.isoformat()}"]
     if a['key'] in ('ash_wednesday', 'good_friday', 'maundy_thursday', 'easter_vigil'):
-        lines.append(f"service: {a['label']}")
+        name = service.order_name(None, a['label'])                    # its order of service, by name
+        lines.append(f"service: {name if name != next(iter(service.ORDERS)) else a['label']}")
     skipped = []
     cands = [spec] + [x for x in alts]
     chosen = None

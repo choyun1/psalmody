@@ -15,7 +15,8 @@ A plugin is a folder in parish/plugins/ (say parish/plugins/newsletter/) with up
                   Sunday keys are kept in B.extra[key] (a string; several lines joined by newlines).
 
 The order settings are read into service.META[order][setting]. The folder is put on sys.path, so a
-plugin can keep more modules beside plugin.py. ctx gives handlers safe_name(name) and root (this folder).
+plugin can keep more modules beside plugin.py. ctx gives handlers safe_name(name), root (the psalmody folder),
+record(files, message) (to record a change for Undo) and rebuild() (to rebuild the page).
 """
 import importlib.util, os, sys
 
@@ -36,7 +37,7 @@ def _manifest(folder):
     out = {}
     p = os.path.join(folder, 'plugin.txt')
     if os.path.exists(p):
-        for line in open(p, encoding='utf-8'):
+        for line in paths.read(p).splitlines():
             k, sep, v = line.split('#', 1)[0].partition(':')
             if sep:
                 out[k.strip().lower()] = [x.strip().lower() for x in v.split(',') if x.strip()]
@@ -52,10 +53,12 @@ def order_settings():
 
 
 _modules = None
+ERRORS = {}                  # plugins that failed to load: {name: what went wrong}
 
 
 def modules():
-    """{name: module} of the plugins that have a plugin.py."""
+    """{name: module} of the plugins that have a plugin.py. One that fails to load is left out (and noted in
+    ERRORS); the others still load."""
     global _modules
     if _modules is None:
         _modules = {}
@@ -66,9 +69,14 @@ def modules():
             if f not in sys.path:
                 sys.path.insert(0, f)
             name = os.path.basename(f)
-            spec = importlib.util.spec_from_file_location(f'psalter_plugin_{name}', p)
-            mod = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(mod)
+            try:
+                spec = importlib.util.spec_from_file_location(f'psalter_plugin_{name}', p)
+                mod = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(mod)
+            except Exception as e:
+                ERRORS[name] = f'{type(e).__name__}: {e}'
+                sys.stderr.write(f'  plugin {name} did not load: {ERRORS[name]}\n')
+                continue
             _modules[name] = mod
     return _modules
 
@@ -85,6 +93,7 @@ def data():
                 out[name] = m.data()
             except Exception as e:                       # a broken plugin shouldn't stop the page
                 out[name] = {'error': str(e)}
+    out.update({name: {'error': err} for name, err in ERRORS.items()})
     return out
 
 
@@ -94,5 +103,5 @@ def scripts():
     for f in folders():
         p = os.path.join(f, 'plugin.js')
         if os.path.exists(p):
-            out.append(f'// plugin: {os.path.basename(f)}\n' + open(p, encoding='utf-8').read())
+            out.append(f'// plugin: {os.path.basename(f)}\n' + paths.read(p))
     return '\n'.join(out)

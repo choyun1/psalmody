@@ -16,6 +16,8 @@ function orderFor(service, label) {
     if (!want) continue;
     const exact = ORDER_NAMES.find(n => n.toLowerCase() === want.toLowerCase()); if (exact) return exact;
     const part = ORDER_NAMES.find(n => n !== first && want.toLowerCase().includes(n.toLowerCase())); if (part) return part;
+    const words = new Set(want.toLowerCase().match(/[a-z]+/g) || []);      // "Easter Vigil" for "The Great Vigil of Easter"
+    const all = ORDER_NAMES.find(n => n !== first && (n.toLowerCase().match(/[a-z]+/g) || []).every(w => words.has(w))); if (all) return all;
   }
   return first;
 }
@@ -23,7 +25,7 @@ const curOrder = () => orderFor(B.service, B.label);
 const slotsOf = o => SV.orders[o] || SV.orders[ORDER_NAMES[0]] || [];
 const anySlot = k => slotsOf(curOrder()).find(s => s.key === k) || Object.values(SV.orders).flat().find(s => s.key === k);
 function hymnOf(v) {
-  const m = String(v || "").trim().match(/^(?:([A-Za-z][A-Za-z0-9]*)\s+)?(S\s?\d{1,3}|\d{1,3}[a-z]?)\.?(?:\s*\(([A-Za-z][A-Za-z0-9]*)\))?(?:\s+(.+))?$/);
+  const m = String(v || "").trim().match(/^(?:((?!S\s?\d)[A-Za-z][A-Za-z0-9]*)\s+)?(S\s?\d{1,3}|\d{1,3}[a-z]?)\.?(?:\s*\(([A-Za-z][A-Za-z0-9]*)\))?(?:\s+(.+))?$/);
   if (!m || (m[4] && m[4].includes(" - "))) return null;
   const b = (m[1] || m[3] || "EH1982").toUpperCase(); if (!BOOKS[b]) return null;
   const book = BOOKS[b], number = m[2].replace(" ", "");
@@ -63,9 +65,14 @@ function svcLines() {
   B.note.split("\n").map(x => x.trim()).filter(Boolean).forEach(x => L.push(pad("note") + x));
   return L;
 }
+// the service on record for this file (its name), or the first on this date
+function serviceOn(date) {
+  const e = SV.byDate[B.name];
+  return e && e.date === date ? e : SV.byDate[date] || Object.values(SV.byDate).find(x => x.date === date) || null;
+}
 function prefillService(date) {
   B.svc = {}; B.also = ""; B.note = ""; B.extra = {}; B.showOpt = new Set(); B.seq = [];
-  const e = SV.byDate[date];
+  const e = serviceOn(date);
   if (e && e.order !== ORDER_NAMES[0]) B.service = e.order;
   if (e) e.items.forEach(([k, v]) => {
     if (PLUGIN_KEYS.has(k)) B.extra[k] = (B.extra[k] ? B.extra[k] + "\n" : "") + v; else if (k === "note") B.note += (B.note ? "\n" : "") + v;
@@ -127,12 +134,13 @@ function wordsHint(s) {
 // what was sung on this day of the lectionary before: the same readings (three years ago, six…) first
 function beforeCard() {
   const me = (SV.lect || {})[B.date]; if (!me) return "";
-  const prior = Object.keys(SV.byDate).filter(d => d < B.date && (SV.lect[d] || [])[0] === me[0]).sort().reverse();
+  const L = k => SV.lect[SV.byDate[k].date] || [];       // services are named by file or date: the day is by date
+  const prior = Object.keys(SV.byDate).filter(k => SV.byDate[k].date < B.date && L(k)[0] === me[0]).sort().reverse();
   if (!prior.length) return "";
-  const same = prior.filter(d => SV.lect[d][1] === me[1]), other = prior.filter(d => SV.lect[d][1] !== me[1]);
+  const same = prior.filter(k => L(k)[1] === me[1]), other = prior.filter(k => L(k)[1] !== me[1]);
   const one = (d, open) => {
     const e = SV.byDate[d], items = e.items.filter(([k]) => !["organist", "note"].includes(k) && !PLUGIN_KEYS.has(k));
-    return `<details ${open ? "open" : ""} style="margin:4px 0"><summary>${esc(d)} <span class="hint">· ${esc(SV.lect[d][2])}, Year ${esc(SV.lect[d][1])}${e.order !== ORDER_NAMES[0] ? " · " + esc(e.order) : ""}</span></summary>
+    return `<details ${open ? "open" : ""} style="margin:4px 0"><summary>${esc(d)} <span class="hint">· ${esc(L(d)[2])}, Year ${esc(L(d)[1])}${e.order !== ORDER_NAMES[0] ? " · " + esc(e.order) : ""}</span></summary>
       <ul style="margin:4px 0 2px 1.1em;padding:0">${(e.psalms || []).map(ps => `<li><span class="hint">Psalm:</span> ${esc(ps.replace(/\s*\(\)$/, ""))}</li>`).join("")}${items.map(([k, v]) => `<li>${itemText(e.order, k, v)}</li>`).join("")}</ul></details>`;
   };
   const lastSame = same[0] ? SV.byDate[same[0]] : null;
@@ -214,7 +222,7 @@ function serviceCard() {
       <div id="sh-${sid(s.key)}" class="svhint">${slotHint(s)}</div>
       <div id="ab-${sid(s.key)}">${s.kind === "anthem" ? anthemBox(s.key) : ""}${s.words ? wordsHint(s) : ""}</div></div></div>`;
   };
-  return `${beforeCard()}<div class="card"><h3 style="font-weight:normal;margin:0 0 4px">The rest of the service <span class="hint">· ${esc(order)}</span>${info((SV.byDate[B.date] ? "Already planned for this date (the imported record or this Sunday's file). " : "") + "Service music carries on from the last service of this kind unless you change it. The order of service comes from the Service box (or the day), and is set out in services.txt.")}</h3>
+  return `${beforeCard()}<div class="card"><h3 style="font-weight:normal;margin:0 0 4px">The rest of the service <span class="hint">· ${esc(order)}</span>${info((serviceOn(B.date) ? "Already planned for this date (the imported record or this Sunday's file). " : "") + "Service music carries on from the last service of this kind unless you change it. The order of service comes from the Service box (or the day), and is set out in services.txt.")}</h3>
     
     <div class="svrow"><label>Organist</label><div><input type="text" value="${esc(B.svc.organist || "")}" onchange="setSvc('organist', this.value)" style="width:120px"></div></div>
     ${shown.map(row).join("")}

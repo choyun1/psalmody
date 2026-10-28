@@ -12,7 +12,7 @@ function overlapMoods(textIds, verses) {
   return out;
 }
 function recentChants(date, weeks = 12) {
-  if (!date) date = new Date().toISOString().slice(0, 10);
+  if (!date) date = ymd();
   const lo = new Date(new Date(date) - weeks * 7 * 864e5).toISOString().slice(0, 10);
   const set = new Set(D.history.filter(h => h.date >= lo && h.date < date).map(h => h.chant));
   D.calendar.filter(c => c.date >= lo && c.date < date).forEach(c => c.planned.forEach(pl => pl.chants.forEach(x => set.add(x))));
@@ -23,7 +23,7 @@ function goText(id) {
   document.querySelector('nav button[data-tab="texts"]').click();
 }
 function renderUpcoming() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = ymd();
   const all = D.calendar.filter(c => c.date >= today), rows = all.slice(0, UPCOMING.n);
   const first = c => c.options.find(o => o.track === "Track " + D.parish.track) || c.options[0];
   $("#tab-upcoming").innerHTML = `<p class="count">The psalms appointed for the coming weeks${info("The Revised Common Lectionary (Episcopal edition). In the season after Pentecost, Track 1 is the semicontinuous psalm and Track 2 the one related to the Old Testament reading. Click a day for its psalms, their moods and chants to try.")}</p>

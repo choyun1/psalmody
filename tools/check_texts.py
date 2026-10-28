@@ -68,7 +68,7 @@ def reference(fname):
 def check(path):
     problems = []
     try:
-        doc = pointed.parse(open(path, encoding='utf-8').read())
+        doc = pointed.load(path)
     except Exception as e:
         return [f'cannot read: {e}']
     ref = reference(os.path.basename(path))

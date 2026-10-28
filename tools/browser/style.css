@@ -132,3 +132,8 @@ dialog::backdrop { background: rgba(0,0,0,.35); }
 .urow { grid-template-columns: 9em 1.6fr 1.3fr 2fr; }
 @media (max-width: 760px) { .urow { grid-template-columns: 1fr 1fr; } }
 .more { display: block; text-align: center; padding: 10px; }
+/* phones: one column; the filters and the header scroll away with the page instead of covering it */
+@media (max-width: 760px) {
+  aside { position: static; max-height: none; overflow: visible; min-width: 0; }
+  header { position: static; }
+}

@@ -48,7 +48,7 @@ def put(service, key, value):
             return "your computer's password store"
         except Exception:
             pass
-    os.makedirs(DIR, exist_ok=True)
+    os.makedirs(DIR, mode=0o700, exist_ok=True)
     f, data = _file(service), {}
     if os.path.exists(f):
         try:
@@ -59,6 +59,7 @@ def put(service, key, value):
     fd = os.open(f, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
     with os.fdopen(fd, 'w') as fh:
         json.dump(data, fh)
+    os.chmod(f, 0o600)                       # only you may read it, even if the file was there before
     return f
 
 
@@ -76,4 +77,5 @@ def forget(service, key):
         except ValueError:
             data = {}
         data.pop(key, None)
-        json.dump(data, open(f, 'w'))
+        with open(f, 'w') as fh:
+            json.dump(data, fh)

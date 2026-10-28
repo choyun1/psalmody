@@ -116,6 +116,10 @@ def order_name(service=None, label=None):
         for n in names:                                   # "Christmas Eve (midnight)", "Evensong for All Saints"
             if n.lower() in want.lower() and n != names[0]:
                 return n
+        words = set(re.findall(r'[a-z]+', want.lower()))
+        for n in names[1:]:                               # "Easter Vigil" for "The Great Vigil of Easter"
+            if set(re.findall(r'[a-z]+', n.lower())) <= words:
+                return n
     return names[0]
 
 
@@ -167,7 +171,7 @@ def hymnals():
     return _hymnals
 
 
-HYMN_RE = re.compile(r'^(?:(?P<b1>[A-Za-z][A-Za-z0-9]*)\s+)?(?P<n>S\s?\d{1,3}|\d{1,3}[a-z]?)\.?'
+HYMN_RE = re.compile(r'^(?:(?P<b1>(?!S\s?\d)[A-Za-z][A-Za-z0-9]*)\s+)?(?P<n>S\s?\d{1,3}|\d{1,3}[a-z]?)\.?'
                      r'(?:\s*\((?P<b2>[A-Za-z][A-Za-z0-9]*)\))?(?:\s+(?P<t>.+))?$')
 
 
@@ -210,7 +214,7 @@ def split_piece(value):
 
 
 def read_anthem(path):
-    head, _, body = open(path, encoding='utf-8').read().partition('\n\n')
+    head, _, body = paths.read(path).partition('\n\n')
     a = {'file': os.path.basename(path)[:-4], 'title': '', 'composer': '', 'source': '', 'text': body.strip('\n')}
     for line in head.splitlines():
         k, _, v = line.partition(':')
@@ -237,14 +241,16 @@ def find_anthem(value, library=None):
     norm = lambda s: re.sub(r'[^a-z0-9]', '', s.lower())
     hits = [a for a in (library if library is not None else anthems()) if norm(a['title']) == norm(title)
             and (a['composer'] or not composer)]          # fixed words (the Magnificat) only when asked for
-    if len(hits) > 1 and composer:
-        hits = [a for a in hits if _surname(a['composer']) == _surname(composer)] or hits
+    if composer:                                          # Byrd's Ave verum is not Mozart's
+        hits = [a for a in hits if _surname(a['composer']) == _surname(composer)]
     return hits[0] if hits else None
 
 
 def write_anthem(title, composer, source, text):
     os.makedirs(anthem_dir(), exist_ok=True)
     old = find_anthem(f'{title} - {composer}' if composer else title)
+    if old and _surname(old['composer']) != _surname(composer):     # never write over another composer's
+        old = None
     name = old['file'] if old else slug(title + ('-' + _surname(composer) if composer else ''))
     path = os.path.join(anthem_dir(), name + '.txt')
     head = [f'title:    {title}', f'composer: {composer}']
@@ -382,16 +388,19 @@ def all_services(refresh=False):
             covered.add(s['date'][:10])
         out.append({'date': s['date'][:10], 'name': name, 'order': order_of(s), 'items': items, 'source': 'file',
                     'psalms': [(it['spec'], [n for n, _ in it['chants'] if n not in ('???', '?')]) for it in s['items']]})
-    by = {}
+    by = {}                                            # one service per date and occasion (Advent 4 and Christmas Eve)
     for r in schedule():
-        by.setdefault(r['date'], []).append(r)
-    for d, rows in by.items():
+        by.setdefault((r['date'], r.get('occasion', '')), []).append(r)
+    per_day = {}
+    for d, _ in by:
+        per_day[d] = per_day.get(d, 0) + 1
+    for (d, occ), rows in by.items():
         if d in covered:
             continue
-        occ = rows[0].get('occasion', '')
         order = order_name(occ, occ)
         ps = [(r['item'], []) for r in rows if r['slot'] == 'Psalm' and r['item'].strip().upper() != 'N/A']
-        out.append({'date': d, 'name': d, 'order': order, 'items': legacy_items(order, rows), 'source': 'schedule',
+        name = d if per_day[d] == 1 else f"{d} {occ}".strip()
+        out.append({'date': d, 'name': name, 'order': order, 'items': legacy_items(order, rows), 'source': 'schedule',
                     'occasion': occ, 'psalms': ps})
     _services = sorted(out, key=lambda e: (e['date'], e['name']))
     return _services

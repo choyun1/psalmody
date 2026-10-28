@@ -5,7 +5,11 @@
 
 With this running, the browser can save chant tags straight to your chant notes, write Sunday
 files, run the checks, and build the PDF and images with one click. It only listens on your own
-computer (localhost). Opening site/index.html directly still works, without those buttons.
+computer (localhost), answers only pages it served itself, and shows only the site, the built
+output and the fonts. Opening site/index.html directly still works, without those buttons.
+
+Each request the page can make is one function below, listed in ROUTES; a parish's plugins add
+their own (tools/plugins.py). Every save is recorded for Undo (tools/history.py).
 """
 import csv, io, http.server, json, os, subprocess, sys, threading, urllib.parse, webbrowser
 
@@ -16,8 +20,11 @@ PY = sys.executable
 sys.path.insert(0, TOOLS)
 import paths, history   # noqa: E402
 SITE_URL = '/' + os.path.relpath(paths.SITE, ROOT).replace(os.sep, '/') + '/index.html'
+SERVED = [paths.SITE, paths.OUTPUT, os.path.join(ROOT, 'style')]     # the only folders a page may read
+MAX_BODY = 20 * 1024 * 1024
 
 
+# ------------------------------------------------------------------ running the tools
 def run(args, timeout=900):
     r = subprocess.run([PY, os.path.join(TOOLS, args[0])] + args[1:], cwd=ROOT,
                        capture_output=True, text=True, timeout=timeout)
@@ -39,46 +46,188 @@ def rebuild_later(what='the chant browser'):
     threading.Thread(target=lambda: rebuild(what), daemon=True).start()
 
 
-def save_verse(data):
-    """Replace one verse of a text file, after checking the words still match the BCP."""
-    import pointed, check_texts, tempfile, shutil
-    name = safe_name(data['id'])
-    src = paths.text_file(name)
-    path = os.path.join(paths.OWN_TEXTS, name + '.txt')        # pointing is the parish's own: saved there
-    os.makedirs(paths.OWN_TEXTS, exist_ok=True)
-    doc = pointed.parse(open(src, encoding='utf-8').read())
-    doc['comments'] = [c for c in doc['comments'] if 'unpointed' not in c.lower()]
-    try:
-        new = pointed.parse('x\n' + data['block'])['verses']
-    except Exception as e:
-        return {'ok': False, 'error': f'cannot read the verse: {e}'}
-    if len(new) != 1 or str(new[0]['n']) != str(data['n']):
-        return {'ok': False, 'error': 'keep exactly one verse, with the same number'}
-    i = next(k for k, v in enumerate(doc['verses']) if str(v['n']) == str(data['n']))
-    doc['verses'][i] = new[0]
-    tmp = tempfile.mkdtemp()
-    try:
-        tp = os.path.join(tmp, name + '.txt')
-        open(tp, 'w', encoding='utf-8').write(pointed.write(doc))
-        problems = [p for p in check_texts.check(tp) if p.startswith(f"v. {data['n']}:")]
-        if problems:
-            return {'ok': False, 'error': '; '.join(problems)}
-        shutil.copy(tp, path)
-    finally:
-        shutil.rmtree(tmp)
-    v = new[0]
-    history.record([path], f"Pointing: {name.replace('_', ' ')} v. {data['n']}")
-    rebuild_later()
-    return {'ok': True, 'verse': [v['n'], int(v['dagger']), [[l['text'], l['half'], int(l['wrap'])] for l in v['lines']]]}
-
-
+# ------------------------------------------------------------------ checking what the page sends
 def safe_name(name):
-    name = os.path.basename(str(name)).strip()
-    if not name or name.startswith('.') or not all(c.isalnum() or c in '-_' for c in name):
+    """A file name the page may use: letters, digits, - and _; nothing that reaches another folder."""
+    name = name.strip() if isinstance(name, str) else ''
+    if not name or name.startswith(('.', '-')) or not all(c.isalnum() or c in '-_' for c in name):
         raise ValueError('file names may use letters, digits, - and _ only')
     return name
 
 
+def text_arg(data, key, required=True):
+    v = data.get(key)
+    if v is None and not required:
+        return ''
+    if not isinstance(v, str):
+        raise ValueError(f'{key} must be text')
+    return v
+
+
+def sunday_path(data):
+    return os.path.join(paths.SUNDAYS, safe_name(data.get('name')) + '.txt')
+
+
+def rel(p):
+    return os.path.relpath(p, ROOT).replace(os.sep, '/')
+
+
+# ------------------------------------------------------------------ the requests
+def api_notes(data):
+    """Chant notes (rating, mood, notes, pin) for every chant, as csv."""
+    reader = csv.DictReader(io.StringIO(text_arg(data, 'csv')))
+    if 'Chant' not in (reader.fieldnames or []):
+        raise ValueError('the notes have no Chant column')
+    rows = list(reader)
+    before = paths._read(paths.NOTES)
+    paths.write_notes(rows)
+    history.record([paths.NOTES], history.describe_notes(before, paths._read(paths.NOTES)))
+    code, out = rebuild()                 # the notes are saved; this only refreshes the page
+    return {'ok': True, 'rebuilt': code == 0, 'log': out}
+
+
+def api_sunday(data):
+    """Write a Sunday file."""
+    text, fp = text_arg(data, 'text'), sunday_path(data)
+    os.makedirs(paths.SUNDAYS, exist_ok=True)
+    new = not os.path.exists(fp)
+    with open(fp, 'w', encoding='utf-8') as fh:
+        fh.write(text)
+    history.record([fp], ('New service: ' if new else 'Service: ') + os.path.basename(fp)[:-4])
+    return {'ok': True, 'path': rel(fp)}
+
+
+def api_sung(data):
+    """Mark a Sunday as sung (it then counts in the history), or not."""
+    fp = sunday_path(data)
+    if not os.path.exists(fp):
+        raise ValueError(f'no Sunday file {os.path.basename(fp)}')
+    yes = data.get('sung', True) is not False
+    lines = [l for l in paths.read(fp).splitlines() if not l.strip().lower().startswith('sung:')]
+    if yes:
+        lines.append('sung:    yes')
+    open(fp, 'w', encoding='utf-8').write('\n'.join(lines) + '\n')
+    history.record([fp], ('Marked as sung: ' if yes else 'Marked as not sung: ') + os.path.basename(fp)[:-4])
+    rebuild()
+    return {'ok': True}
+
+
+def api_commit(data):
+    """Sync with GitHub: bring in what's new there, send what's new here."""
+    msg = (data.get('message') if isinstance(data.get('message'), str) else '') or 'Changes made outside the chant browser'
+    with REBUILD:                                     # not while a rebuild is writing the pages
+        ok, log = history.sync(msg.strip())
+    if ok and history.STALE.pop('site', None):        # pages built on both sides: build them afresh, and send those too
+        rebuild('after bringing in changes')
+        with REBUILD:
+            history.sync(msg.strip())
+    return {'ok': ok, 'log': log}
+
+
+def api_undo(data):
+    ok, msg = history.undo(text_arg(data, 'repo'), text_arg(data, 'sha'))
+    if not ok:
+        return {'ok': False, 'error': msg}
+    code, _ = rebuild('after an undo')
+    return {'ok': True, 'undid': msg, 'rebuilt': code == 0}
+
+
+def api_anthem(data):
+    """Keep an anthem's words (parish/anthems/)."""
+    import service
+    one_line = lambda k: ' '.join(text_arg(data, k, required=False).split())
+    title = one_line('title')
+    if not title:
+        raise ValueError('the anthem needs a title')
+    f = service.write_anthem(title, one_line('composer'), one_line('source'), text_arg(data, 'text', required=False))
+    history.record([f], 'Anthem words: ' + title)
+    rebuild_later()
+    return {'ok': True, 'file': rel(f)}
+
+
+def api_open(data):
+    """Open a Sunday's output folder on this computer."""
+    name = safe_name(data.get('name'))
+    folder = os.path.join(paths.OUTPUT, name, safe_name(data['sub']) if data.get('sub') else '')
+    if not os.path.isdir(folder):
+        raise ValueError('nothing built yet for ' + name)
+    if sys.platform.startswith('win'):
+        os.startfile(folder)
+    else:
+        subprocess.Popen(['open' if sys.platform == 'darwin' else 'xdg-open', folder])
+    return {'ok': True}
+
+
+def api_text(data):
+    """Replace one verse of a text's pointing, after checking the words still match the BCP."""
+    import pointed, check_texts, tempfile, shutil
+    name, n = safe_name(data.get('id')), str(data.get('n'))
+    src = paths.text_file(name)
+    if not src:
+        raise ValueError(f'no text {name}')
+    doc = pointed.load(src)
+    doc['comments'] = [c for c in doc['comments'] if 'unpointed' not in c.lower()]
+    try:
+        new = pointed.parse('x\n' + text_arg(data, 'block'))['verses']
+    except Exception as e:
+        return {'ok': False, 'error': f'cannot read the verse: {e}'}
+    if len(new) != 1 or str(new[0]['n']) != n:
+        return {'ok': False, 'error': 'keep exactly one verse, with the same number'}
+    i = next((k for k, v in enumerate(doc['verses']) if str(v['n']) == n), None)
+    if i is None:
+        raise ValueError(f'{name} has no verse {n}')
+    doc['verses'][i] = new[0]
+    path = os.path.join(paths.OWN_TEXTS, name + '.txt')        # pointing is the parish's own: saved there
+    tmp = tempfile.mkdtemp()
+    try:
+        tp = os.path.join(tmp, name + '.txt')
+        open(tp, 'w', encoding='utf-8').write(pointed.write(doc))
+        problems = [p for p in check_texts.check(tp) if p.startswith(f'v. {n}:')]
+        if problems:
+            return {'ok': False, 'error': '; '.join(problems)}
+        os.makedirs(paths.OWN_TEXTS, exist_ok=True)
+        shutil.copy(tp, path)
+    finally:
+        shutil.rmtree(tmp)
+    v = new[0]
+    history.record([path], f"Pointing: {name.replace('_', ' ')} v. {n}")
+    rebuild_later()
+    return {'ok': True, 'verse': [v['n'], int(v['dagger']), [[l['text'], l['half'], int(l['wrap'])] for l in v['lines']]]}
+
+
+def api_check(data):
+    code, out = run(['build.py', sunday_path(data), '--check'])
+    return {'ok': code == 0, 'log': out}
+
+
+def api_build(data):
+    """Build a Sunday's PDF (and images): the files made, for links."""
+    fp = sunday_path(data)
+    name = os.path.basename(fp)[:-4]
+    code, out = run(['build.py', fp] + (['--pdf-only'] if data.get('pdfOnly') else []))
+    outdir = os.path.join(paths.OUTPUT, name)
+    files = sorted(rel(os.path.join(dp, f)) for dp, _, fs in os.walk(outdir) for f in fs
+                   if f.endswith(('.pdf', '.jpg'))) if os.path.isdir(outdir) else []
+    if code == 0:
+        rebuild('built ' + name)                 # refresh history and "coming up"
+    return {'ok': code == 0, 'log': out, 'files': files}
+
+
+ROUTES = {'/api/notes': api_notes, '/api/sunday': api_sunday, '/api/sung': api_sung, '/api/commit': api_commit,
+          '/api/undo': api_undo, '/api/anthem': api_anthem, '/api/open': api_open, '/api/text': api_text,
+          '/api/check': api_check, '/api/build': api_build}
+
+
+def get_sunday(q):
+    fp = os.path.join(paths.SUNDAYS, safe_name(q.get('name', [''])[0]) + '.txt')
+    return {'exists': os.path.exists(fp), 'text': paths.read(fp) if os.path.exists(fp) else ''}
+
+
+GETS = {'/api/ping': lambda q: {'ok': True}, '/api/git': lambda q: {'repos': history.pending()},
+        '/api/history': lambda q: {'changes': history.changes()}, '/api/sunday': get_sunday}
+
+
+# ------------------------------------------------------------------ the server
 class Handler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *a, **k):
         super().__init__(*a, directory=ROOT, **k)
@@ -97,118 +246,55 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         except (BrokenPipeError, ConnectionResetError):     # the page was closed or reloaded before the answer came
             pass
 
+    def ours(self):
+        """Only this computer's own pages: the Host must be localhost (no DNS rebinding), and a request that
+        says where it comes from must come from localhost (another website can't drive the planner)."""
+        host = (self.headers.get('Host') or '').rsplit(':', 1)[0].strip('[]')
+        if host not in ('localhost', '127.0.0.1', '::1'):
+            return False
+        origin = self.headers.get('Origin')
+        if origin and urllib.parse.urlparse(origin).hostname not in ('localhost', '127.0.0.1', '::1'):
+            return False
+        return True
+
     def do_GET(self):
+        if not self.ours():
+            return self.reply({'error': 'local pages only'}, 403)
         u = urllib.parse.urlparse(self.path)
         if u.path == '/':
             self.send_response(302)
             self.send_header('Location', SITE_URL)
             self.end_headers()
             return
-        if u.path == '/api/ping':
-            return self.reply({'ok': True})
-        if u.path == '/api/git':
-            return self.reply({'repos': history.pending()})
-        if u.path == '/api/history':
-            return self.reply({'changes': history.changes()})
-        if u.path == '/api/sunday':
-            q = urllib.parse.parse_qs(u.query)
+        if u.path in GETS:
             try:
-                name = safe_name(q.get('name', [''])[0])
+                return self.reply(GETS[u.path](urllib.parse.parse_qs(u.query)))
             except ValueError as e:
                 return self.reply({'error': str(e)}, 400)
-            path = os.path.join(paths.SUNDAYS, name + '.txt')
-            return self.reply({'exists': os.path.exists(path),
-                               'text': open(path, encoding='utf-8').read() if os.path.exists(path) else ''})
+        target = os.path.realpath(self.translate_path(u.path))
+        if not any(target == os.path.realpath(d) or target.startswith(os.path.realpath(d) + os.sep) for d in SERVED):
+            return self.reply({'error': 'not found'}, 404)
         return super().do_GET()
 
     def do_POST(self):
-        if self.client_address[0] not in ('127.0.0.1', '::1'):
-            return self.reply({'error': 'local only'}, 403)
-        n = int(self.headers.get('Content-Length', '0'))
-        try:
-            data = json.loads(self.rfile.read(n) or b'{}')
-        except json.JSONDecodeError:
-            return self.reply({'error': 'bad request'}, 400)
+        if not self.ours():
+            return self.reply({'error': 'local pages only'}, 403)
+        if (self.headers.get('Content-Type') or '').split(';')[0].strip() != 'application/json':
+            return self.reply({'error': 'send JSON'}, 415)          # a form on another site can't send JSON
         path = urllib.parse.urlparse(self.path).path
         try:
-            if path == '/api/notes':
-                before = paths._read(paths.NOTES)
-                rows = list(csv.DictReader(io.StringIO(data['csv'])))
-                paths.write_notes(rows)
-                history.record([paths.NOTES], history.describe_notes(before, paths._read(paths.NOTES)))
-                code, out = rebuild()          # the notes are saved; this only refreshes the page
-                return self.reply({'ok': True, 'rebuilt': code == 0, 'log': out})
-            if path == '/api/sunday':
-                name = safe_name(data['name'])
-                os.makedirs(paths.SUNDAYS, exist_ok=True)
-                fp = os.path.join(paths.SUNDAYS, name + '.txt')
-                new = not os.path.exists(fp)
-                with open(fp, 'w', encoding='utf-8') as fh:
-                    fh.write(data['text'])
-                history.record([fp], ('New service: ' if new else 'Service: ') + name)
-                return self.reply({'ok': True, 'path': os.path.relpath(os.path.join(paths.SUNDAYS, name + '.txt'), ROOT).replace(os.sep, '/')})
-            if path == '/api/sung':
-                name = safe_name(data['name'])
-                fp = os.path.join(paths.SUNDAYS, name + '.txt')
-                txt = open(fp, encoding='utf-8').read()
-                yes = bool(data.get('sung', True))
-                lines = [l for l in txt.splitlines() if not l.strip().lower().startswith('sung:')]
-                if yes:
-                    lines.append('sung:    yes')
-                open(fp, 'w', encoding='utf-8').write('\n'.join(lines) + '\n')
-                history.record([fp], ('Marked as sung: ' if yes else 'Marked as not sung: ') + name)
-                code, out = rebuild()
-                return self.reply({'ok': True})
-            if path == '/api/commit':
-                ok, log = history.sync((data.get('message') or 'Changes made outside the chant browser').strip())
-                if ok and history.STALE.pop('site', None):      # pages built on both sides: build them afresh
-                    rebuild('after bringing in changes')
-                return self.reply({'ok': ok, 'log': log})
-            if path == '/api/undo':
-                ok, msg = history.undo(data['repo'], data['sha'])
-                if not ok:
-                    return self.reply({'ok': False, 'error': msg})
-                code, out = rebuild('after an undo')
-                return self.reply({'ok': True, 'undid': msg, 'rebuilt': code == 0})
-            if path == '/api/anthem':
-                import service
-                if not data.get('title', '').strip():
-                    raise ValueError('the anthem needs a title')
-                f = service.write_anthem(data['title'].strip(), data.get('composer', '').strip(),
-                                         data.get('source', '').strip(), data.get('text', ''))
-                history.record([f], 'Anthem words: ' + data['title'].strip())
-                rebuild_later()
-                return self.reply({'ok': True, 'file': os.path.relpath(f, ROOT).replace(os.sep, '/')})
-            if path == '/api/open':
-                name = safe_name(data['name'])
-                folder = os.path.join(paths.OUTPUT, name, safe_name(data['sub']) if data.get('sub') else '')
-                if not os.path.isdir(folder):
-                    raise ValueError('nothing built yet for ' + name)
-                if sys.platform.startswith('win'):
-                    os.startfile(folder)
-                else:
-                    subprocess.Popen(['open' if sys.platform == 'darwin' else 'xdg-open', folder])
-                return self.reply({'ok': True})
-            if path == '/api/text':
-                return self.reply(save_verse(data))
-            if path == '/api/check':
-                name = safe_name(data['name'])
-                code, out = run(['build.py', os.path.join(paths.SUNDAYS, name + '.txt'), '--check'])
-                return self.reply({'ok': code == 0, 'log': out})
-            if path == '/api/build':
-                name = safe_name(data['name'])
-                args = ['build.py', os.path.join(paths.SUNDAYS, name + '.txt')] + (['--pdf-only'] if data.get('pdfOnly') else [])
-                code, out = run(args)
-                outdir = os.path.join(paths.OUTPUT, name)
-                files = []
-                if os.path.isdir(outdir):
-                    for dp, _, fs in os.walk(outdir):
-                        for f in sorted(fs):
-                            if f.endswith(('.pdf', '.jpg')):
-                                files.append(os.path.relpath(os.path.join(dp, f), ROOT).replace(os.sep, '/'))
-                if code == 0:
-                    rebuild('built ' + name)          # refresh history and "coming up"
-                return self.reply({'ok': code == 0, 'log': out, 'files': sorted(files)})
+            n = int(self.headers.get('Content-Length', '0'))
+            if not 0 <= n <= MAX_BODY:
+                raise ValueError('bad length')
+            data = json.loads(self.rfile.read(n).decode('utf-8') or '{}')
+            if not isinstance(data, dict):
+                raise ValueError('bad request')
+        except (ValueError, UnicodeDecodeError):
+            return self.reply({'error': 'bad request'}, 400)
+        try:
+            handler = ROUTES.get(path)
+            if handler:
+                return self.reply(handler(data))
             import plugins                      # a parish plugin's own requests (parish/plugins/)
             handler = plugins.routes().get(path)
             if handler:
@@ -218,10 +304,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return self.reply({'error': str(e)}, 400)
         except subprocess.TimeoutExpired:
             return self.reply({'error': 'timed out'}, 500)
+        except Exception as e:                  # anything else: say what, so the page isn't left waiting
+            return self.reply({'error': f'{type(e).__name__}: {e}'}, 500)
         return self.reply({'error': 'unknown request'}, 404)
 
 
 class Server(http.server.ThreadingHTTPServer):
+    request_queue_size = 32
+
     def handle_error(self, request, client_address):
         """A page closed or reloaded mid-request (BrokenPipe) is normal: say nothing; anything else, as usual."""
         if isinstance(sys.exc_info()[1], (BrokenPipeError, ConnectionResetError, ConnectionAbortedError)):
@@ -237,7 +327,7 @@ def main():
     import lectionary
     if len(lectionary.links()) < 100:               # first run: find the lectionary site's pages, in the background
         threading.Thread(target=lambda: run(['lectionary_links.py']), daemon=True).start()
-    elif f'"linksSignature":"{lectionary.links_signature()}"' not in open(os.path.join(paths.SITE, 'data.js'), encoding='utf-8').read():
+    elif f'"linksSignature":"{lectionary.links_signature()}"' not in paths.read(os.path.join(paths.SITE, 'data.js')):
         print('updating the links to the lectionary…')        # the table changed since the page was built
         rebuild()
     srv = Server(('127.0.0.1', PORT), Handler)

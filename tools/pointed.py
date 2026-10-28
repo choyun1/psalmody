@@ -33,6 +33,12 @@ SMALLCAPS = ('LORD', 'GOD', 'YAHWEH')
 
 
 # ---------------------------------------------------------------- parsing .txt
+def load(path):
+    """parse() of a text file."""
+    with open(path, encoding='utf-8') as fh:
+        return parse(fh.read())
+
+
 def parse(text):
     """-> dict(title, latin, comments, verses=[dict(n, dagger, lines=[dict(text, half, wrap)])])"""
     title = latin = None

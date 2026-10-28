@@ -9,7 +9,7 @@ to bring in changes from GitHub and send these up.
 What the tools make from those files (the parish's site/ and output/) is recorded too, as "generated"
 commits that History leaves out; after an undo the browser is simply rebuilt.
 """
-import os, subprocess, sys, threading
+import os, re, subprocess, sys, threading, time
 
 TOOLS = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, TOOLS)
@@ -24,13 +24,25 @@ WHO = ['-c', 'user.name=Psalter', '-c', 'user.email=psalter@localhost']   # if g
 
 
 def git(d, *args):
-    try:
-        with LOCK:
-            r = subprocess.run(['git'] + (WHO if not known(d) else []) + list(args), cwd=d,
-                               capture_output=True, text=True)
-    except OSError:                                    # no git on this computer
-        return 1, 'git is not installed'
-    return r.returncode, (r.stdout or '') + (r.stderr or '')
+    """Run git in folder d -> (exit code, output). Waits a moment and tries again while another program holds
+    git's lock (an editor checking the folder, say), so a save isn't left unrecorded."""
+    for attempt in range(6):
+        try:
+            with LOCK:
+                r = subprocess.run(['git'] + (WHO if not known(d) else []) + list(args), cwd=d,
+                                   capture_output=True, text=True)
+        except OSError:                                    # no git on this computer
+            return 1, 'git is not installed'
+        out = (r.stdout or '') + (r.stderr or '')
+        if r.returncode == 0 or 'index.lock' not in out:
+            return r.returncode, out
+        time.sleep(0.5)
+    return r.returncode, out
+
+
+def names(out):
+    """File names from git's -z output (names may have spaces)."""
+    return [f for f in out.split('\0') if f]
 
 
 _KNOWN = {}
@@ -56,7 +68,7 @@ def ensure():
 
 
 def is_repo(d):
-    return bool(d) and os.path.isdir(os.path.join(d, '.git'))
+    return bool(d) and os.path.exists(os.path.join(d, '.git'))      # a folder, or a file (a worktree, a submodule)
 
 
 def repo_of(path):
@@ -127,16 +139,22 @@ def undo(repo, sha):
     d = dict((n, dd) for dd, n in repos()).get(repo)
     if not d:
         return False, 'no such repository'
-    code, body = git(d, 'log', '-1', '--format=%B', sha)
+    if not re.fullmatch(r'[0-9a-f]{7,40}', str(sha)):          # a change's id, and nothing else, reaches git
+        return False, 'no such change'
+    code, body = git(d, 'log', '-1', '--format=%B', sha, '--')
     if code != 0 or MARK not in body:
         return False, 'only changes made in the chant browser can be undone here'
     msg = body.strip().splitlines()[0]
+    files = names(git(d, 'diff-tree', '--no-commit-id', '--name-only', '-r', '-z', '--root', sha)[1])
     with LOCK:
         code, out = git(d, 'revert', '--no-commit', sha)
+        if code == 0 and git(d, 'diff', '--cached', '--quiet', '--', *files)[0] == 0:
+            git(d, 'revert', '--abort')
+            return False, 'that change has been undone already'
         if code == 0:
             base = msg.split(': ', 1)[1] if msg.startswith(('Undid: ', 'Redid: ')) else msg
             new = ('Redid: ' if msg.startswith('Undid: ') else 'Undid: ') + base       # an undo can be undone
-            code, out = git(d, 'commit', '-q', '-m', new, '-m', MARK)
+            code, out = git(d, 'commit', '-q', '-m', new, '-m', MARK, '--', *files)   # only what it touched
         if code != 0:
             git(d, 'revert', '--abort')
             if 'would be overwritten' in out or 'local changes' in out:
@@ -151,8 +169,8 @@ def pending():
     """Files changed but not recorded, and recorded changes not yet on GitHub, per repository."""
     out = []
     for d, name in repos():
-        code, st = git(d, 'status', '--porcelain')
-        files = [l[3:] for l in st.splitlines()] if code == 0 else []
+        code, st = git(d, 'status', '--porcelain', '-z')
+        files = [e[3:] for e in names(st) if len(e) > 3 and e[2] == ' '] if code == 0 else []
         code, ahead = git(d, 'rev-list', '--count', '@{u}..HEAD')
         out.append({'repo': name, 'files': files, 'unpushed': int(ahead.strip() or 0) if code == 0 else 0})
     return out
@@ -179,8 +197,7 @@ def _sync(message, log):
         code, before = git(d, 'rev-list', '--count', 'HEAD..@{u}')
         code, out = git(d, 'merge', '--no-edit', '-q', '@{u}')
         if code != 0:
-            _, clash = git(d, 'diff', '--name-only', '--diff-filter=U')
-            clash = clash.split()
+            clash = names(git(d, 'diff', '--name-only', '-z', '--diff-filter=U')[1])
             if clash and all(f.startswith(GENERATED_DIRS) for f in clash):
                 git(d, 'checkout', '--theirs', '--', *clash)       # they'll be rebuilt from the merged files
                 git(d, 'add', '--', *clash)
@@ -202,6 +219,9 @@ def _sync(message, log):
         n = int(ahead.strip() or 0) if code == 0 else 0
         if n:
             code, out = git(d, 'push', '-q')
+            if code != 0 and d == paths.CORE and paths.PARISH:      # the tools are someone else's: bringing in is enough
+                log.append(f'{name}: {n} change(s) of your own to the tools, kept here (GitHub would not take them)')
+                continue
             if code != 0:
                 return False, f'{name}: could not send to GitHub:\n{out.strip()}'
             log.append(f'{name}: {n} change(s) saved to GitHub')

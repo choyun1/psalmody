@@ -32,8 +32,8 @@ function lectLink(text, url) { return url ? `<a href="${esc(url)}" target="_blan
 function downloadRecord() {
   // every service on record, one row per piece, with hymn titles spelled out
   const rows = [["date", "service", "lectionary day", "slot", "item", "title", "readings"]];
-  Object.keys(SV.byDate).sort().forEach(d => {
-    const e = SV.byDate[d], day = (SV.lect || {})[d], lect = day ? `${day[2]}, Year ${day[1]}` : "", url = day ? day[3] || "" : "";
+  Object.keys(SV.byDate).sort().forEach(k => {
+    const e = SV.byDate[k], d = e.date, day = (SV.lect || {})[d], lect = day ? `${day[2]}, Year ${day[1]}` : "", url = day ? day[3] || "" : "";
     (e.psalms || []).forEach(ps => rows.push([d, e.order, lect, "Psalm", ps.replace(/\s*\(\)$/, ""), "", url]));
     e.items.filter(([k]) => !["organist", "note"].includes(k) && !PLUGIN_KEYS.has(k)).forEach(([k, v]) => {
       const s = (SV.orders[e.order] || []).find(x => x.key === k) || anySlot(k) || {label: k === "also" ? "Other" : k, kind: "music"};
@@ -43,22 +43,22 @@ function downloadRecord() {
   });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob(["\ufeff" + rows.map(r => r.map(csvCell).join(",")).join("\r\n")], {type: "text/csv"}));
-  a.download = "music-record-" + new Date().toISOString().slice(0, 10) + ".csv"; a.click();
+  a.download = "music-record-" + ymd() + ".csv"; a.click();
 }
 function drawServices() {
   const q = $("#sq").value.toLowerCase(), o = $("#so").value;
-  const dates = Object.keys(SV.byDate).sort().reverse().filter(d => {
-    const e = SV.byDate[d];
+  const dates = Object.keys(SV.byDate).sort().reverse().filter(k => {
+    const e = SV.byDate[k];
     if (o && e.order !== o) return false;
     if (!q) return true;
-    const words = [d, e.order].concat(e.items.map(([k, v]) => v + " " + hymnsOf(v).map(h => h.title).join(" "))).join(" ").toLowerCase();
+    const words = [k, e.order].concat(e.items.map(([k, v]) => v + " " + hymnsOf(v).map(h => h.title).join(" "))).join(" ").toLowerCase();
     return words.includes(q);
   });
   $("#scount").textContent = dates.length + " services";
-  $("#slist").innerHTML = dates.slice(0, 200).map(d => {
-    const e = SV.byDate[d];
+  $("#slist").innerHTML = dates.slice(0, 200).map(k => {
+    const e = SV.byDate[k], d = e.date;
     const items = e.items.filter(([k]) => !["organist", "note"].includes(k) && !PLUGIN_KEYS.has(k));
-    return `<details class="card" style="padding:8px 14px;margin-bottom:6px"><summary>${swatch(d)}${esc(d)} · ${(SV.lect || {})[d] ? lectLink(SV.lect[d][2] + ", Year " + SV.lect[d][1], SV.lect[d][3]) + " · " : ""}${esc(e.order)} <span class="hint">· ${items.length} items${e.source === "file" ? " · from its file here" : " · from the imported record"}</span></summary>
+    return `<details class="card" style="padding:8px 14px;margin-bottom:6px"><summary>${swatch(d)}${esc(k)} · ${(SV.lect || {})[d] ? lectLink(SV.lect[d][2] + ", Year " + SV.lect[d][1], SV.lect[d][3]) + " · " : ""}${esc(e.order)} <span class="hint">· ${items.length} items${e.source === "file" ? " · from its file here" : " · from the imported record"}</span></summary>
       <ul style="margin:6px 0 2px 1.1em;padding:0">${items.map(([k, v]) => `<li>${itemText(e.order, k, v)}</li>`).join("")}</ul></details>`;
   }).join("") + (dates.length > 200 ? '<p class="hint">Showing the 200 most recent: filter to find older ones.</p>' : "");
 }

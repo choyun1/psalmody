@@ -37,6 +37,12 @@ CATALOG_COLUMNS = ['Chant', 'Composer', 'Years', 'Key', 'Mode', 'Single/Double',
 NOTE_COLUMNS = ['Chant', 'Rating', 'Mood', 'Notes', 'Pin']    # Pin: favorite, to try
 
 
+def read(path):
+    """A text file's contents (UTF-8)."""
+    with open(path, encoding='utf-8') as fh:
+        return fh.read()
+
+
 def text_file(name):
     """The text a name refers to (e.g. Psalm_019): the parish's pointed copy if it has one."""
     for d in reversed(TEXT_DIRS):

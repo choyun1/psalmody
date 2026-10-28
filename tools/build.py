@@ -26,7 +26,7 @@ psalm with no chant: line of its own continues with the previous chant.
 Outputs go to output/<file name>/: psalm_<file name>.pdf, .ly (editable), admin/NN_*.jpg.
 Two services on one day: name the files e.g. 2026-12-24-early.txt and 2026-12-24-midnight.txt.
 """
-import argparse, csv, glob, os, re, shutil, subprocess, sys, tempfile
+import argparse, os, re, shutil, subprocess, sys, tempfile
 
 TOOLS = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(TOOLS)
@@ -43,7 +43,7 @@ def parse_sunday(path):
     import service
     s = {'date': None, 'service': 'Eucharist', 'gloria': None, 'reprint': True, 'sung': False, 'choir': True,
          'items': [], 'music': []}
-    for raw in open(path, encoding='utf-8'):
+    for raw in paths.read(path).splitlines():
         line = raw.split('#', 1)[0].strip()
         if not line:
             continue
@@ -87,7 +87,7 @@ def parse_sunday(path):
             if not s['items']:
                 raise SystemExit(f'{path}: a {key}: line must come after a psalm: line')
             m = re.match(r'^(.+?)(?:\s+from\s+(\d+))?$', val)
-            if not m:
+            if not m or re.match(r'^from\s+\d+$', val):
                 raise SystemExit(f'{path}: cannot read {key} line {val!r}')
             name = m.group(1).strip()
             if key == 'tone':
@@ -154,8 +154,11 @@ def resolve(spec, optional=True):
 
     '19'  '19:1-6'  '72:1-7,18-19'  '34:1-8,(19-22)'  '147:1-12,21c'  '89 Part 1'  '89:20-37'
     '119 Aleph'  '119:9-16'  'Canticle 16'.  A psalm printed in parts or sections needs either
-    the part's name or verse numbers; verses are then taken from whichever files hold them."""
+    the part's name or verse numbers; verses are then taken from whichever files hold them.
+    Two psalms sung as one, as the lectionary prints them: '42 and 43'."""
     spec = spec.strip()
+    if re.search(r'\s+and\s+', spec, re.I):
+        return [seg for part in re.split(r'\s+and\s+', spec, flags=re.I) for seg in resolve(part, optional)]
     m = re.match(r'^(.*?)(?:\s*:\s*([\d,\-()a-d\s]+))?$', spec)
     name, vtxt = m.group(1).strip(), m.group(2)
     verses = parse_verses(vtxt, optional) if vtxt else None
@@ -168,7 +171,8 @@ def resolve(spec, optional=True):
         n, part, sec = mm.groups()
         base = 'Psalm_%03d' % int(n)
         if part:
-            files = [base + '_Part_' + part.upper()]
+            roman = {'I': '1', 'II': '2', 'III': '3', 'IV': '4'}             # 89 Part I is 89 Part 1
+            files = [base + '_Part_' + roman.get(part.upper(), part.upper())]
         elif sec:
             files = [base + '_V_' + sec.capitalize()]
         elif paths.text_file(base):
@@ -178,8 +182,11 @@ def resolve(spec, optional=True):
             if not files:
                 raise SystemExit(f'no text file for {spec!r}')
             if verses is None:
-                raise SystemExit(f'Psalm {int(n)} is printed in parts ({", ".join(f.split("_", 2)[2].replace("_", " ") for f in files)}): '
-                                 f'give the part or the verses, e.g. "{int(n)} Part 1" or "{int(n)}:1-8"')
+                kinds = [f.split('_', 2)[2] for f in files]                 # Part_1, Part_2 / V_Aleph, V_Beth…
+                names = [k.replace('V_', '').replace('_', ' ') for k in kinds]
+                eg = f'{int(n)} {names[0]}' if kinds[0].startswith('V_') else f'{int(n)} Part 1'
+                raise SystemExit(f'Psalm {int(n)} is printed in parts ({", ".join(names)}): '
+                                 f'give the part or the verses, e.g. "{eg}" or "{int(n)}:1-8"')
     out = []
     for f in files:
         path = paths.text_file(f) or os.path.join(paths.TEXT_DIRS[0], f + '.txt')
@@ -189,7 +196,7 @@ def resolve(spec, optional=True):
         if verses is None:
             out.append((path, None))
             continue
-        nums = {v['n'] for v in pointed.parse(open(path, encoding='utf-8').read())['verses']}
+        nums = {v['n'] for v in pointed.load(path)['verses']}
         take = [v for v in verses if v in nums]
         if take:
             out.append((path, take))
@@ -231,7 +238,7 @@ def _brace_block(s, start):
 
 
 def read_chant(name):
-    src = open(chant_path(name), encoding='utf-8').read()
+    src = paths.read(chant_path(name))
     info = {'name': name}
     hm = re.search(r'\\header\s*\{', src)
     credit = []
@@ -282,8 +289,23 @@ def load_music(name):
     info = read_chant(base)
     if shift:
         transpose(info, shift)
+    catalog_key(info, base, shift)
     info['name'] = name
     return info
+
+
+def catalog_key(info, base, shift):
+    """The key the catalog gives (Key, Mode: it may say G Mixolydian where the file's signature says C major) wins
+    for what the checks report, moved by the transposition; the file's own key still drives the \\transpose."""
+    row = next((r for r in paths.catalog() if r['Chant'] == base), None)
+    m = re.match(r'^([A-G])([#b♯♭]?)$', (row or {}).get('Key', '').strip())
+    if not m or not row.get('Mode', '').strip():
+        return
+    mode = row['Mode'].strip().lower()
+    mode = {'mix': 'mixolydian', 'dor': 'dorian', 'phr': 'phrygian', 'lyd': 'lydian', 'aeo': 'aeolian'}.get(mode[:3], mode)
+    pc = (NOTE[m.group(1).lower()] + (1 if m.group(2) in '#♯' and m.group(2) else -1 if m.group(2) else 0) + shift) % 12
+    spelled = SPELL['minor' if mode in ('minor', 'aeolian', 'dorian', 'phrygian') else 'major'][pc]
+    info['key'] = (pc, mode, spelled[0].upper() + spelled[1:].replace('is', '♯').replace('es', '♭'))
 
 
 # the usual spelling of each key's tonic, by semitone above C (Dutch names, as LilyPond writes them)
@@ -330,7 +352,7 @@ def prefixed(info, tag):
 def key_relation(a, b):
     if not a or not b:
         return 'key unknown'
-    (pa, ma, na), (pb, mb, nb) = a, b
+    (pa, ma, _), (pb, mb, _) = a, b
     d = (pb - pa) % 12
     if d == 0 and ma == mb:
         return 'same key'
@@ -363,7 +385,7 @@ def plan(sunday):
     for item in sunday['items']:
         segs = []
         for path, take in resolve(item['spec'], item.get('optional', optional_default())):
-            doc = pointed.parse(open(path, encoding='utf-8').read())
+            doc = pointed.load(path)
             vs = [v for v in doc['verses'] if take is None or v['n'] in take]
             if 'daggers' in item:                        # this Sunday's own † placement
                 vs = [dict(v, dagger=v['n'] in item['daggers']) for v in vs]
@@ -376,10 +398,18 @@ def plan(sunday):
             raise SystemExit(f'psalm {item["spec"]}: no chant given')
         starts = []
         for i, (name, frm) in enumerate(changes):
+            if i == 0 and frm is not None and frm > allv[0]['n']:      # the verses before carry on the chant before
+                if current is None:
+                    raise SystemExit(f'psalm {item["spec"]}: chant {name} starts at verse {frm}: '
+                                     f'give a chant for the verses before it')
+                starts.append((allv[0]['n'], current))
             frm = allv[0]['n'] if (frm is None and i == 0) else frm
             if frm is None:
                 raise SystemExit(f'chant {name}: say "from <verse>" for every chant after the first')
             starts.append((frm, name))
+        if any(b[0] <= a[0] for a, b in zip(starts, starts[1:])):
+            raise SystemExit(f'psalm {item["spec"]}: each "from" verse must come after the one before '
+                             f'({", ".join(str(f) for f, _ in starts)})')
         for path, doc, vs in segs:
             sections = []
             for i, (frm, name) in enumerate(starts):
@@ -513,7 +543,7 @@ def gloria_verses():
     """Gloria Patri verses, unnumbered (sung to the whole chant, single or double)."""
     if not os.path.exists(GLORIA):
         return []
-    doc = pointed.parse(open(GLORIA, encoding='utf-8').read())
+    doc = pointed.load(GLORIA)
     return [dict(v, n='', dagger=False) for v in doc['verses']]
 
 
@@ -552,47 +582,46 @@ def choir_ly(sunday, psalms, chants, tags, outdir, reprints=frozenset()):
     return '\n'.join(L) + '\n'
 
 
-def page_tops(pdf):
-    """First line of text on each page (poppler's pdftotext if installed, otherwise the pypdf package)."""
-    pages = None
+def page_texts(pdf):
+    """The text of each page (poppler's pdftotext if installed, otherwise the pypdf package)."""
     if shutil.which('pdftotext'):
         out = subprocess.run(['pdftotext', '-layout', pdf, '-'], capture_output=True, text=True).stdout
-        pages = out.split('\f')
-    else:
-        try:
-            import pypdf
-            pages = [p.extract_text() or '' for p in pypdf.PdfReader(pdf).pages]
-        except ImportError:
-            print('  note: install pypdf (pip install pypdf) to have chants reprinted at the top of a page')
-            return []
-    tops = []
-    for page in pages:
-        lines = [l.strip() for l in page.splitlines() if l.strip() and not l.strip().startswith('/')]
-        tops.append(lines[0] if lines else '')
-    return tops
+        return out.split('\f')
+    try:
+        import pypdf
+        return [p.extract_text() or '' for p in pypdf.PdfReader(pdf).pages]
+    except ImportError:
+        print('  note: install pypdf (pip install pypdf) to have chants reprinted at the top of a page')
+        return []
 
 
 def find_reprints(pdf, psalms):
-    """Verses that open a page while their chant is on an earlier page."""
-    need = set()
-    for pno, top in enumerate(page_tops(pdf)):
-        if pno == 0:
-            continue
+    """(psalm, verse) for each verse that opens a page while its chant is on an earlier page. A page's top verse
+    belongs to the psalm whose title came last before it (two psalms may share verse numbers)."""
+    need, at = set(), -1
+    norm = lambda t: re.sub(r'\s+', ' ', t)
+    for pno, page in enumerate(page_texts(pdf)):
+        lines = [l.strip() for l in page.splitlines() if l.strip() and not l.strip().startswith('/')]
+        top = lines[0] if lines else ''
         m = re.match(r'^†?\s*(\d+)\s*[A-Z\u201c\u2018"\'\u2014]', top)
-        if not m:
-            continue
-        n = int(m.group(1))
-        for pi, ps in enumerate(psalms):
-            for sec in ps['sections']:
-                if any(v['n'] == n for v in sec['verses'][1:]):
-                    need.add((pi, n))
+        if pno and m and at >= 0:
+            n = int(m.group(1))
+            if any(v['n'] == n for sec in psalms[at]['sections'] for v in sec['verses'][1:]):
+                need.add((at, n))
+        text = norm(page)
+        pos = 0
+        while at + 1 < len(psalms):                    # the titles on this page, in order
+            i = text.find(norm(psalms[at + 1]['doc']['title']), pos)
+            if i < 0:
+                break
+            at, pos = at + 1, i + 1
     return need
 
 
 def build_pdf(exe, sunday, psalms, chants, tags, outdir, base):
     ly = os.path.join(outdir, base + '.ly')
     reprints = set()
-    for _ in range(4):
+    for _ in range(12):
         open(ly, 'w', encoding='utf-8').write(choir_ly(sunday, psalms, chants, tags, outdir, frozenset(reprints)))
         run_lilypond(exe, ly, os.path.join(outdir, base))
         if not sunday['reprint']:
@@ -600,7 +629,7 @@ def build_pdf(exe, sunday, psalms, chants, tags, outdir, base):
         more = find_reprints(os.path.join(outdir, base + '.pdf'), psalms) - reprints
         if not more:
             break
-        reprints |= more
+        reprints.add(min(more))           # one at a time: each moves the pages after it
     return ly, sorted(reprints)
 
 
@@ -612,9 +641,12 @@ def build_images(exe, sunday, psalms, chants, tags, outdir, dpi=400):
     os.makedirs(adir)
     tmp = tempfile.mkdtemp(dir=outdir, prefix='.img_')
     made, k = [], 0
+    prev = (None, None)
     for pi, ps in enumerate(psalms):
         for si, sec in enumerate(ps['sections']):
             c = chants[sec['chant']]
+            cont = si == 0 and prev == (ps['spec'], sec['chant'])      # as in the PDF: the same tone carrying on
+            prev = (ps['spec'], sec['chant'])
             vs = sec['verses']
             tv = list(vs)
             if sunday['gloria'] and pi == len(psalms) - 1 and si == len(ps['sections']) - 1:
@@ -622,7 +654,7 @@ def build_images(exe, sunday, psalms, chants, tags, outdir, dpi=400):
             title = emit.title_line(ps['doc']) if si == 0 else None
             if c.get('tone'):
                 jobs = [('tone_' + c['tone']['label'].replace('Tone ', '').replace(' ', ''), [music_markup(c, None)])]
-                pvs = [tones.point_verse(v, c['tone'], first=(vi == 0 and si == 0) or (ps['every'] and v['n'] != ''))
+                pvs = [tones.point_verse(v, c['tone'], first=(vi == 0 and not cont) or (ps['every'] and v['n'] != ''))
                        for vi, v in enumerate(tv)]
                 body = [tones.single_block(title, pvs)]
             else:
@@ -634,7 +666,7 @@ def build_images(exe, sunday, psalms, chants, tags, outdir, dpi=400):
             jobs.append((f'text_{label}_{rng}', body))
             for name, blocks in jobs:
                 k += 1
-                stem = '%02d_%s' % (k, re.sub(r'[^A-Za-z0-9_.-]', '', name))
+                stem = '%02d_%s' % (k, re.sub(r'[^A-Za-z0-9_-]', '', name))      # no dots: LilyPond trims them
                 ly = os.path.join(tmp, stem + '.ly')
                 open(ly, 'w', encoding='utf-8').write('\n'.join(header(tmp, '  page-breaking = #ly:one-page-breaking') + blocks) + '\n')
                 run_lilypond(exe, ly, os.path.join(tmp, stem), '-dcrop', '-dresolution=%d' % dpi, '--png')
@@ -670,6 +702,8 @@ def main():
     if not sunday['choir']:
         print('No choir this week (choir: no): the psalm is said, so there is nothing to build.')
         return
+    if not sunday['items']:
+        raise SystemExit(f'{args.sunday}: no psalm: line, so there is nothing to build')
     psalms = plan(sunday)
     names = []
     for ps in psalms:
