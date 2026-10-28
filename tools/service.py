@@ -295,7 +295,7 @@ def schedule():
     return list(csv.DictReader(open(p, encoding='utf-8'))) if os.path.exists(p) else []
 
 
-LABELLED = re.compile(r"^([A-Z][\w' &]+?):\s+(.+)$")
+LABELED = re.compile(r"^([A-Z][\w' &]+?):\s+(.+)$")
 
 
 def legacy_items(order, rows):
@@ -314,7 +314,7 @@ def legacy_items(order, rows):
         loose = []
         for seg in segs:
             seg = seg.strip()
-            m = LABELLED.match(seg)
+            m = LABELED.match(seg)
             target, value = None, seg
             if m:
                 lab = m.group(1).lower()

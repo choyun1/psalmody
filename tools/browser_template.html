@@ -377,8 +377,8 @@ function topNote(c) {                                   // the soprano's highest
   const n = String([].concat(c.range || []).slice(-1)[0] || "").split(/[–-]/).pop().trim().match(/^([A-G])([#♯b♭]?)(-?\d)$/);
   return n ? 12 * (+n[3] + 1) + NOTE_PC[n[1]] + (/[#♯]/.test(n[2]) ? 1 : /[b♭]/.test(n[2]) ? -1 : 0) : null;
 }
-// pins: ★ a favourite, 📌 one to try; kept with the ratings in chant_notes.csv (the Pin column)
-const PINS = [["favourite", "★", "☆", "favourite"], ["to try", "📌", "📌", "to try"]];
+// pins: ★ a favorite, 📌 one to try; kept with the ratings in chant_notes.csv (the Pin column)
+const PINS = [["favorite", "★", "☆", "favorite"], ["to try", "📌", "📌", "to try"]];
 const pinned = (c, p) => (val(c, "pins") || []).includes(p);
 function togglePin(id, p) {
   const cur = val(C[id], "pins") || [];
@@ -403,8 +403,8 @@ const SORT_FIELDS = {
   fifths:   {label: "key (circle of fifths)", dir: 1, val: c => keyRank(c, true), head: c => keyName(c)},
   sd:       {label: "single / double", dir: 1, val: c => c.double ? 1 : 0, head: c => c.double ? "Double chants" : "Single chants"},
   rating:   {label: "rating", dir: -1, val: c => val(c, "rating") || null},
-  pinned:   {label: "pinned first (★, then 📌)", dir: 1, val: c => pinned(c, "favourite") ? 0 : pinned(c, "to try") ? 1 : null,
-             head: c => pinned(c, "favourite") ? "★ Favourites" : pinned(c, "to try") ? "📌 To try" : "The rest"},
+  pinned:   {label: "pinned first (★, then 📌)", dir: 1, val: c => pinned(c, "favorite") ? 0 : pinned(c, "to try") ? 1 : null,
+             head: c => pinned(c, "favorite") ? "★ Favorites" : pinned(c, "to try") ? "📌 To try" : "The rest"},
   stale:    {label: "last used", dir: 1, val: c => lastUsed(c.id)},
   used:     {label: "times used", dir: -1, val: c => (usedBy[c.id] || []).length},
   range:    {label: "highest soprano note", dir: 1, val: topNote},
@@ -460,7 +460,7 @@ function renderChantsShell() {
     <h3>Mood</h3>${D.vocabulary.map(g => `<div class="row" style="margin-bottom:5px">${g.tags.map(t =>
       `<button class="chip g-${esc(g.group)}" data-mood="${esc(t)}">${esc(t)}</button>`).join("")}</div>`).join("")}
     <label class="hint"><input type="checkbox" id="untagged"> only chants without moods</label>
-    <h3>Pinned</h3><select id="pinf"><option value="">all chants</option><option value="favourite">★ favourites</option><option value="to try">📌 to try</option></select>
+    <h3>Pinned</h3><select id="pinf"><option value="">all chants</option><option value="favorite">★ favorites</option><option value="to try">📌 to try</option></select>
     <h3>Mode</h3><select id="mode"><option value="">any</option><option>Major</option><option>Minor</option><option value="other">modal / other</option></select>
     <h3>Key</h3><select id="keyf"><option value="">any</option>${KEYS_PRESENT.map(k => `<option>${esc(k)}</option>`).join("")}</select>
     <h3>Single or double</h3><select id="sd"><option value="">either</option><option value="s">single</option><option value="d">double</option></select>
@@ -1124,7 +1124,7 @@ function renderPicker() {
       <h3 class="hint" style="margin:10px 0 4px">Key</h3><select id="pkey"><option value="">any</option>${KEYS_PRESENT.map(k => `<option ${P.key === k ? "selected" : ""}>${esc(k)}</option>`).join("")}</select>
       <h3 class="hint" style="margin:10px 0 4px">Mode</h3><select id="pmode"><option value="">any</option>${["Major", "Minor"].map(m => `<option ${P.mode === m ? "selected" : ""}>${m}</option>`).join("")}<option value="other" ${P.mode === "other" ? "selected" : ""}>modal / other</option></select>
       <h3 class="hint" style="margin:10px 0 4px">Single or double</h3><select id="psd"><option value="">either</option><option value="s" ${P.sd === "s" ? "selected" : ""}>single</option><option value="d" ${P.sd === "d" ? "selected" : ""}>double</option></select>
-      <h3 class="hint" style="margin:10px 0 4px">Pinned</h3><select id="ppin">${[["", "all chants"], ["favourite", "★ favourites"], ["to try", "📌 to try"]].map(([v, l]) => `<option value="${v}" ${P.pin === v ? "selected" : ""}>${l}</option>`).join("")}</select>
+      <h3 class="hint" style="margin:10px 0 4px">Pinned</h3><select id="ppin">${[["", "all chants"], ["favorite", "★ favorites"], ["to try", "📌 to try"]].map(([v, l]) => `<option value="${v}" ${P.pin === v ? "selected" : ""}>${l}</option>`).join("")}</select>
       <h3 class="hint" style="margin:10px 0 4px">Rating at least</h3><select id="prt"><option value="0">any</option>${[1, 2, 3, 4, 5].map(n => `<option ${P.minRating === n ? "selected" : ""}>${n}</option>`).join("")}</select>
       <h3 class="hint" style="margin:10px 0 4px">Sort</h3>${sortControl("picker", true)}
       <h3 class="hint" style="margin:14px 0 4px">Or a plainchant tone</h3><div id="ptone">${toneMenus(P.tone, "t => { P.tone = t; renderPicker(); }")}</div>

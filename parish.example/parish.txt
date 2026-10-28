@@ -1,6 +1,6 @@
 # Settings for your parish. Copy this folder to parish/ and edit; everything specific to one church lives
 # here, so the tools stay general. Lines starting with # are comments.
-name:          St Example's, Anytown
+name:          St. Example's, Anytown
 # Season after Pentecost: which lectionary track's psalm to offer first (1 or 2).
 track:         2
 # Patronal feast (optional): month-day, the psalm-table key, and its name. Kept even when it falls on a Sunday.

@@ -7,3 +7,4 @@
 - `parish/` is each user's own folder (often its own private repository) and is never committed here; `parish.example/` is the template. `tools/paths.py` says where everything is.
 - Anything specific to one parish (name, track, orders of service, plugins such as an email to the office or a music schedule spreadsheet) belongs in its `parish/` folder, not in code.
 - Never store a password, web-app address or secret (a plugin's either) in a repository; `tools/keystore.py` keeps them in the OS keyring or `~/.psalter/`.
+- Use American spelling everywhere (favorite, color, catalog; St. Peter's), as the Episcopal Church does.

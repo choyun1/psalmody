@@ -34,7 +34,7 @@ TEXT_DIRS = [os.path.join(CORE, 'texts')] + ([os.path.join(PARISH, 'texts')] if 
 OWN_TEXTS = TEXT_DIRS[-1]                   # where pointing done in the browser is saved
 
 CATALOG_COLUMNS = ['Chant', 'Composer', 'Years', 'Key', 'Mode', 'Single/Double', 'Source', 'ACP Psalm']
-NOTE_COLUMNS = ['Chant', 'Rating', 'Mood', 'Notes', 'Pin']    # Pin: favourite, to try
+NOTE_COLUMNS = ['Chant', 'Rating', 'Mood', 'Notes', 'Pin']    # Pin: favorite, to try
 
 
 def text_file(name):

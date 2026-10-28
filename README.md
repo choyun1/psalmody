@@ -2,7 +2,7 @@
 
 Psalmody sets the psalms of the 1979 Book of Common Prayer for a parish choir, typeset with LilyPond, either to Anglican chant or to the Gregorian psalm tones. Texts and chants are kept apart, so any text can be sung to any chant. One short text file per Sunday becomes the choir's copy (a PDF) and cropped images for the service leaflet. A planner that runs in your web browser opens on the psalm the lectionary appoints, helps choose a chant by mood, key and when it was last sung, and keeps the rest of the service (hymns, anthems, voluntaries, service music) as the parish's record of what was sung.
 
-It was built for the weekly use of one parish, St Peter's Episcopal Church in Cambridge, Massachusetts, and is shared in case it helps others. Anything particular to a parish lives in its own folder, apart from the tools, and a parish can add to the planner with plugins of its own.
+It was built for the weekly use of one parish, St. Peter's Episcopal Church in Cambridge, Massachusetts, and is shared in case it helps others. Anything particular to a parish lives in its own folder, apart from the tools, and a parish can add to the planner with plugins of its own.
 
 <!-- Contents: one entry per ## section, in order (tools/check_readme.py checks it). -->
 <table><tr><td>
@@ -192,7 +192,7 @@ LORD, GOD and YAHWEH are set in small capitals automatically, and straight quote
 | `plugins/` | Your own additions to the planner (below). |
 | `output/`, `site/` | What the build makes, and the chant browser built for your parish. |
 
-**Plugins.** A parish's own ways of doing things (a weekly email to the office, a music schedule spreadsheet, a rota) belong in its folder, not here. A plugin is a folder in `parish/plugins/` with up to three files: `plugin.txt` (lines it adds to Sunday files and orders of service), `plugin.py` (requests it answers for the planner) and `plugin.js` (a card or rows it adds to the planner). `tools/plugins.py` describes them. St Peter's has two: its weekly email to the parish office, drafted in Gmail with the psalm images attached, and its music schedule, a Google Sheet each service is written into.
+**Plugins.** A parish's own ways of doing things (a weekly email to the office, a music schedule spreadsheet, a volunteer schedule) belong in its folder, not here. A plugin is a folder in `parish/plugins/` with up to three files: `plugin.txt` (lines it adds to Sunday files and orders of service), `plugin.py` (requests it answers for the planner) and `plugin.js` (a card or rows it adds to the planner). `tools/plugins.py` describes them. St. Peter's has two: its weekly email to the parish office, drafted in Gmail with the psalm images attached, and its music schedule, a Google Sheet each service is written into.
 
 In this folder: `texts/` and `chants/` (with `catalog.csv`), `moods.txt`, `services.txt`, `examples/`, `style/` (the LilyPond settings and EB Garamond), `reference/` (the 1979 psalter, the lectionary's psalm table, the psalm tones), `tools/` and `parish.example/`. To add a chant, copy it into `chants/` in the layout of the others and add a row to `chants/catalog.csv` (or to `parish/chants/` if it's still under copyright).
 
@@ -210,6 +210,6 @@ Maybe later:
 
 ## Credits and license
 
-Psalmody grew out of the LilyPond files Adrian Cho made to set the psalms each week at St Peter's, Cambridge, and was developed with Claude (Anthropic) in 2026.
+Psalmody grew out of the LilyPond files Adrian Cho made to set the psalms each week at St. Peter's, Cambridge, and was developed with Claude (Anthropic) in 2026.
 
 The code is under the MIT License ([LICENSE](LICENSE)). The mood tags, the chant catalog and the other data are under Creative Commons Attribution 4.0 ([LICENSE-DATA.md](LICENSE-DATA.md)). The psalm texts are from the 1979 Book of Common Prayer, which is in the public domain, as are the chants included here. The canticle texts were taken from the Venite project (MIT) and checked against bcponline.org; the Gloria in excelsis and the Te Deum, printed as prose in the BCP, are divided into verses for chanting by the editor. The psalm tones come from the jgabc project (public domain). The EB Garamond fonts are under the SIL Open Font License (`style/fonts/OFL.txt`).
