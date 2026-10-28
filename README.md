@@ -73,6 +73,8 @@ Double-click **Psalter.bat** and open the **Service planner** tab.
 5. **Save & build.** The PDF and the images for the leaflet appear as links. Any cards your parish's plugins add (a weekly email, a music schedule) come below.
 6. **Save to GitHub.** When there are changes, a button at the top commits and pushes your folders.
 
+**No choir this week** (under Options) is for the Sundays the psalm is said: the chant boxes give way, there's nothing to build, and the history and Coming up show "no choir" (`choir: no` in the Sunday file).
+
 **Psalm only**, at the top, hides the rest of the service: for a rehearsal or a one-off, with or without a date. A service in a free order (Lessons and Carols: lessons, hymns and carols in any order) shows as a list to add to and rearrange, starting from last year's if you like; lessons are numbered for you.
 
 ## From the command line

@@ -779,7 +779,7 @@ function renderUpcoming() {
     const recent = recentChants(c.date);
     return `<div class="card"><h2>${esc(new Date(c.date + "T12:00").toLocaleDateString(undefined, {weekday: "short", month: "long", day: "numeric", year: "numeric"}))}</h2>
       <span class="who">${lectLink(c.label + " · Year " + c.year, c.link)}</span>
-      ${c.planned.map(pl => ` <span class="chip ${pl.sung ? "g-calm on" : "g-calm"}">${pl.sung ? "sung" : "planned"}: ${esc(pl.chants.join(", ") || "chant not chosen")}</span>`).join("")}
+      ${c.planned.map(pl => ` <span class="chip ${pl.sung ? "g-calm on" : "g-calm"}">${pl.sung ? "sung" : "planned"}: ${pl.choir === false ? "no choir" : esc(pl.chants.join(", ") || "chant not chosen")}</span>`).join("")}
       ${c.options.length ? c.options.map(o => {
         const mood = overlapMoods(o.texts, o.verses);
         const sg = mood.length ? D.chants.map(ch => ({ch, ...score(mood, val(ch, "mood"))})).filter(x => x.s > 0 && !recent.has(x.ch.id))
@@ -848,12 +848,13 @@ function sundayText() {
   if (B.gloria !== "auto") L.push(`gloria:  ${B.gloria}`);
   if (!B.reprint) L.push("reprint: no");
   if (B.sung) L.push("sung:    yes");
+  if (B.choir === false) L.push("choir:   no                       # no choir this week: the psalm is said");
   const svc = B.mode === "psalm" ? [] : svcLines();
   if (svc.length) L.push("", "# The rest of the service", ...svc);
   return L.join("\n") + "\n";
 }
 function parseSunday(text) {
-  B.psalms = []; B.service = "Eucharist"; B.gloria = "auto"; B.reprint = true; B.sung = false; B.svc = {}; B.also = ""; B.note = ""; B.extra = {};
+  B.psalms = []; B.service = "Eucharist"; B.gloria = "auto"; B.reprint = true; B.sung = false; B.choir = true; B.svc = {}; B.also = ""; B.note = ""; B.extra = {};
   const alsoL = [], noteL = [], seqL = [];
   text.split("\n").forEach(raw => {
     const line = raw.split("#")[0].trim(); if (!line) return;
@@ -863,6 +864,7 @@ function parseSunday(text) {
     else if (k === "gloria") B.gloria = /^(y|yes|true|on)$/i.test(v) ? "yes" : "no";
     else if (k === "reprint") B.reprint = !/^(n|no|false|off)$/i.test(v);
     else if (k === "sung") B.sung = /^(y|yes|true|on)$/i.test(v);
+    else if (k === "choir") B.choir = !/^(n|no|false|off|none)$/i.test(v);
     else if (k === "psalm") B.psalms.push({spec: v, chants: [], daggers: null});
     else if (k === "intonation" && B.psalms.length) B.psalms[B.psalms.length - 1].intonation = /^(every|all|yes)/i.test(v) ? "every" : "first";
     else if (k === "optional" && B.psalms.length) B.psalms[B.psalms.length - 1].optional = /^(y|yes|true|on|sing|include)$/i.test(v);
@@ -887,7 +889,7 @@ function buildThisPsalm(id) {
   // the Psalm builder on its own: no date, no service, just this text and a chant
   B.mode = "psalm"; try { localStorage.setItem("psalter-mode", "psalm"); } catch (e) {}
   B.started = true; B.date = ""; B.label = ""; B.year = ""; B.service = "Eucharist"; B.existing = null; B.files = []; B.status = ""; B.log = ""; B.pdf = "";
-  B.name = id.toLowerCase().replace(/_/g, "-"); B.svc = {}; B.also = ""; B.note = ""; B.extra = {}; PLUGINS.reset.forEach(f => f()); B.sung = false;
+  B.name = id.toLowerCase().replace(/_/g, "-"); B.svc = {}; B.also = ""; B.note = ""; B.extra = {}; PLUGINS.reset.forEach(f => f()); B.sung = false; B.choir = true;
   B.psalms = [{spec: specOf(id), chants: [{name: "", from: ""}], daggers: null, open: true}];
   document.querySelector('nav button[data-tab="builder"]').click();
 }
@@ -897,7 +899,7 @@ async function setDate(date) {
     if (!B.name || /^\d{4}-/.test(B.name)) B.name = "psalm";
     renderBuilder(); return;
   }
-  B.date = date; PLUGINS.reset.forEach(f => f()); B.name = date || (B.name && !/^\d{4}-/.test(B.name) ? B.name : "psalm"); B.status = ""; B.log = ""; B.files = []; B.existing = null; B.sung = false; B.pdf = "";
+  B.date = date; PLUGINS.reset.forEach(f => f()); B.name = date || (B.name && !/^\d{4}-/.test(B.name) ? B.name : "psalm"); B.status = ""; B.log = ""; B.files = []; B.existing = null; B.sung = false; B.choir = true; B.pdf = "";
   const c = calEntry(date);
   B.label = c ? c.label : ""; B.year = c ? c.year : "";
   const opts = c ? c.options.filter(o => o.texts.length) : [];
@@ -929,7 +931,8 @@ function renderBuilder() {
       <h3>Service</h3><select id="bservice">${[...new Set(SERVICES.concat([B.service]))].map(sv => `<option ${sv === B.service ? "selected" : ""}>${esc(sv)}</option>`).join("")}</select>
       <h3>Gloria Patri</h3><select id="bgloria">${[["auto", "by service"], ["yes", "yes"], ["no", "no"]].map(([v, l]) => `<option value="${v}" ${B.gloria === v ? "selected" : ""}>${l}</option>`).join("")}</select>
       <h3>Options</h3><label class="hint"><input type="checkbox" id="breprint" ${B.reprint ? "checked" : ""}> reprint chant at top of page</label><br>
-      <label class="hint"><input type="checkbox" id="bsung" ${B.sung ? "checked" : ""}> sung (confirmed): counts in the history</label>
+      <label class="hint"><input type="checkbox" id="bsung" ${B.sung ? "checked" : ""}> sung (confirmed): counts in the history</label><br>
+      <label class="hint"><input type="checkbox" id="bnochoir" ${B.choir === false ? "checked" : ""}> no choir this week (the psalm is said)</label>
     </aside><div>
     ${B.existing !== null ? `<div class="card"><b style="font-weight:normal">${esc(B.name)}.txt already exists.</b> <span class="link" onclick="loadExisting()">Load it</span> or carry on to replace it.</div>` : ""}
     ${c && c.options.length ? `<div class="card"><h3 style="font-weight:normal;margin:0 0 6px">Appointed</h3>${c.options.map(o =>
@@ -972,6 +975,7 @@ function renderBuilder() {
   $("#bgloria").onchange = e => { B.gloria = e.target.value; renderBuilder(); };
   $("#breprint").onchange = e => { B.reprint = e.target.checked; renderBuilder(); };
   $("#bsung").onchange = e => { B.sung = e.target.checked; renderBuilder(); };
+  $("#bnochoir").onchange = e => { B.choir = !e.target.checked; renderBuilder(); };
 }
 
 // pointed text as HTML
@@ -1154,7 +1158,7 @@ function psalmBlock(p, pi, recent) {
     ${res.length ? `<details ${p.open ? "open" : ""} ontoggle="B.psalms[${pi}].open=this.open"><summary>The text</summary>
       <p class="hint" style="margin:6px 0 0">Click a verse number to put a † (second half again) on it or take it off, for this file only (the psalm text keeps its own).${p.daggers ? ` <span class="link" onclick="B.psalms[${pi}].daggers=null; renderBuilder()">back to the text's own †</span>` : ""}</p>
       ${textBody(res).map(seg => `<div class="hint" style="margin-top:6px">${esc(seg.title)}</div>` + pointedHTML(withDaggers(seg.body, p.daggers), null, pi)).join("")}</details>` : ""}
-    ${p.chants.map((c, ci) => {
+    ${B.choir === false ? '<p class="hint" style="margin:6px 0">No choir this week: the psalm is said, so no chant (untick <i>no choir</i> under Options to choose one).</p>' : p.chants.map((c, ci) => {
       const ch = C[c.name];
       return `<div class="moodrow">${ci === 0 ? "Chant" : "then"} <input type="text" list="chantlist" value="${esc(c.name)}" placeholder="chant, or e.g. tone 7a" style="width:170px"
         onchange="B.psalms[${pi}].chants[${ci}].name=this.value.trim(); renderBuilder()">
@@ -1165,9 +1169,9 @@ function psalmBlock(p, pi, recent) {
           <span class="link" onclick="showChant('${esc(ch.id)}')">see</span>` : (c.name && !/^tone[:\s]/i.test(c.name)) ? '<span class="hint">not in the catalog</span>' : ""}
         ${ci > 0 ? `<span class="link" onclick="B.psalms[${pi}].chants.splice(${ci},1); renderBuilder()">remove</span>` : ""}</div>`;
     }).join("")}
-    <p style="margin:4px 0"><span class="link" onclick="B.psalms[${pi}].chants.push({name:'',from:''}); renderBuilder()">+ change chant partway</span></p>
-    ${res.length ? `<div style="margin:2px 0 6px">${fitReport(p, pi)}${(() => { const d = p.daggers || textDaggers(res); return `<div class="hint">† ${d.length ? "on v. " + d.join(", ") : "on no verse"}${p.daggers ? " (moved for this Sunday)" : " (as marked in the text)"} · <span class="link" onclick="B.psalms[${pi}].open=true; renderBuilder()">change</span></div>`; })()}</div>` : ""}
-    ${sg.length ? `<div class="used">Suggestions (moods match, not used in the last 12 weeks): ${sg.map(x =>
+    ${B.choir === false ? "" : `<p style="margin:4px 0"><span class="link" onclick="B.psalms[${pi}].chants.push({name:'',from:''}); renderBuilder()">+ change chant partway</span></p>`}
+    ${res.length && B.choir !== false ? `<div style="margin:2px 0 6px">${fitReport(p, pi)}${(() => { const d = p.daggers || textDaggers(res); return `<div class="hint">† ${d.length ? "on v. " + d.join(", ") : "on no verse"}${p.daggers ? " (moved for this Sunday)" : " (as marked in the text)"} · <span class="link" onclick="B.psalms[${pi}].open=true; renderBuilder()">change</span></div>`; })()}</div>` : ""}
+    ${sg.length && B.choir !== false ? `<div class="used">Suggestions (moods match, not used in the last 12 weeks): ${sg.map(x =>
       `<span class="link" onclick="useChant(${pi}, '${esc(x.ch.id)}')">${esc(x.ch.id)}</span>`).join(" · ")}</div>`
       : mood.length ? '<p class="hint">No chant shares these moods yet. Tag chants on the Chants tab.</p>' : ""}
   </div>`;
@@ -1204,7 +1208,8 @@ async function buildSunday(pdfOnly) {
   if (!(await saveSunday())) return;
   B.status = "Building… (LilyPond takes a little while)"; B.log = ""; B.files = []; renderBuilder();
   const j = await post("/api/build", {name: B.name, pdfOnly});
-  B.status = j.ok ? "Built." : "The build stopped:"; B.log = j.log || j.error; B.files = j.files || [];
+  B.status = !j.ok ? "The build stopped:" : B.choir === false ? "No choir this week: nothing to build." : "Built.";
+  B.log = B.choir === false && j.ok ? "" : j.log || j.error; B.files = j.files || [];
   if (j.ok && !pdfOnly) B.builtText = sundayText();
   renderBuilder();
 }

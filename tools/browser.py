@@ -69,6 +69,13 @@ def history():
             s = build.parse_sunday(path)
             if not s['sung'] or not s['date']:
                 continue
+            if not s['choir']:                      # no choir: the psalms, said, with no chant
+                for it in s['items']:
+                    for path_, take in build.resolve(it['spec']):
+                        vs = take or [v['n'] for v in pointed.parse(open(path_, encoding='utf-8').read())['verses']]
+                        rows.append({'date': s['date'], 'text': os.path.basename(path_)[:-4], 'chant': '', 'source': 'new',
+                                     'verses': f'{vs[0]}-{vs[-1]}' if len(vs) > 1 else str(vs[0]), 'note': 'no choir that week'})
+                continue
             for ps in build.plan(s):
                 name = ps['id']
                 for sec in ps['sections']:
@@ -187,7 +194,7 @@ def calendar(weeks=110):
     for p in glob.glob(os.path.join(paths.SUNDAYS, '[!_]*.txt')):
         try:
             sd = build.parse_sunday(p)
-            planned.setdefault(sd['date'], []).append({'name': os.path.basename(p)[:-4], 'sung': sd['sung'],
+            planned.setdefault(sd['date'], []).append({'name': os.path.basename(p)[:-4], 'sung': sd['sung'], 'choir': sd['choir'],
                 'chants': [c for it in sd['items'] for c, _ in it['chants'] if c not in ('???', '?')],
                 'psalms': [it['spec'] for it in sd['items']]})
         except SystemExit:

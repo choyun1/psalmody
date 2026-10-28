@@ -16,6 +16,7 @@ A Sunday file looks like this (one item per line; # starts a comment):
     tone:    VIIa                     # instead of chant: a Gregorian psalm tone (Liber Usualis), e.g. VIIa, 1D2, 8G, per
     gloria:  no                       # default: yes for Office/Evensong, no otherwise
     reprint: yes                      # reprint the chant at the top of a page (default yes)
+    choir:   no                       # no choir this week: the psalm is said, so nothing to build
     sung:    yes                      # confirmed as sung: only then does it count in the history
 
 Several psalm: lines may follow one another; chant: lines belong to the psalm above them, and a
@@ -39,7 +40,8 @@ STYLE = os.path.join(ROOT, 'style', 'psalm-style.ily')
 # ================================================================== input
 def parse_sunday(path):
     import service
-    s = {'date': None, 'service': 'Eucharist', 'gloria': None, 'reprint': True, 'sung': False, 'items': [], 'music': []}
+    s = {'date': None, 'service': 'Eucharist', 'gloria': None, 'reprint': True, 'sung': False, 'choir': True,
+         'items': [], 'music': []}
     for raw in open(path, encoding='utf-8'):
         line = raw.split('#', 1)[0].strip()
         if not line:
@@ -56,6 +58,8 @@ def parse_sunday(path):
             s['reprint'] = val.lower() in ('yes', 'y', 'true', 'on')
         elif key == 'sung':
             s['sung'] = val.lower() in ('yes', 'y', 'true', 'on')
+        elif key == 'choir':
+            s['choir'] = val.lower() not in ('no', 'n', 'false', 'off', 'none')
         elif key == 'psalm':
             s['items'].append({'spec': val, 'chants': []})
         elif key == 'intonation':
@@ -622,6 +626,9 @@ def main():
     args = ap.parse_args()
 
     sunday = parse_sunday(args.sunday)
+    if not sunday['choir']:
+        print('No choir this week (choir: no): the psalm is said, so there is nothing to build.')
+        return
     psalms = plan(sunday)
     names = []
     for ps in psalms:
