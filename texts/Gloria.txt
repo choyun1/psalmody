@@ -1,0 +1,9 @@
+Gloria Patri
+% unpointed draft: the words of the 1979 BCP. Pointing for Anglican chant goes in your parish folder
+% (parish/texts/), or use the pointing editor in the chant browser; plainchant tones need none.
+
+1   Glory to the Father, and to the Son, *
+      and to the Holy Spirit:
+
+2   As it was in the beginning, is now, *
+      and will be for ever. Amen.

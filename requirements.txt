@@ -1,0 +1,5 @@
+pyphen
+pronouncing
+Pillow
+pypdf
+keyring

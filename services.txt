@@ -1,0 +1,125 @@
+# Orders of service: the music of each kind of service, in the order it happens.
+# The service planner shows these boxes and the weekly email lists them in this order.
+#
+# Under a service's name, one line per piece of music:
+#     key: Label in the email      (kind)
+# kinds:  hymn    = hymn number(s): 390, LEVAS 114, or several: WLP 729, WLP 731
+#         anthem  = a hymn or a piece with words; a piece's words go into the email
+#         service = service music: carried on from the last service of this kind,
+#                   and the email mentions it only when it changes
+#         music   = anything else (the default), written Title - Composer (dates)
+# more words in the brackets, after a comma:
+#         optional       a box that's hidden until you ask for it (the Kyrie, in Lent)
+#         bare           the email lists just the piece ("* Magnificat in B flat - Stanford"),
+#                        without "Label:" in front
+#         words=NAME     the words that go with it are always the same, from parish/anthems/NAME.txt
+#                        (the Magnificat), whatever setting is sung
+# Two lines that aren't music can set the email for this kind of service:
+#     email subject: Music for {mm}/{dd} (Evensong)
+#     email intro:   Here's the music for the evensong on {month} {dayth}!
+# and "spreadsheet: no" keeps this kind of service out of the music schedule spreadsheet.
+# A label can say "{hymn|anthem}": it becomes "hymn" or "anthem" by what's sung ("Offertory hymn").
+# "lesson" is a kind too: a reading, written  Genesis 3:1-22 | Adam and Eve rebel against God …,
+# listed as "The First Lesson: …" (the summary comes from parish/lessons.csv if left out).
+# "repeat" lets a piece come any number of times, in any order (the lessons, hymns and carols of
+# Lessons and Carols): the planner then shows the service as a list to add to and rearrange.
+# ({mm} {dd} {month} {mon} {day} {dayth} {weekday} {occasion} are filled in;
+#  otherwise parish.txt's email_subject and email_intro are used.)
+#
+# The planner picks the order named on the Sunday file's service: line, else the one named
+# like the day (Palm Sunday, Easter Vigil, Christmas Eve…), else the first one in this file.
+# A parish can keep its own copy as parish/services.txt, which then replaces this one.
+# There, a column name in [brackets] at the end of a line says which column of an old
+# music-schedule spreadsheet that piece was written in, so old plans can be read back.
+
+Eucharist
+  prelude:            Prelude
+  opening:            Opening hymn          (hymn)
+  kyrie:              Kyrie                 (service, optional)
+  gloria in excelsis: Gloria                (service)
+  gradual:            Gradual hymn          (hymn)
+  offertory:          Offertory {hymn|anthem} (anthem)
+  sanctus:            Sanctus               (service)
+  agnus dei:          Lamb of God           (service)
+  communion:          Communion {hymn|anthem} (anthem)
+  closing:            Closing hymn          (hymn)
+  postlude:           Postlude
+
+Evensong
+  email subject:      Music for {mm}/{dd} (Evensong)
+  email intro:        Here's the music for the evensong on {month} {dayth}!
+  prelude:            Prelude
+  preces:             Preces & Responses    (music, bare)
+  opening:            Opening hymn          (hymn)
+  magnificat:         Magnificat            (music, bare, words=magnificat)
+  nunc dimittis:      Nunc dimittis         (music, bare, words=nunc-dimittis)
+  anthem:             Anthem                (anthem)
+  closing:            Closing hymn          (hymn)
+  postlude:           Postlude
+
+Ash Wednesday
+  prelude:            Prelude
+  opening:            Opening hymn          (hymn)
+  gradual:            Gradual hymn          (hymn)
+  offertory:          Offertory {hymn|anthem} (anthem)
+  sanctus:            Sanctus               (service)
+  agnus dei:          Lamb of God           (service)
+  communion:          Communion {hymn|anthem} (anthem)
+  closing:            Closing hymn          (hymn)
+  postlude:           Postlude
+
+Palm Sunday
+  prelude:            Prelude
+  procession:         Processional hymn     (hymn)
+  opening:            Gathering hymn        (hymn, optional)
+  kyrie:              Kyrie                 (service)
+  gradual:            Gradual hymn          (hymn)
+  offertory:          Offertory {hymn|anthem} (anthem)
+  sanctus:            Sanctus               (service)
+  agnus dei:          Lamb of God           (service)
+  communion:          Communion {hymn|anthem} (anthem)
+  closing:            Closing hymn          (hymn)
+  postlude:           Postlude              (music, optional)
+
+Maundy Thursday
+  prelude:            Prelude               (music, optional)
+  opening:            Opening hymn          (hymn)
+  kyrie:              Kyrie                 (service)
+  footwashing:        At the foot washing   (anthem)
+  offertory:          Offertory {hymn|anthem} (anthem)
+  sanctus:            Sanctus               (service)
+  agnus dei:          Lamb of God           (service)
+  communion:          Communion {hymn|anthem} (anthem)
+  closing:            Closing hymn          (hymn)
+  stripping:          At the stripping of the altar
+
+Good Friday
+  reflection:         Hymn after the sermon (hymn)
+  veneration:         Anthem at the veneration (anthem)
+  communion:          Communion hymn        (hymn)
+  closing:            Closing hymn          (hymn)
+
+Easter Vigil
+  exsultet:           Versicle and Exsultet
+  lessons:            Responses to the lessons
+  gloria in excelsis: Gloria                (service, optional)
+  gradual:            Gradual {hymn|anthem} (anthem)
+  offertory:          Offertory {hymn|anthem} (anthem)
+  sanctus:            Sanctus               (service)
+  agnus dei:          Lamb of God           (service)
+  communion:          Communion {hymn|anthem} (anthem)
+  closing:            Closing hymn          (hymn)
+  postlude:           Postlude
+
+Lessons and Carols
+  email subject:      Lessons and Carols {year}: music and lessons
+  email intro:        Here are the music and lessons for Lessons and Carols:
+  spreadsheet:        no
+  prelude:            Prelude               (music, optional)
+  introit:            Introit               (anthem)
+  opening:            Opening hymn          (hymn)
+  lesson:             Lesson                (lesson, repeat)
+  hymn:               Hymn                  (hymn, repeat)
+  carol:              Carol                 (anthem, repeat)
+  closing:            Closing hymn          (hymn)
+  postlude:           Postlude              (music, optional)

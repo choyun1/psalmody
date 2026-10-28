@@ -1,0 +1,12 @@
+# A Gregorian psalm tone instead of a chant, for Lent and Holy Week.
+#   tone: VIIa     Liber Usualis names: 1D 1D2 1f 1g 1g2 1g3 1a 1a2 1a3, 2D, 3b 3a 3a2 3g 3g2,
+#                  4g 4E 4c 4A 4A* 4d, 5a, 6F, 7a 7b 7c 7c2 7d, 8G 8G* 8c, per (Tonus peregrinus);
+#                  Roman numerals work too (VIIa, VIIIG).
+# The PDF shows the tone, then verse 1 set syllable by syllable under the notes (with the intonation),
+# then the other verses pointed:  | where the cadence begins,  bold = accented syllable,
+# a slur under a syllable sung to more than one note,  † = flex (drop to the flex note).
+# Accents follow the natural word stress. Tones and chants can be mixed: "tone: 8G from 12".
+date:    2027-03-26
+service: Good Friday
+psalm:   22:1-11
+tone:    VIIa

@@ -1,0 +1,5 @@
+# Season after Pentecost: which track's psalm a parish offers first is set in parish.txt (track: 1 or 2).
+# For the Track 1 (semicontinuous) psalm:  python tools/new_sunday.py 2026-11-08 --track 1
+date:    2026-11-08
+psalm:   78:1-7
+chant:   Goss-2

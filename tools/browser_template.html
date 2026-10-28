@@ -1,0 +1,1535 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chant Browser</title>
+<style>
+@font-face { font-family: "EBG"; src: url("../style/fonts/EBGMedium-Regular.ttf"); }
+@font-face { font-family: "EBG"; font-style: italic; src: url("../style/fonts/EBGMedium-Italic.ttf"); }
+@font-face { font-family: "EBG"; font-weight: bold; src: url("../style/fonts/EBGSemiBold-Bold.ttf"); }
+:root {
+  --bg: #f7f4ee; --panel: #fffdf9; --ink: #2a2622; --muted: #7a7168; --line: #e3ddd2; --accent: #8a2b2b;
+  --bright: #b7791f; --calm: #2f7d6d; --shadowed: #6b5b95; --dark: #7b2d26; --other: #6f6f6f;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #1d1b19; --panel: #262320; --ink: #ece6dc; --muted: #a39a8f; --line: #3a3530; --accent: #e08a7a;
+    --bright: #e0a84a; --calm: #5fbfa9; --shadowed: #a796d6; --dark: #e07a6e; }
+  .notation img { filter: invert(0.9) hue-rotate(180deg); }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.45 "EBG", Georgia, serif; }
+header { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line);
+  display: flex; align-items: baseline; gap: 24px; padding: 12px 24px; flex-wrap: wrap; }
+header h1 { margin: 0; font-size: 26px; font-weight: normal; letter-spacing: .02em; }
+nav button { background: none; border: none; font: inherit; color: var(--muted); padding: 4px 2px; margin-right: 14px; cursor: pointer;
+  border-bottom: 2px solid transparent; }
+nav button.on { color: var(--ink); border-color: var(--accent); }
+#savebar { margin-left: auto; font-size: 15px; color: var(--muted); }
+#savebar button { margin-left: 8px; }
+button.small, select, input[type=search], input[type=text], textarea {
+  font: 15px "EBG", Georgia, serif; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 4px 9px; }
+button.small { cursor: pointer; }
+button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+main { padding: 18px 24px 60px; }
+.layout { display: grid; grid-template-columns: 250px 1fr; gap: 26px; align-items: start; }
+@media (max-width: 760px) { .layout { grid-template-columns: 1fr; } main, header { padding-left: 16px; padding-right: 16px; } }
+aside { position: sticky; top: 74px; max-height: calc(100vh - 90px); overflow: auto; }
+aside h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: normal; margin: 16px 0 6px; }
+aside .row { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { display: inline-block; font-size: 14px; padding: 1px 9px; border-radius: 99px; border: 1px solid currentColor;
+  color: var(--c, var(--other)); background: transparent; cursor: default; white-space: nowrap; line-height: 1.5; }
+button.chip { cursor: pointer; font-family: inherit; }
+.chip.on { background: var(--c, var(--other)); color: var(--panel); }
+.chip.off { opacity: .45; }
+.g-bright { --c: var(--bright); } .g-calm { --c: var(--calm); } .g-shadowed { --c: var(--shadowed); } .g-dark { --c: var(--dark); }
+.count { color: var(--muted); font-size: 15px; margin: 0 0 10px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; margin-bottom: 14px; }
+.card.flash { outline: 2px solid var(--accent); }
+.card h2 { font-size: 22px; font-weight: normal; margin: 0; display: inline; }
+.card .who { color: var(--muted); margin-left: 8px; }
+.facts { color: var(--muted); font-size: 15px; margin: 2px 0 6px; }
+.facts b { color: var(--ink); font-weight: normal; }
+.stars { color: var(--bright); letter-spacing: 1px; }
+.notation { margin: 8px 0 4px; overflow-x: auto; }
+.notation img { max-width: 100%; height: auto; max-height: 150px; display: block; }
+.notes { font-style: italic; }
+.used { font-size: 15px; color: var(--muted); }
+.moodrow { margin: 6px 0; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+.play { float: right; }
+.edit { border-top: 1px dashed var(--line); margin-top: 10px; padding-top: 8px; }
+.edit textarea { width: 100%; min-height: 40px; }
+.edit .moodpick { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 8px; }
+.list { list-style: none; margin: 0; padding: 0; }
+.list li { padding: 5px 8px; border-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; gap: 8px; }
+.list li:hover { background: var(--panel); }
+.list li.on { background: var(--panel); outline: 1px solid var(--line); }
+.list .dots { display: flex; gap: 3px; align-items: center; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c); display: inline-block; }
+.latin { font-style: italic; color: var(--muted); margin-left: 10px; }
+.section { border-left: 3px solid var(--line); padding: 2px 0 2px 14px; margin: 14px 0; }
+.sugg { width: 100%; border-collapse: collapse; font-size: 15px; margin-top: 6px; }
+.sugg td, .sugg th { padding: 4px 6px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.sugg th { font-weight: normal; color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: .06em; }
+a, .link { color: var(--accent); cursor: pointer; text-decoration: none; }
+.hint { color: var(--muted); font-size: 15px; font-style: italic; }
+table.hist { border-collapse: collapse; width: 100%; font-size: 15px; }
+table.hist td, table.hist th { padding: 4px 8px; border-bottom: 1px solid var(--line); text-align: left; }
+code { font-size: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+
+.ptext { font-size: 16px; line-height: 1.55; margin: 8px 0 4px; }
+.ptext .v { margin: 0 0 7px; }
+.sheetdiff { border-collapse: collapse; font-size: 14px; width: 100%; }
+.sheetdiff td, .sheetdiff th { border-bottom: 1px solid var(--line); padding: 3px 8px 3px 0; text-align: left; vertical-align: top; font-weight: normal; }
+.sheetdiff th { color: var(--muted); }
+.seqrow { display: grid; grid-template-columns: 9.5em 1fr auto; gap: 4px 10px; align-items: start; margin: 6px 0; }
+.seqrow select { width: 100%; }
+.seqbtn { white-space: nowrap; padding-top: 5px; }
+@media (max-width: 640px) { .seqrow { grid-template-columns: 1fr auto; } .seqrow select { grid-column: 1 / -1; } }
+.seg { display: flex; gap: 0; margin-bottom: 4px; }
+.seg button { flex: 1; font: inherit; font-size: 14px; padding: 4px 6px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); cursor: pointer; }
+.seg button:first-child { border-radius: 6px 0 0 6px; } .seg button:last-child { border-radius: 0 6px 6px 0; border-left: none; }
+.seg button.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+.ptext .vclick { cursor: pointer; border-radius: 4px; }
+.ptext .vclick:hover { background: var(--line); color: var(--accent); }
+.ptext .vn { display: inline-block; width: 2.2em; text-align: right; margin-right: .6em; color: var(--muted); font-size: 13px; }
+.ptext .l2 { padding-left: 4.2em; }
+.ptext .l1 { padding-left: 2.8em; }
+.ptext .wrap { padding-left: 6em; }
+.pbar { display: inline-block; width: 1px; height: .62em; background: currentColor; margin: 0 2px; vertical-align: .38em; }
+.held { text-decoration: underline dotted; text-underline-offset: 3px; }
+.sc { font-variant: small-caps; }
+.pv-music { margin: 12px 0 4px; }
+.svrow { display: grid; grid-template-columns: 9.5em 1fr; gap: 4px 10px; align-items: start; margin: 5px 0; }
+.svrow > label { padding-top: 5px; color: var(--muted, #666); }
+.svhint { font-size: 14px; margin: 2px 0 0; min-height: 0; }
+.warn { color: #a33; }
+a.small { font-size: 14px; margin-left: 6px; }
+@media (max-width: 640px) { .svrow { grid-template-columns: 1fr; } }
+.pv-music img { max-width: 100%; max-height: 120px; }
+.pv-credit { text-align: right; font-style: italic; color: var(--muted); font-size: 14px; }
+details > summary { cursor: pointer; color: var(--accent); }
+.pick { display: grid; grid-template-columns: 210px 1fr; gap: 16px; }
+@media (max-width: 760px) { .pick { grid-template-columns: 1fr; } }
+.pick .item { border-bottom: 1px solid var(--line); padding: 8px 0; }
+.pick .item img { max-width: 100%; max-height: 90px; display: block; margin: 4px 0; }
+#dlg.wide { max-width: min(1100px, 96vw); }
+dialog { border: 1px solid var(--line); border-radius: 12px; background: var(--bg); color: var(--ink); max-width: min(900px, 94vw); width: 100%; padding: 8px 16px; }
+dialog::backdrop { background: rgba(0,0,0,.35); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Chant Browser</h1>
+  <nav>
+    <button data-tab="upcoming" class="on">Coming up</button>
+    <button data-tab="builder">Service planner</button>
+    <button data-tab="chants">Chants</button>
+    <button data-tab="texts">Psalms</button>
+    <button data-tab="history">History</button>
+  </nav>
+  <span id="savebar"></span><span id="gitbar"></span>
+</header>
+<main>
+  <section id="tab-upcoming"></section>
+  <section id="tab-builder" hidden></section>
+  <section id="tab-chants" hidden></section>
+  <section id="tab-texts" hidden></section>
+  <section id="tab-history" hidden></section>
+</main>
+<dialog id="dlg"><div id="dlgbody"></div><p><button class="small" onclick="dlg.close()">Close</button></p></dialog>
+<script src="data.js"></script>
+<script>
+"use strict";
+const D = window.PSALTER;
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+
+// ---------- vocabulary ----------
+const GROUP = {}; const ORDER = [];
+D.vocabulary.forEach(g => g.tags.forEach(t => { GROUP[t] = g.group; ORDER.push(t); }));
+const gclass = t => GROUP[t] ? "g-" + GROUP[t] : "";
+const chip = (t, extra = "") => `<span class="chip ${gclass(t)} ${extra}">${esc(t)}</span>`;
+
+// ---------- local edits (kept in this browser until exported) ----------
+const KEY = "psalter-edits-v1";
+let edits = {};
+try { edits = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { edits = {}; }
+function saveEdits() { try { localStorage.setItem(KEY, JSON.stringify(edits)); } catch (e) {} renderSavebar(); }
+const C = {}; D.chants.forEach(c => C[c.id] = c);
+Object.keys(edits).forEach(id => {
+  if (!C[id]) { delete edits[id]; return; }
+  Object.keys(edits[id]).forEach(f => { if (JSON.stringify(C[id][f]) === JSON.stringify(edits[id][f])) delete edits[id][f]; });
+  if (!Object.keys(edits[id]).length) delete edits[id];
+});
+try { localStorage.setItem(KEY, JSON.stringify(edits)); } catch (e) {}
+function val(c, f) { return edits[c.id] && f in edits[c.id] ? edits[c.id][f] : c[f]; }
+function setEdit(id, f, v) {
+  edits[id] = edits[id] || {};
+  const orig = C[id][f];
+  if (JSON.stringify(orig) === JSON.stringify(v)) delete edits[id][f]; else edits[id][f] = v;
+  if (!Object.keys(edits[id]).length) delete edits[id];
+  saveEdits();
+}
+let savedNote = "";
+function renderSavebar() {
+  const n = Object.keys(edits).length;
+  const canWrite = SERVER || "showSaveFilePicker" in window;
+  $("#savebar").innerHTML = (savedNote ? `<span>${esc(savedNote)}</span> ` : "") + (n ? `${n} chant${n > 1 ? "s" : ""} edited here
+    <button class="small primary" onclick="saveCatalog()">${canWrite ? "Save" : "Download chant_notes.csv"}</button>
+    <button class="small" onclick="discardEdits()">Discard</button>` : "");
+}
+function discardEdits() { if (window.confirm("Discard the edits made in this browser?")) { edits = {}; savedNote = ""; saveEdits(); renderChants(); } }
+function csvField(v) { v = String(v ?? ""); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+function catalogText() {
+  const cols = ["Chant", "Rating", "Mood", "Notes"];
+  const lines = [cols.join(",")];
+  D.chants.forEach(c => {
+    const r = val(c, "rating");
+    lines.push([c.id, r == null ? "" : r, val(c, "mood").join("; "), val(c, "notes")].map(csvField).join(","));
+  });
+  return lines.join("\n") + "\n";
+}
+// remember the catalog file between visits (Chrome and Edge only)
+function idb(mode, fn) {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open("psalter", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("kv");
+    r.onerror = () => rej(r.error);
+    r.onsuccess = () => { const tx = r.result.transaction("kv", mode); const q = fn(tx.objectStore("kv")); tx.oncomplete = () => res(q && q.result); tx.onerror = () => rej(tx.error); };
+  });
+}
+let SERVER = false;
+if (location.protocol.startsWith("http")) fetch("/api/ping").then(r => r.ok && r.json()).then(j => { if (j && j.ok) { SERVER = true; renderSavebar(); renderHistory(); refreshGit(); if (!$("#tab-builder").hidden) renderBuilder(); } }).catch(() => {});
+async function refreshGit() {
+  if (!SERVER) return;
+  try {
+    const j = await (await fetch("/api/git")).json();
+    const n = j.repos.reduce((a, r) => a + r.changes, 0);
+    $("#gitbar").innerHTML = n ? ` <button class="small" title="${esc(j.repos.flatMap(r => r.files.map(f => r.name + ": " + f)).join("\n"))}" onclick="commitAll()">Save ${n} change${n > 1 ? "s" : ""} to GitHub</button>` : "";
+  } catch (e) {}
+}
+async function commitAll() {
+  const msg = window.prompt("A few words describing the changes (for the GitHub history):", "Updates from the chant browser");
+  if (msg === null) return;
+  $("#gitbar").textContent = " Saving to GitHub…";
+  const j = await post("/api/commit", {message: msg});
+  window.alert(j.log || (j.ok ? "Saved." : "Something went wrong."));
+  refreshGit();
+}
+setInterval(refreshGit, 30000);
+async function post(url, obj) {
+  const r = await fetch(url, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(obj)});
+  setTimeout(refreshGit, 800);
+  return r.json();
+}
+async function saveCatalog() {
+  const text = catalogText();
+  if (SERVER) {
+    savedNote = "Saving…"; renderSavebar();
+    const j = await post("/api/notes", {csv: text});
+    savedNote = j.ok ? "Saved. Reload the page to see it everywhere." : "Could not save: " + (j.error || j.log);
+    renderSavebar(); return;
+  }
+  if (!("showSaveFilePicker" in window)) {
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], {type: "text/csv"})); a.download = "chant_notes.csv"; a.click();
+    savedNote = "Downloaded: save it over parish/chant_notes.csv.";
+    renderSavebar(); return;
+  }
+  try {
+    let h = null;
+    try { h = await idb("readonly", st => st.get("notes")); } catch (e) {}
+    if (h && (await h.requestPermission({mode: "readwrite"})) !== "granted") h = null;
+    if (!h) {
+      window.alert("Choose parish/chant_notes.csv in your psalter folder. The browser will remember it next time.");
+      h = await window.showSaveFilePicker({suggestedName: "chant_notes.csv", types: [{description: "CSV", accept: {"text/csv": [".csv"]}}]});
+      try { await idb("readwrite", st => st.put(h, "notes")); } catch (e) {}
+    }
+    const w = await h.createWritable(); await w.write(text); await w.close();
+    savedNote = "Saved to " + h.name + ". Run tools/browser.py to refresh, then commit.";
+    renderSavebar();
+  } catch (e) {
+    if (e && e.name !== "AbortError") window.alert("Could not save: " + e.message);
+  }
+}
+
+// ---------- history ----------
+const usedBy = {}, textHist = {};
+D.history.forEach(h => {
+  if (h.chant && h.chant !== "?") (usedBy[h.chant] = usedBy[h.chant] || []).push(h);
+  (textHist[h.text] = textHist[h.text] || []).push(h);
+});
+const textTitle = {}; D.texts.forEach(t => textTitle[t.id] = t.title);
+const lastUsed = id => (usedBy[id] || []).map(h => h.date).sort().pop() || "";
+
+// ---------- playback ----------
+let audio = null, playing = null;
+function stopPlay() { if (playing) { playing.forEach(o => { try { o.stop(); } catch (e) {} }); playing = null; } document.querySelectorAll(".play").forEach(b => b.textContent = "▶ Play"); }
+function play(id, btn) { playVoices(C[id].voices, btn); }
+function playTone(name, btn) { playVoices((D.tones || []).find(t => t.name === name).voices, btn); }
+function playVoices(voices, btn) {
+  if (playing) { const was = btn.textContent.startsWith("■"); stopPlay(); if (was) return; }
+  audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+  const c = {voices}, wn = 2.09;                // seconds per whole note (raise to slow down)
+  const t0 = audio.currentTime + 0.08, out = audio.createGain(); out.gain.value = 0.11; out.connect(audio.destination);
+  const lp = audio.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 2400; lp.connect(out);
+  playing = []; let end = 0;
+  Object.entries(c.voices).forEach(([v, evs]) => {
+    if (v === "descant") return;
+    evs.forEach(([m, st, du]) => {
+      const f = 440 * Math.pow(2, (m - 57) / 12), a = t0 + st * wn, b = a + du * wn;
+      end = Math.max(end, b);
+      const g = audio.createGain(); g.gain.setValueAtTime(0, a); g.gain.linearRampToValueAtTime(1, a + 0.04);
+      g.gain.setValueAtTime(1, b - 0.06); g.gain.linearRampToValueAtTime(0, b); g.connect(lp);
+      [[1, 1], [2, .45], [3, .18], [4, .12]].forEach(([h, amp]) => {
+        const o = audio.createOscillator(), og = audio.createGain(); o.frequency.value = f * h; og.gain.value = amp;
+        o.connect(og); og.connect(g); o.start(a); o.stop(b + 0.02); playing.push(o);
+      });
+    });
+  });
+  btn.textContent = "■ Stop";
+  setTimeout(() => { if (btn.textContent.startsWith("■")) stopPlay(); }, (end - audio.currentTime + 0.2) * 1000);
+}
+
+// ---------- chant card ----------
+function stars(r) { return r == null ? "" : `<span class="stars" title="your rating">${"★".repeat(r)}${"☆".repeat(Math.max(0, 5 - r))}</span>`; }
+function chantCard(c, opts = {}) {
+  const mood = val(c, "mood"), uses = usedBy[c.id] || [];
+  const last = uses.length ? uses.slice().sort((a, b) => a.date < b.date ? 1 : -1)[0] : null;
+  const usedTxt = uses.length ? `Used ${uses.length}× · last ${last.date} (${esc(textTitle[last.text] || last.text)}${last.verses ? " " + last.verses : ""})` : "Not used yet";
+  const editing = opts.editing;
+  return `<div class="card" id="card-${esc(c.id)}">
+    <button class="small play" onclick="play('${esc(c.id)}', this)">▶ Play</button>
+    <h2>${esc(c.id)}</h2><span class="who">${esc(c.composer)}${c.years ? " (" + esc(c.years) + ")" : ""}</span>
+    <div class="facts"><b>${esc(keyName(c))}</b> · ${c.double ? "double" : "single"}
+      ${c.range ? " · soprano " + esc(c.range.join("–")) : ""} ${c.acp ? " · ACP sets it to Ps " + esc(c.acp) : ""} ${stars(val(c, "rating"))}</div>
+    <div class="moodrow">${mood.length ? mood.map(t => chip(t)).join("") : '<span class="hint">no mood tags yet</span>'}</div>
+    ${c.img ? `<div class="notation"><img loading="lazy" src="notation/${encodeURIComponent(c.id)}.png" alt="${esc(c.id)}"></div>` : ""}
+    ${val(c, "notes") ? `<div class="notes">${esc(val(c, "notes"))}</div>` : ""}
+    <div class="used">${usedTxt} ${uses.length > 1 ? `<span class="link" onclick="showUses('${esc(c.id)}')">all</span>` : ""}</div>
+    ${editing ? editBox(c) : `<p style="margin:6px 0 0"><span class="link" onclick="openEdit('${esc(c.id)}')">Edit mood, rating, notes</span>
+      · <span class="link" onclick="dlg.close(); useInBuilder('${esc(c.id)}')">Use in the psalm builder</span></p>`}
+  </div>`;
+}
+function editBox(c) {
+  const mood = val(c, "mood"), r = val(c, "rating");
+  return `<div class="edit">
+    ${D.vocabulary.map(g => `<div class="moodpick">${g.tags.map(t => `<button class="chip g-${esc(g.group)} ${mood.includes(t) ? "on" : ""}" onclick="toggleMood('${esc(c.id)}','${esc(t)}')">${esc(t)}</button>`).join("")}</div>`).join("")}
+    Rating: <select onchange="setEdit('${esc(c.id)}','rating', this.value === '' ? null : +this.value); refreshCard('${esc(c.id)}')">
+      <option value="">–</option>${[1, 2, 3, 4, 5].map(n => `<option ${r === n ? "selected" : ""}>${n}</option>`).join("")}</select>
+    <textarea placeholder="Notes on its character" onchange="setEdit('${esc(c.id)}','notes', this.value)">${esc(val(c, "notes"))}</textarea>
+    <span class="link" onclick="closeEdit('${esc(c.id)}')">Done</span>
+  </div>`;
+}
+const openEdits = new Set();
+function openEdit(id) { openEdits.add(id); refreshCard(id); }
+function closeEdit(id) { openEdits.delete(id); refreshCard(id); }
+function toggleMood(id, t) {
+  const m = val(C[id], "mood").slice(), i = m.indexOf(t);
+  if (i >= 0) m.splice(i, 1); else m.push(t);
+  setEdit(id, "mood", m); refreshCard(id);
+}
+function refreshCard(id) {
+  document.querySelectorAll("#card-" + CSS.escape(id)).forEach(el => {
+    el.outerHTML = chantCard(C[id], {editing: openEdits.has(id)});
+  });
+}
+function showUses(id) {
+  const rows = (usedBy[id] || []).slice().sort((a, b) => a.date < b.date ? 1 : -1);
+  $("#dlgbody").innerHTML = `<h2 style="font-weight:normal">${esc(id)}: every use</h2><table class="hist">${rows.map(h =>
+    `<tr><td>${esc(h.date)}</td><td>${esc(textTitle[h.text] || h.text)} ${esc(h.verses)}</td><td class="hint">${esc(h.note)}</td></tr>`).join("")}</table>`;
+  dlg.showModal();
+}
+function showChant(id) { $("#dlgbody").innerHTML = chantCard(C[id], {editing: openEdits.has(id)}); dlg.showModal(); }
+
+// ---------- keys ----------
+const PC = {C: 0, "C#": 1, Db: 1, D: 2, "D#": 3, Eb: 3, E: 4, Fb: 4, F: 5, "E#": 5, "F#": 6, Gb: 6, G: 7, "G#": 8, Ab: 8, A: 9, "A#": 10, Bb: 10, B: 11, Cb: 11};
+const pretty = k => k.replace("#", "♯").replace(/([A-G])b/, "$1♭");
+function tonic(c) { return (c.key || "").split("/")[0].trim(); }
+const MODES = {mix: "mixolydian", dor: "dorian", phr: "phrygian", lyd: "lydian", aeo: "aeolian"};
+function keyName(c) {
+  const k = c.key || "", m = (c.mode || "").toLowerCase();
+  if (k.includes("/") && m === "m/m") { const [a, b] = k.split("/"); return `${pretty(a.trim())} major / ${pretty(b.trim())} minor`; }
+  return pretty(tonic(c)) + " " + (MODES[m.slice(0, 3)] || m);
+}
+function keyRank(c, fifths) {
+  const p = PC[tonic(c)] ?? 99;
+  const minor = /^min/i.test(c.mode || ""), modal = !/^(maj|min)/i.test(c.mode || "");
+  // circle of fifths: C G D A E B F♯ D♭ A♭ E♭ B♭ F; minor keys sit with their relative major
+  const pos = fifths ? (((minor ? (p + 3) % 12 : p) * 7) % 12) : p;
+  return pos * 10 + (minor ? 1 : modal ? 2 : 0);
+}
+const KEYS_PRESENT = [...new Set(D.chants.slice().sort((a, b) => keyRank(a, false) - keyRank(b, false)).map(keyName))];
+
+// ---------- chants tab ----------
+const F = {moods: new Set(), mode: "", sd: "", key: "", minRating: 0, q: "", sort: "composer", untagged: false};
+function renderChantsShell() {
+  $("#tab-chants").innerHTML = `<div class="layout"><aside>
+    <input type="search" id="q" placeholder="Composer or chant" style="width:100%">
+    <h3>Mood</h3>${D.vocabulary.map(g => `<div class="row" style="margin-bottom:5px">${g.tags.map(t =>
+      `<button class="chip g-${esc(g.group)}" data-mood="${esc(t)}">${esc(t)}</button>`).join("")}</div>`).join("")}
+    <label class="hint"><input type="checkbox" id="untagged"> only chants without moods</label>
+    <h3>Mode</h3><select id="mode"><option value="">any</option><option>Major</option><option>Minor</option><option value="other">modal / other</option></select>
+    <h3>Key</h3><select id="keyf"><option value="">any</option>${KEYS_PRESENT.map(k => `<option>${esc(k)}</option>`).join("")}</select>
+    <h3>Single or double</h3><select id="sd"><option value="">either</option><option value="s">single</option><option value="d">double</option></select>
+    <h3>Rating at least</h3><select id="rating"><option value="0">any</option>${[1, 2, 3, 4, 5].map(n => `<option>${n}</option>`).join("")}</select>
+    <h3>Sort</h3><select id="sort"><option value="composer">composer</option><option value="rating">rating</option>
+      <option value="stale">longest since used</option><option value="used">most used</option>
+      <option value="key">key (C, D♭, D …)</option><option value="fifths">key (circle of fifths)</option></select>
+  </aside><div>
+    <div class="seg" style="max-width:440px;margin-bottom:10px"><button class="${CV.tones ? "" : "on"}" onclick="CV.tones=false; renderChantsShell(); renderChants()">Anglican chants</button><button class="${CV.tones ? "on" : ""}" onclick="CV.tones=true; renderChantsShell(); renderChants()">Plainchant psalm tones</button></div>
+    <p class="count" id="ccount"></p><div id="clist"></div></div></div>`;
+  if (CV.tones) { $("#tab-chants aside").style.display = "none"; $("#tab-chants .layout").style.gridTemplateColumns = "1fr"; }
+  $("#q").oninput = e => { F.q = e.target.value.toLowerCase(); renderChants(); };
+  document.querySelectorAll("[data-mood]").forEach(b => b.onclick = () => {
+    const t = b.dataset.mood; F.moods.has(t) ? F.moods.delete(t) : F.moods.add(t); b.classList.toggle("on"); renderChants(); });
+  $("#untagged").onchange = e => { F.untagged = e.target.checked; renderChants(); };
+  $("#mode").onchange = e => { F.mode = e.target.value; renderChants(); };
+  $("#sd").onchange = e => { F.sd = e.target.value; renderChants(); };
+  $("#keyf").onchange = e => { F.key = e.target.value; renderChants(); };
+  $("#rating").onchange = e => { F.minRating = +e.target.value; renderChants(); };
+  $("#sort").onchange = e => { F.sort = e.target.value; renderChants(); };
+}
+const CV = {tones: false, mode: 0};
+function renderTones() {
+  const all = D.tones || [];
+  const list = all.filter(t => !CV.mode || t.mode === CV.mode);
+  const modes = [...new Set(all.map(t => t.mode))];
+  $("#ccount").innerHTML = `${list.length} tones and endings, from the Liber usualis · mode: ` +
+    [0].concat(modes.filter(m => m)).map(m => `<span class="link" style="${CV.mode === m ? "font-weight:bold" : ""}" onclick="CV.mode=${m}; renderChants()">${m ? ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII"][m] : "all"}</span>`).join(" · ") +
+    (modes.includes(0) ? ` · <span class="link" onclick="CV.mode=-1; renderChants()">peregrinus</span>` : "");
+  const shown = CV.mode === -1 ? all.filter(t => t.mode === 0) : list;
+  $("#clist").innerHTML = `<p class="hint" style="margin:0 0 10px">Each tone is printed as sung: the intonation (first verse only), the reciting note, the mediant cadence ‖ the reciting note, the ending. Notes in brackets are added or left out as the words need; ´ marks the notes that take an accented syllable. In the psalm builder, type <i>tone 7a</i> in a chant box, or use the button on a tone here; the psalm is pointed for it automatically.</p>` +
+    shown.map(t => `<div class="card">
+      <button class="small play" onclick="playTone('${esc(t.name)}', this)">▶ Play</button>
+      <h3 style="font-weight:normal;margin:0">${esc(t.label)} <span class="hint">· typed as “tone ${esc(t.name)}”</span></h3>
+      <div class="hint" style="margin:2px 0 6px">${esc(t.character)}${t.mode ? " · the spirit of the mode" : ""}</div>
+      ${t.img ? `<img src="notation/${encodeURIComponent(t.img)}" alt="${esc(t.label)}" style="max-width:100%;max-height:90px">` : ""}
+      <p style="margin:6px 0 0"><span class="link" onclick="useInBuilder('tone ${esc(t.name)}')">Use in the psalm builder</span>${toneUses(t)}</p></div>`).join("");
+}
+function toneUses(t) {
+  const want = t.name.toLowerCase().replace(/\W/g, "");
+  const roman = t.label.replace(/^Tone /, "").toLowerCase().replace(/\W/g, "");
+  const uses = D.history.filter(h => /^tone/i.test(h.chant || "") && [want, roman].includes(String(h.chant).replace(/^tone[:\s]*/i, "").toLowerCase().replace(/\W/g, "")));
+  return uses.length ? ` <span class="hint">· used ${uses.length}×, last ${esc(uses.map(h => h.date).sort().pop())}</span>` : "";
+}
+function renderChants() {
+  if (CV.tones) { renderTones(); return; }
+  let list = D.chants.filter(c => {
+    const mood = val(c, "mood"), r = val(c, "rating") || 0;
+    if (F.q && !(c.id + " " + c.composer).toLowerCase().includes(F.q)) return false;
+    if (F.moods.size && ![...F.moods].some(t => mood.includes(t))) return false;
+    if (F.untagged && mood.length) return false;
+    if (F.mode === "other" ? ["Major", "Minor"].includes(c.mode) : F.mode && c.mode !== F.mode) return false;
+    if (F.sd && (F.sd === "d") !== c.double) return false;
+    if (F.key && keyName(c) !== F.key) return false;
+    if (r < F.minRating) return false;
+    return true;
+  });
+  const by = {
+    composer: (a, b) => a.id.localeCompare(b.id, undefined, {numeric: true}),
+    rating: (a, b) => (val(b, "rating") || 0) - (val(a, "rating") || 0),
+    stale: (a, b) => lastUsed(a.id).localeCompare(lastUsed(b.id)),
+    used: (a, b) => (usedBy[b.id] || []).length - (usedBy[a.id] || []).length,
+    key: (a, b) => keyRank(a, false) - keyRank(b, false),
+    fifths: (a, b) => keyRank(a, true) - keyRank(b, true),
+  }[F.sort];
+  list.sort((a, b) => by(a, b) || a.id.localeCompare(b.id, undefined, {numeric: true}));
+  const tagged = D.chants.filter(c => val(c, "mood").length).length;
+  $("#ccount").textContent = `${list.length} of ${D.chants.length} chants · ${tagged} have mood tags`;
+  let prevKey = null;
+  $("#clist").innerHTML = list.map(c => {
+    let head = "";
+    if (F.sort === "key" || F.sort === "fifths") {
+      const k = keyName(c);
+      if (k !== prevKey) head = `<h3 style="font-weight:normal;margin:18px 0 8px">${esc(k)}</h3>`;
+      prevKey = k;
+    }
+    return head + chantCard(c, {editing: openEdits.has(c.id)});
+  }).join("");
+}
+
+// ---------- matching ----------
+function score(textTags, chantTags) {
+  if (!textTags.length || !chantTags.length) return {s: 0, hits: []};
+  let s = 0; const hits = [];
+  textTags.forEach((t, i) => {
+    const w = i === 0 ? 1.0 : 0.75;            // the first tag is the main character
+    if (chantTags.includes(t)) { s += w; hits.push(t); }
+    else if (chantTags.some(c => GROUP[c] && GROUP[c] === GROUP[t])) s += 0.4 * w;
+  });
+  return {s: s / textTags.length, hits};
+}
+function suggestions(sec) {
+  return D.chants.map(c => ({c, ...score(sec.mood, val(c, "mood"))}))
+    .filter(x => x.s > 0)
+    .sort((a, b) => b.s - a.s || (val(b.c, "rating") || 0) - (val(a.c, "rating") || 0) || lastUsed(a.c.id).localeCompare(lastUsed(b.c.id)))
+    .slice(0, 10);
+}
+
+
+// ---------- pointing editor ----------
+const E = {on: false, n: null, lines: [], msg: "", busy: false};
+function verseBlock(v) {
+  const [n, dag, lines] = v;
+  const num = (dag ? "†" : "") + n;
+  return lines.map((l, i) => {
+    const t = (l[2] ? "+ " : "") + l[0];
+    if (i === 0) return (num.length < 4 ? num.padEnd(4) : num + " ") + t;
+    return (l[1] === 1 ? "    " : "      ") + t;
+  }).join("\n");
+}
+function editableText(t) {
+  return '<div class="ptext">' + t.body.map(v => v[0] === E.n ? verseEditor(t, v) :
+    `<div class="v" style="cursor:pointer" title="Click to edit this verse" onclick="startEdit(${JSON.stringify(v[0])})">${pointedHTML([v]).replace(/^<div class="ptext">|<\/div>$/g, "")}</div>`).join("") +
+    '</div><p class="hint">Click a verse to edit it. In the editor, click a word to put a bar before it (or take it away); Shift+click to mark it held; or type in the box. Saving checks that the words still match the 1979 BCP.</p>';
+}
+function startEdit(n) {
+  const t = D.texts.find(x => x.id === curText);
+  const v = t.body.find(x => x[0] === n);
+  E.n = n; E.lines = verseBlock(v).split("\n"); E.msg = ""; renderText();
+}
+function editorPreview() {
+  return E.lines.map((line, li) => {
+    const m = line.match(/^(\s*(?:†?\d+\s+)?(?:\+ )?)(.*)$/);
+    const toks = m[2].split(" ").filter(x => x !== "");
+    return `<div>${esc(m[1].replace(/ /g, "\u00a0"))}${toks.map((tk, ti) =>
+      tk === "|" ? '<span class="pbar"></span>' :
+      tk === "." ? " · " :
+      tk === "*" ? " * " :
+      `<span class="tok" data-li="${li}" data-ti="${ti}" style="cursor:pointer;padding:0 2px;border-radius:3px" onmouseover="this.style.background='var(--line)'" onmouseout="this.style.background=''" onclick="clickTok(event, ${li}, ${ti})">${tk.startsWith("=") ? '<span class="held">' + esc(tk.slice(1)) + "</span>" : esc(tk)}</span> `).join("")}</div>`;
+  }).join("");
+}
+function verseEditor(t, v) {
+  const preview = editorPreview();
+  return `<div class="v" style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:6px 0">
+    <div id="eprev" style="font: 16px/1.7 EBG, Georgia, serif">${preview}</div>
+    <textarea id="eta" spellcheck="false" oninput="E.lines=this.value.split('\\n'); $('#eprev').innerHTML=editorPreview()" style="width:100%;height:${E.lines.length * 1.6 + 1.2}em;font: 14px/1.6 ui-monospace, Menlo, Consolas, monospace;margin-top:6px">${esc(E.lines.join("\n"))}</textarea>
+    <p style="margin:6px 0 0"><button class="small primary" ${E.busy ? "disabled" : ""} onclick="saveVerse()">Save verse</button>
+      <button class="small" onclick="E.n=null; E.msg=''; renderText()">Cancel</button>
+      ${E.msg ? `<span class="hint" style="margin-left:8px">${esc(E.msg)}</span>` : ""}</p>
+    <p class="hint" style="margin:4px 0 0">| bar · . split · * mediant · =word held · word- | -word divided word · + line runs over · † before the number: second half again</p>
+  </div>`;
+}
+function clickTok(ev, li, ti) {
+  const ta = $("#eta"); if (ta) E.lines = ta.value.split("\n");
+  const line = E.lines[li];
+  const m = line.match(/^(\s*(?:†?\d+\s+)?(?:\+ )?)(.*)$/);
+  const toks = m[2].split(" ").filter(x => x !== "");
+  if (ev.shiftKey) {
+    toks[ti] = toks[ti].startsWith("=") ? toks[ti].slice(1) : "=" + toks[ti];
+  } else if (ti > 0 && toks[ti - 1] === "|") {
+    toks.splice(ti - 1, 1);
+  } else {
+    toks.splice(ti, 0, "|");
+  }
+  E.lines[li] = m[1] + toks.join(" ");
+  renderText();
+}
+async function saveVerse() {
+  const ta = $("#eta"); if (ta) E.lines = ta.value.split("\n");
+  E.busy = true; E.msg = "Saving…"; renderText();
+  const j = await post("/api/text", {id: curText, n: E.n, block: E.lines.join("\n")});
+  E.busy = false;
+  if (!j.ok) { E.msg = j.error || "Could not save"; renderText(); return; }
+  const t = D.texts.find(x => x.id === curText);
+  const i = t.body.findIndex(x => x[0] === E.n);
+  t.body[i] = j.verse;
+  E.n = null; E.msg = ""; renderText();
+}
+
+// ---------- psalms tab ----------
+let curText = null, textOpen = true;
+function renderTextsShell() {
+  $("#tab-texts").innerHTML = `<div class="layout"><aside>
+    <input type="search" id="tq" placeholder="Number, title or words" style="width:100%">
+    <h3>Mood</h3>${D.vocabulary.map(g => `<div class="row" style="margin-bottom:5px">${g.tags.map(t =>
+      `<button class="chip g-${esc(g.group)}" data-tmood="${esc(t)}">${esc(t)}</button>`).join("")}</div>`).join("")}
+    <h3>Psalms</h3><ul class="list" id="tlist"></ul></aside><div id="tdetail"></div></div>`;
+  const tm = new Set();
+  const draw = () => {
+    const q = $("#tq").value.toLowerCase().trim();
+    const items = D.texts.filter(t => {
+      if (q && !(t.title.toLowerCase().includes(q) || t.latin.toLowerCase().includes(q) || t.first.toLowerCase().includes(q) || t.id.replace(/_0*/g, " ").toLowerCase().includes(q))) return false;
+      if (tm.size && !t.sections.some(s => s.mood.some(m => tm.has(m)))) return false;
+      return true;
+    });
+    $("#tlist").innerHTML = items.map(t => `<li data-id="${esc(t.id)}" class="${t.id === curText ? "on" : ""}"><span>${esc(t.title)}</span>
+      <span class="dots">${[...new Set(t.sections.flatMap(s => s.mood.slice(0, 1)))].map(m => `<span class="dot ${gclass(m)}" title="${esc(m)}"></span>`).join("")}</span></li>`).join("");
+    document.querySelectorAll("#tlist li").forEach(li => li.onclick = () => { curText = li.dataset.id; draw(); renderText(); });
+  };
+  $("#tq").oninput = draw;
+  document.querySelectorAll("[data-tmood]").forEach(b => b.onclick = () => {
+    const t = b.dataset.tmood; tm.has(t) ? tm.delete(t) : tm.add(t); b.classList.toggle("on"); draw(); });
+  curText = curText || D.texts[0].id;
+  draw(); renderText();
+}
+function renderText() {
+  const t = D.texts.find(x => x.id === curText); if (!t) return;
+  const hist = (textHist[t.id] || []).slice().sort((a, b) => a.date < b.date ? 1 : -1);
+  const tagged = D.chants.filter(c => val(c, "mood").length).length;
+  $("#tdetail").innerHTML = `<div class="card">
+    <h2>${esc(t.title)}</h2><span class="latin">${esc(t.latin)}</span>
+    <div class="facts">verses ${t.verses ? t.verses.join("–") : ""}${t.draft ? " · <b>not yet pointed</b>" : ""} · <span class="link" onclick="buildThisPsalm('${esc(t.id)}')">set this psalm to a chant</span></div>
+    <details ${textOpen ? "open" : ""} ontoggle="textOpen=this.open"><summary>The text</summary>
+      ${SERVER ? `<p style="margin:6px 0"><label class="hint"><input type="checkbox" ${E.on ? "checked" : ""} onchange="E.on=this.checked; E.n=null; renderText()"> edit the pointing</label></p>`
+               : `<p class="hint" style="margin:6px 0">To edit the pointing, open the browser with the launcher.</p>`}
+      ${E.on ? editableText(t) : pointedHTML(t.body)}</details>
+    ${t.sections.map(s => {
+      const sg = suggestions(s);
+      return `<div class="section"><div class="moodrow"><b style="font-weight:normal">${s.verses === "all" ? "Whole text" : "Verses " + esc(s.verses)}</b>
+        ${s.mood.map(m => chip(m)).join("")} <span class="hint">${esc(s.type)}${s.note ? " · " + esc(s.note) : ""}</span></div>
+        ${sg.length ? `<table class="sugg"><tr><th>Chant</th><th>Key</th><th>Shares</th><th>Rating</th><th>Last used</th></tr>${sg.map(x =>
+          `<tr><td><span class="link" onclick="showChant('${esc(x.c.id)}')">${esc(x.c.id)}</span></td><td>${esc(keyName(x.c))}, ${x.c.double ? "double" : "single"}</td>
+          <td>${x.hits.map(h => chip(h)).join(" ") || '<span class="hint">same family</span>'}</td><td>${stars(val(x.c, "rating"))}</td><td>${esc(lastUsed(x.c.id))}</td></tr>`).join("")}</table>`
+          : `<p class="hint">No matching chants yet${tagged ? "" : ": none of the chants has mood tags so far. Tag them on the Chants tab"}.</p>`}
+      </div>`;
+    }).join("") || '<p class="hint">No mood tags for this text (texts/moods.csv).</p>'}
+    <h3 style="font-weight:normal;margin-bottom:4px">${D.parish.name ? "Sung at " + esc(D.parish.name) : "Past use"}</h3>
+    ${hist.length ? `<table class="hist">${hist.map(h => `<tr><td>${esc(h.date)}</td><td>${esc(h.verses)}</td><td>${h.chant && h.chant !== "?" ? `<span class="link" onclick="showChant('${esc(h.chant)}')">${esc(h.chant)}</span>` : "?"}</td><td class="hint">${esc(h.note)}</td></tr>`).join("")}</table>` : '<p class="hint">Not yet.</p>'}
+  </div>`;
+}
+
+// ---------- history tab ----------
+async function markSung(name) {
+  const j = await post("/api/sung", {name, sung: true});
+  if (j.ok) location.reload(); else window.alert("Could not mark it: " + (j.error || ""));
+}
+const HV = {mode: "psalms"};
+// every service on record (the old spreadsheet, then the Sunday files): what was sung, by date
+function servicesRecord() {
+  const orders = [...new Set(Object.values(SV.byDate).map(e => e.order))];
+  return `<input type="search" id="sq" placeholder="Filter: a date, hymn number, anthem, composer…" style="width:min(420px,100%)">
+    <select id="so"><option value="">every kind of service</option>${orders.map(o => `<option>${esc(o)}</option>`).join("")}</select>
+    <button class="small" onclick="downloadRecord()">Download the whole record (CSV)</button>
+    <p class="count" id="scount"></p><div id="slist"></div>`;
+}
+function itemText(order, k, v) {
+  const s = (SV.orders[order] || []).find(x => x.key === k) || anySlot(k) || {label: k === "also" ? "" : k, kind: "music"};
+  const label = s.label.replace(/\s*\{hymn\|anthem\}/, "");
+  const hs = s.kind !== "music" && s.kind !== "lesson" ? hymnsOf(v) : [];
+  const body = hs.length ? hs.map(h => h.number + (h.title && !h.service ? ". " + h.title : "") + (h.book !== "EH1982" ? " (" + h.book + ")" : "")).join("; ") : v.split("|").map(x => x.trim()).join(" — ");
+  return label ? `<span class="hint">${esc(label)}:</span> ${esc(body)}` : esc(body);
+}
+function csvCell(v) { v = String(v ?? ""); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+function downloadRecord() {
+  // every service on record, one row per piece, with hymn titles spelled out
+  const rows = [["date", "service", "lectionary day", "slot", "item", "title"]];
+  Object.keys(SV.byDate).sort().forEach(d => {
+    const e = SV.byDate[d], day = (SV.lect || {})[d], lect = day ? `${day[2]}, Year ${day[1]}` : "";
+    (e.psalms || []).forEach(ps => rows.push([d, e.order, lect, "Psalm", ps.replace(/\s*\(\)$/, ""), ""]));
+    e.items.filter(([k]) => !["organist", "note", "lead"].includes(k)).forEach(([k, v]) => {
+      const s = (SV.orders[e.order] || []).find(x => x.key === k) || anySlot(k) || {label: k === "also" ? "Other" : k, kind: "music"};
+      const hs = s.kind !== "music" && s.kind !== "lesson" ? hymnsOf(v) : [];
+      rows.push([d, e.order, lect, s.label.replace(/\s*\{hymn\|anthem\}/, ""), hs.length ? hs.map(h => (h.book === "EH1982" ? "" : h.book + " ") + h.number).join("; ") : v, hs.map(h => h.title).join("; ")]);
+    });
+  });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob(["\ufeff" + rows.map(r => r.map(csvCell).join(",")).join("\r\n")], {type: "text/csv"}));
+  a.download = "music-record-" + new Date().toISOString().slice(0, 10) + ".csv"; a.click();
+}
+function drawServices() {
+  const q = $("#sq").value.toLowerCase(), o = $("#so").value;
+  const dates = Object.keys(SV.byDate).sort().reverse().filter(d => {
+    const e = SV.byDate[d];
+    if (o && e.order !== o) return false;
+    if (!q) return true;
+    const words = [d, e.order].concat(e.items.map(([k, v]) => v + " " + hymnsOf(v).map(h => h.title).join(" "))).join(" ").toLowerCase();
+    return words.includes(q);
+  });
+  $("#scount").textContent = dates.length + " services";
+  $("#slist").innerHTML = dates.slice(0, 200).map(d => {
+    const e = SV.byDate[d];
+    const items = e.items.filter(([k]) => !["organist", "note", "lead"].includes(k));
+    return `<details class="card" style="padding:8px 14px;margin-bottom:6px"><summary>${esc(d)} · ${esc(e.order)} <span class="hint">· ${items.length} items${e.source === "file" ? " · from its file here" : " · from the spreadsheet"}</span></summary>
+      <ul style="margin:6px 0 2px 1.1em;padding:0">${items.map(([k, v]) => `<li>${itemText(e.order, k, v)}</li>`).join("")}</ul></details>`;
+  }).join("") + (dates.length > 200 ? '<p class="hint">Showing the 200 most recent: filter to find older ones.</p>' : "");
+}
+function renderHistory() {
+  const unc = D.unconfirmed || [];
+  $("#tab-history").innerHTML = (unc.length ? `<div class="card"><h3 style="font-weight:normal;margin:0 0 6px">Past Sundays not yet confirmed</h3>
+    <p class="hint" style="margin:0 0 6px">A Sunday counts in the history once it's marked as sung${SERVER ? "" : " (add the line <code>sung: yes</code> to its file, or open the browser with the launcher for a button)"}.</p>
+    <table class="hist">${unc.map(u => `<tr><td>${esc(u.date)}</td><td>${esc(u.psalms.join(", "))}</td><td>${esc(u.chants.join(", "))}</td>
+      <td>${SERVER ? `<button class="small primary" onclick="markSung('${esc(u.name)}')">Mark as sung</button>` : `<span class="hint">${esc(u.name)}.txt</span>`}</td></tr>`).join("")}</table></div>` : "") +
+    `<div class="seg" style="max-width:420px;margin-bottom:10px"><button class="${HV.mode !== "services" ? "on" : ""}" onclick="HV.mode='psalms'; renderHistory()">Psalms and chants</button><button class="${HV.mode === "services" ? "on" : ""}" onclick="HV.mode='services'; renderHistory()">Whole services</button></div>` +
+    (HV.mode === "services" ? servicesRecord() :
+    `<input type="search" id="hq" placeholder="Filter by date, psalm or chant" style="width:min(420px,100%)">
+    <p class="count" id="hcount"></p><table class="hist" id="htab"></table>`);
+  if (HV.mode === "services") { $("#sq").oninput = drawServices; $("#so").onchange = drawServices; drawServices(); return; }
+  const draw = () => {
+    const q = $("#hq").value.toLowerCase();
+    const rows = D.history.slice().reverse().filter(h => !q || [h.date, h.text, textTitle[h.text], h.chant, h.note].join(" ").toLowerCase().includes(q));
+    $("#hcount").textContent = rows.length + " entries";
+    $("#htab").innerHTML = `<tr><th>Date</th><th>Text</th><th>Verses</th><th>Chant</th><th></th></tr>` + rows.map(h =>
+      `<tr><td>${esc(h.date)}</td><td>${esc(textTitle[h.text] || h.text)}</td><td>${esc(h.verses)}</td>
+       <td>${C[h.chant] ? `<span class="link" onclick="showChant('${esc(h.chant)}')">${esc(h.chant)}</span>` : esc(h.chant)}</td><td class="hint">${esc(h.note)}</td></tr>`).join("");
+  };
+  $("#hq").oninput = draw; draw();
+}
+
+// ---------- coming up ----------
+const TX = {}; D.texts.forEach(t => TX[t.id] = t);
+function overlapMoods(textIds, verses) {
+  const out = [];
+  textIds.forEach(id => (TX[id] ? TX[id].sections : []).forEach(s => {
+    if (s.verses !== "all" && verses) {
+      const [lo, hi] = s.verses.split("-").map(Number);
+      if (!verses.some(v => v >= lo && v <= (hi || lo))) return;
+    }
+    s.mood.forEach(m => { if (!out.includes(m)) out.push(m); });
+  }));
+  return out;
+}
+function recentChants(date, weeks = 12) {
+  if (!date) date = new Date().toISOString().slice(0, 10);
+  const lo = new Date(new Date(date) - weeks * 7 * 864e5).toISOString().slice(0, 10);
+  const set = new Set(D.history.filter(h => h.date >= lo && h.date < date).map(h => h.chant));
+  D.calendar.filter(c => c.date >= lo && c.date < date).forEach(c => c.planned.forEach(pl => pl.chants.forEach(x => set.add(x))));
+  return set;
+}
+function goText(id) {
+  curText = id;
+  document.querySelector('nav button[data-tab="texts"]').click();
+}
+function renderUpcoming() {
+  const today = new Date().toISOString().slice(0, 10);
+  const rows = D.calendar.filter(c => c.date >= today).slice(0, 40);
+  $("#tab-upcoming").innerHTML = `<p class="count">The psalm appointed by the Revised Common Lectionary (Episcopal edition). In the season after Pentecost, Track 1 is the semicontinuous psalm and Track 2 the one related to the Old Testament reading.
+    To start a Sunday: <code>python tools/new_sunday.py DATE</code></p>` + rows.map(c => {
+    const recent = recentChants(c.date);
+    return `<div class="card"><h2>${esc(new Date(c.date + "T12:00").toLocaleDateString(undefined, {weekday: "short", month: "long", day: "numeric", year: "numeric"}))}</h2>
+      <span class="who">${esc(c.label)} · Year ${esc(c.year)}</span>
+      ${c.planned.map(pl => ` <span class="chip ${pl.sung ? "g-calm on" : "g-calm"}">${pl.sung ? "sung" : "planned"}: ${esc(pl.chants.join(", ") || "chant not chosen")}</span>`).join("")}
+      ${c.options.length ? c.options.map(o => {
+        const mood = overlapMoods(o.texts, o.verses);
+        const sg = mood.length ? D.chants.map(ch => ({ch, ...score(mood, val(ch, "mood"))})).filter(x => x.s > 0 && !recent.has(x.ch.id))
+          .sort((a, b) => b.s - a.s || (val(b.ch, "rating") || 0) - (val(a.ch, "rating") || 0)).slice(0, 4) : [];
+        return `<div class="section"><div class="moodrow"><b style="font-weight:normal">${o.track ? esc(o.track) + ": " : ""}${/^\d/.test(o.spec) ? "Psalm " : ""}${esc(o.spec)}</b>
+          ${o.texts.map(id => `<span class="link" onclick="goText('${esc(id)}')">${esc(TX[id] ? TX[id].title : id)}</span>`).join(", ")}
+          ${mood.map(m => chip(m)).join("")}${o.error ? ` <span class="hint">${/^\d/.test(o.spec) ? esc(o.error) : "not in the library yet"}</span>` : ""}</div>
+          ${sg.length ? `<div class="used">Try: ${sg.map(x => `<span class="link" onclick="showChant('${esc(x.ch.id)}')">${esc(x.ch.id)}</span>`).join(" · ")}</div>` : ""}</div>`;
+      }).join("") : '<p class="hint">No psalm in the table for this day.</p>'}</div>`;
+  }).join("");
+}
+
+
+// ---------- Service planner (psalm builder + the rest of the service) ----------
+const SERVICES = [...new Set(Object.keys((D.service || {}).orders || {}).concat(["Eucharist", "Evensong", "Office", "Morning Prayer", "Evening Prayer"]))];
+const B = {date: "", name: "", label: "", year: "", service: "Eucharist", gloria: "auto", reprint: true, sung: false,
+           psalms: [{spec: "", chants: [{name: "", from: ""}]}], status: "", log: "", files: [], existing: null,
+           svc: {}, also: "", note: "", mail: null, showOpt: new Set(), mode: (() => { try { return localStorage.getItem("psalter-mode") || "service"; } catch (e) { return "service"; } })()};
+function setMode(m) { B.mode = m; try { localStorage.setItem("psalter-mode", m); } catch (e) {} renderBuilder(); }
+function nextSunday() { const d = new Date(); d.setDate(d.getDate() + ((7 - d.getDay()) % 7 || 7)); return d.toISOString().slice(0, 10); }
+function calEntry(date) { return D.calendar.find(c => c.date === date); }
+// a psalm tone's intonation: on verse 1 only, unless set to every verse
+const intoneDefault = p => false;
+const intoneEvery = p => p.intonation ? p.intonation === "every" : intoneDefault(p);
+// verses the lectionary prints in brackets are optional: sung or not as parish.txt says, or as set per psalm
+const optOf = p => p && p.optional != null ? p.optional : !!D.parish.optional;
+function optionalVerses(spec) {
+  const m = String(spec || "").match(/:\s*([\d,\-()a-d\s]+)$/); if (!m) return [];
+  const out = [];
+  m[1].split(",").forEach(part => { part = part.trim(); if (!/^\(.*\)$/.test(part)) return;
+    const q = part.replace(/[()\sa-d]/g, "").split("-").map(Number); for (let v = q[0]; v <= (q[1] || q[0]); v++) out.push(v); });
+  return out;
+}
+function resolveSpec(spec, optional = true) {
+  spec = (spec || "").trim();
+  let m = spec.match(/^canticle\s+(\d+)$/i);
+  if (m) return TX["Canticle_" + m[1]] ? [{id: "Canticle_" + m[1], verses: null}] : [];
+  m = spec.match(/^(?:psalm\s+)?(\d+)(?:\s*:?\s*part\s+(\w+)|\s+([A-Za-z]+))?(?:\s*:\s*([\d,\-()a-d\s]+))?$/i);
+  if (!m) return [];
+  const base = "Psalm_" + String(+m[1]).padStart(3, "0");
+  let verses = null;
+  if (m[4]) { verses = []; m[4].split(",").forEach(p => { if (!optional && /^\s*\(.*\)\s*$/.test(p)) return; const q = p.replace(/[()\sa-d]/g, "").split("-").map(Number); for (let v = q[0]; v <= (q[1] || q[0]); v++) verses.push(v); }); }
+  let ids = m[2] ? [base + "_Part_" + m[2]] : m[3] ? [base + "_V_" + m[3][0].toUpperCase() + m[3].slice(1).toLowerCase()]
+          : TX[base] ? [base] : D.texts.filter(t => t.id.startsWith(base + "_")).map(t => t.id);
+  ids = ids.filter(id => TX[id]);
+  if (verses) ids = ids.filter(id => TX[id].verses && verses.some(v => v >= TX[id].verses[0] && v <= TX[id].verses[1]));
+  return ids.map(id => ({id, verses}));
+}
+function sundayText() {
+  const L = [];
+  if (B.label) L.push(`# ${B.label}${B.year ? ", Year " + B.year : ""}`);
+  if (B.date) L.push(`date:    ${B.date}`);
+  if (B.service !== "Eucharist") L.push(`service: ${B.service}`);
+  B.psalms.forEach(p => {
+    if (!p.spec.trim()) return;
+    L.push(`psalm:   ${p.spec.trim()}`);
+    p.chants.forEach((c, i) => {
+      const nm = c.name.trim(); if (!nm) return;
+      const tm = nm.match(/^tone[:\s]+(.+)$/i);
+      L.push(`${tm ? "tone:    " + tm[1].replace(/\s+/g, "") : "chant:   " + nm}${i > 0 && c.from ? " from " + c.from : ""}`);
+    });
+    if (p.intonation && (p.intonation === "every") !== intoneDefault(p) && p.chants.some(c => /^tone[:\s]/i.test(c.name))) L.push(`intonation: ${p.intonation === "every" ? "every verse" : "first verse"}`);
+    if (optionalVerses(p.spec).length && p.optional != null && p.optional !== !!D.parish.optional) L.push(`optional: ${p.optional ? "yes" : "no"}           # ${p.optional ? "sing" : "leave out"} the verses in brackets`);
+    if (p.daggers) L.push(`daggers: ${p.daggers.length ? p.daggers.join(", ") : "none"}            # this Sunday's †, in place of the text's`);
+  });
+  if (B.gloria !== "auto") L.push(`gloria:  ${B.gloria}`);
+  if (!B.reprint) L.push("reprint: no");
+  if (B.sung) L.push("sung:    yes");
+  const svc = B.mode === "psalm" ? [] : svcLines();
+  if (svc.length) L.push("", "# The rest of the service (for the email to the parish office)", ...svc);
+  return L.join("\n") + "\n";
+}
+function parseSunday(text) {
+  B.psalms = []; B.service = "Eucharist"; B.gloria = "auto"; B.reprint = true; B.sung = false; B.svc = {}; B.also = ""; B.note = ""; B.lead = "";
+  const alsoL = [], noteL = [], seqL = [];
+  text.split("\n").forEach(raw => {
+    const line = raw.split("#")[0].trim(); if (!line) return;
+    const i = line.indexOf(":"); if (i < 0) return;
+    const k = line.slice(0, i).trim().toLowerCase(), v = line.slice(i + 1).trim();
+    if (k === "service") B.service = v;
+    else if (k === "gloria") B.gloria = /^(y|yes|true|on)$/i.test(v) ? "yes" : "no";
+    else if (k === "reprint") B.reprint = !/^(n|no|false|off)$/i.test(v);
+    else if (k === "sung") B.sung = /^(y|yes|true|on)$/i.test(v);
+    else if (k === "psalm") B.psalms.push({spec: v, chants: [], daggers: null});
+    else if (k === "intonation" && B.psalms.length) B.psalms[B.psalms.length - 1].intonation = /^(every|all|yes)/i.test(v) ? "every" : "first";
+    else if (k === "optional" && B.psalms.length) B.psalms[B.psalms.length - 1].optional = /^(y|yes|true|on|sing|include)$/i.test(v);
+    else if ((k === "daggers" || k === "dagger") && B.psalms.length) B.psalms[B.psalms.length - 1].daggers = /^(none|no|-)?$/i.test(v) ? [] : v.split(/[\s,]+/).map(x => parseInt(x.replace(/[^0-9]/g, ""))).filter(x => x);
+    else if (SVC_ALIAS[k] || SVC_KEYS.has(k)) { B.svc[SVC_ALIAS[k] || k] = v; if (k !== "organist") seqL.push([SVC_ALIAS[k] || k, v]); }
+    else if (k === "also") { alsoL.push(v); seqL.push(["also", v]); }
+    else if (k === "note") noteL.push(raw.slice(raw.indexOf(":") + 1).trim());
+    else if (k === "lead") B.lead = (B.lead ? B.lead + " " : "") + raw.slice(raw.indexOf(":") + 1).trim();
+    else if ((k === "chant" || k === "tone") && B.psalms.length) { const m = v.match(/^(\S+)(?:\s+from\s+(\d+))?$/); if (m) B.psalms[B.psalms.length - 1].chants.push({name: m[1] === "???" ? "" : (k === "tone" ? "tone " + m[1] : m[1]), from: m[2] || ""}); }
+  });
+  B.also = alsoL.join("\n"); B.note = noteL.join("\n"); B.seq = seqL;
+  B.psalms.forEach(p => { if (!p.chants.length) p.chants.push({name: "", from: ""}); });
+  if (!B.psalms.length) B.psalms = [{spec: "", chants: [{name: "", from: ""}]}];
+}
+function specOf(id) {
+  let m = id.match(/^Psalm_(\d+)_Part_(\w+)$/); if (m) return `${+m[1]} Part ${m[2]}`;
+  m = id.match(/^Psalm_(\d+)_V_(\w+)$/); if (m) return `${+m[1]} ${m[2]}`;
+  m = id.match(/^Psalm_(\d+)$/); if (m) return String(+m[1]);
+  m = id.match(/^Canticle_(\d+)$/); return m ? "Canticle " + m[1] : id;
+}
+function buildThisPsalm(id) {
+  // the Psalm builder on its own: no date, no service, just this text and a chant
+  B.mode = "psalm"; try { localStorage.setItem("psalter-mode", "psalm"); } catch (e) {}
+  B.started = true; B.date = ""; B.label = ""; B.year = ""; B.service = "Eucharist"; B.existing = null; B.files = []; B.status = ""; B.log = ""; B.pdf = "";
+  B.name = id.toLowerCase().replace(/_/g, "-"); B.svc = {}; B.also = ""; B.note = ""; B.lead = ""; B.mail = null; B.sung = false;
+  B.psalms = [{spec: specOf(id), chants: [{name: "", from: ""}], daggers: null, open: true}];
+  document.querySelector('nav button[data-tab="builder"]').click();
+}
+async function setDate(date) {
+  if (!date) {                                    // no date: keep the psalm, drop the day
+    B.date = ""; B.label = ""; B.year = ""; B.existing = null; B.mail = null;
+    if (!B.name || /^\d{4}-/.test(B.name)) B.name = "psalm";
+    renderBuilder(); return;
+  }
+  B.date = date; B.sheet = null; B.name = date || (B.name && !/^\d{4}-/.test(B.name) ? B.name : "psalm"); B.status = ""; B.log = ""; B.files = []; B.existing = null; B.sung = false; B.pdf = "";
+  const c = calEntry(date);
+  B.label = c ? c.label : ""; B.year = c ? c.year : "";
+  const opts = c ? c.options.filter(o => o.texts.length) : [];
+  const pick = opts.find(o => o.track === "Track 2") || opts[0];
+  B.psalms = [{spec: pick ? pick.spec : "", chants: [{name: "", from: ""}], daggers: null}];
+  B.service = c && /Ash Wednesday|Good Friday|Maundy|Vigil/.test(c.label) ? c.label : "Eucharist";
+  prefillService(date);
+  B.mail = null;
+  if (SERVER) {
+    try { const j = await (await fetch("/api/sunday?name=" + encodeURIComponent(date))).json(); if (j.exists) B.existing = j.text; } catch (e) {}
+  }
+  renderBuilder();
+}
+const TONE_NAMES = ["1D", "1D2", "1f", "1g", "1g2", "1g3", "1a", "1a2", "1a3", "2D", "3b", "3a", "3a2", "3g", "3g2", "4g", "4E", "4c", "4A", "4A*", "4d", "5a", "6F", "6alt", "7a", "7b", "7c", "7c2", "7d", "8G", "8G*", "8c", "per"];
+function chantOptions() { return TONE_NAMES.map(t => `<option value="tone ${t}">plainchant psalm tone</option>`).join("") + D.chants.map(c => `<option value="${esc(c.id)}">${esc(keyName(c))}${val(c, "mood").length ? " · " + esc(val(c, "mood").join(", ")) : ""}</option>`).join(""); }
+function renderBuilder() {
+  if (!B.date && !B.started) { B.started = true; setDate(nextSunday()); return; }
+  B.started = true;
+  const c = calEntry(B.date);
+  const recent = recentChants(B.date);
+  const text = sundayText();
+  if (B.pdf && B.pdfText !== text) B.pdf = "";        // the PDF no longer matches: fall back to the quick preview
+  $("#tab-builder").innerHTML = `<div class="layout"><aside>
+      <h3>Planning</h3><div class="seg"><button class="${B.mode !== "psalm" ? "on" : ""}" onclick="setMode('service')">Whole service</button><button class="${B.mode === "psalm" ? "on" : ""}" onclick="setMode('psalm')">Psalm only</button></div>
+      <h3>Day</h3><input type="date" id="bdate" value="${esc(B.date)}" style="width:100%">
+      <p class="hint" style="margin:6px 0">${c ? esc(c.label) + " · Year " + esc(c.year) : B.date ? "Not in the calendar: type the psalm yourself." : "No date: a psalm on its own (a rehearsal, a one-off). Name the file below."}${B.mode === "psalm" && B.date ? ` <span class="link" onclick="setDate('')">no date</span>` : ""}</p>
+      <h3>File name</h3><input type="text" id="bname" value="${esc(B.name)}" style="width:100%">
+      <p class="hint" style="margin:4px 0">Use e.g. ${esc(B.date)}-midnight for a second service that day.</p>
+      <h3>Service</h3><select id="bservice">${[...new Set(SERVICES.concat([B.service]))].map(sv => `<option ${sv === B.service ? "selected" : ""}>${esc(sv)}</option>`).join("")}</select>
+      <h3>Gloria Patri</h3><select id="bgloria">${[["auto", "by service"], ["yes", "yes"], ["no", "no"]].map(([v, l]) => `<option value="${v}" ${B.gloria === v ? "selected" : ""}>${l}</option>`).join("")}</select>
+      <h3>Options</h3><label class="hint"><input type="checkbox" id="breprint" ${B.reprint ? "checked" : ""}> reprint chant at top of page</label><br>
+      <label class="hint"><input type="checkbox" id="bsung" ${B.sung ? "checked" : ""}> sung (confirmed): counts in the history</label>
+    </aside><div>
+    ${B.existing !== null ? `<div class="card"><b style="font-weight:normal">${esc(B.name)}.txt already exists.</b> <span class="link" onclick="loadExisting()">Load it</span> or carry on to replace it.</div>` : ""}
+    ${c && c.options.length ? `<div class="card"><h3 style="font-weight:normal;margin:0 0 6px">Appointed</h3>${c.options.map(o =>
+      `<div class="moodrow"><span class="link" onclick="usePsalm('${esc(o.spec)}')">${o.track ? esc(o.track) + ": " : ""}${/^\d/.test(o.spec) ? "Psalm " : ""}${esc(o.spec)}</span>
+       ${o.texts.length ? overlapMoods(o.texts, o.verses).map(m => chip(m)).join("") : `<span class="hint">${/^\d/.test(o.spec) ? esc(o.error || "no text yet") : "not in the library yet"}</span>`}</div>`).join("")}
+       <p class="hint" style="margin:6px 0 0">Click one to use it.${D.parish.name ? " " + esc(D.parish.name) + " uses" : " Default:"} Track ${esc(D.parish.track)} after Pentecost (parish.txt).</p></div>` : ""}
+    ${B.psalms.map((p, pi) => psalmBlock(p, pi, recent)).join("")}
+    <p><span class="link" onclick="addPsalm()">+ another psalm</span></p>
+    ${B.mode === "psalm" ? "" : serviceCard()}
+    <div class="card"><details ${B.previewOpen ? "open" : ""} ontoggle="B.previewOpen=this.open"><summary>Preview</summary>
+      ${SERVER ? `<p style="margin:8px 0"><button class="small" onclick="pdfPreview()">Exact PDF preview</button> <span class="hint">LilyPond takes a few seconds</span></p>` : ""}
+      ${B.pdf ? `<p style="margin:4px 0"><a href="/${encodeURI(B.pdf)}" target="_blank">Open the PDF in its own tab</a> · <span class="link" onclick="B.pdf=''; renderBuilder()">back to the quick preview</span></p>
+        <iframe src="/${encodeURI(B.pdf)}?t=${Date.now()}" style="width:100%;height:80vh;border:1px solid var(--line);border-radius:6px;background:#fff"></iframe>` : quickPreview()}
+    </details></div>
+    <div class="card"><h3 style="font-weight:normal;margin:0 0 6px">The file: ${esc(B.name)}.txt</h3>
+      <pre id="bfile" style="font: 14px/1.5 ui-monospace, Menlo, Consolas, monospace; white-space: pre-wrap; margin:0">${esc(text)}</pre>
+      <p style="margin:10px 0 0">
+        <button class="small primary" onclick="saveSunday()">${SERVER ? "Save" : "Save file…"}</button>
+        ${SERVER ? `<button class="small" onclick="checkSunday()">Save &amp; check</button>
+        <button class="small primary" onclick="buildSunday(false)">Save &amp; build PDF + images</button>
+        <button class="small" onclick="buildSunday(true)">PDF only</button>` : ""}
+      </p>
+      ${SERVER ? "" : `<p class="hint">Saving writes parish/sundays/${esc(B.name)}.txt (Chrome/Edge) or downloads it. To check and build from here, open the browser with the Psalter launcher (or <code>python tools/serve.py</code>).</p>`}
+      ${B.status ? `<p><b style="font-weight:normal">${esc(B.status)}</b></p>` : ""}
+      ${B.log ? `<pre style="font: 13px/1.45 ui-monospace, Menlo, Consolas, monospace; white-space: pre-wrap; background: var(--bg); padding: 8px; border-radius: 6px">${esc(B.log)}</pre>` : ""}
+      ${B.files.length ? `<p>${B.files.map(f => `<a href="/${encodeURI(f)}" target="_blank">${esc(f.split("/").pop())}</a>`).join(" · ")}</p>` : ""}
+    </div>
+    ${B.mode === "psalm" ? "" : mailCard()}
+    </div></div>
+    <datalist id="chantlist">${chantOptions()}</datalist>
+    ${repLists()}`;
+  $("#bdate").onchange = e => setDate(e.target.value);
+  $("#bname").onchange = e => { B.name = e.target.value.trim() || B.date || "psalm"; renderBuilder(); };
+  $("#bservice").onchange = e => {
+    B.service = e.target.value;
+    const keep = new Set(slotsOf(curOrder()).map(x => x.key));          // drop service music the new order doesn't have
+    Object.keys(B.svc).forEach(k => { const sl = anySlot(k); if (sl && sl.kind === "service" && !keep.has(k)) delete B.svc[k]; });
+    carryService(); renderBuilder();
+  };
+  $("#bgloria").onchange = e => { B.gloria = e.target.value; renderBuilder(); };
+  $("#breprint").onchange = e => { B.reprint = e.target.checked; renderBuilder(); };
+  $("#bsung").onchange = e => { B.sung = e.target.checked; renderBuilder(); };
+}
+
+// pointed text as HTML
+function pointedLine(t) {
+  // mark the pointing with placeholders first, then escape, then turn placeholders into markup
+  t = t.replace(/(\S+)- \| -(\S+)/g, "$1\u0001$2").replace(/(\S+)- \| (\S+)/g, "$1-\u0001$2")
+       .replace(/(\S+)- \. -(\S+)/g, "$1\u0004$2")
+       .replace(/(^|\s)\|\s/g, "$1\u0001").replace(/\s\.\s/g, " \u0004 ")
+       .replace(/=([^\s\u0001]+)/g, "\u0002$1\u0003");
+  let h = esc(t).replace(/&quot;/g, '"');
+  h = h.replace(/(^|[\s\u0001\u0002])"(?=\S)/g, "$1“").replace(/"/g, "”").replace(/(^|[\s\u0001\u0002])'(?=\w)/g, "$1‘").replace(/'/g, "’");
+  h = h.replace(/\bLORD/g, 'L<span class="sc">ord</span>').replace(/\bGOD\b/g, 'G<span class="sc">od</span>');
+  return h.replace(/\u0001/g, '<span class="pbar"></span>').replace(/\u0004/g, "·")
+          .replace(/\u0002/g, '<span class="held">').replace(/\u0003/g, "</span>");
+}
+function pointedHTML(body, verses, pi) {
+  // pi given: the verse numbers can be clicked to put a † on the verse or take it off (this Sunday only)
+  const vn = (n, dag) => pi === undefined || n === "" ? `<span class="vn">${dag ? "† " : ""}${esc(n)}</span>`
+    : `<span class="vn vclick" title="click: † on this verse or off (this file only)" onclick="toggleDagger(${pi}, ${n})">${dag ? "† " : ""}${esc(n)}</span>`;
+  return '<div class="ptext">' + body.filter(v => !verses || verses.includes(v[0]) || v[0] === "").map(([n, dag, lines]) =>
+    `<div class="v">${lines.map((l, i) => `<div class="${i === 0 ? "" : l[2] ? "wrap" : l[1] === 2 ? "l2" : "l1"}">${i === 0 ? vn(n, dag) : ""}${pointedLine(l[0])}</div>`).join("")}</div>`).join("") + "</div>";
+}
+// second-half repeats (†): the text's own, or this Sunday's
+function textDaggers(res) { return textBody(res).flatMap(seg => seg.body.filter(v => v[1]).map(v => v[0])); }
+function withDaggers(body, daggers) { return daggers ? body.map(v => [v[0], daggers.includes(v[0]) ? 1 : 0, v[2]]) : body; }
+function toggleDagger(pi, n) {
+  const p = B.psalms[pi], res = resolveSpec(p.spec, optOf(p));
+  const orig = textDaggers(res), cur = new Set(p.daggers || orig);
+  cur.has(n) ? cur.delete(n) : cur.add(n);
+  const list = [...cur].sort((a, b) => a - b);
+  p.daggers = list.join() === orig.slice().sort((a, b) => a - b).join() ? null : list;
+  p.open = true; renderBuilder();
+}
+function fitReport(p, pi) {
+  // the same check as the build: does each double-chant section come out even?
+  const res = resolveSpec(p.spec, optOf(p)); if (!res.length) return "";
+  const verses = textBody(res).flatMap(seg => withDaggers(seg.body, p.daggers)).filter(v => v[0] !== "");
+  let chants = p.chants.filter(c => c.name).map((c, i) => ({name: c.name, from: i === 0 ? verses[0][0] : +c.from}));
+  if (!chants.length) { const prev = B.psalms.slice(0, pi).reverse().map(q => q.chants.filter(c => c.name).pop()).find(Boolean); if (prev) chants = [{name: prev.name, from: verses[0][0]}]; }
+  const out = [];
+  chants.forEach((c, i) => {
+    const to = i + 1 < chants.length ? chants[i + 1].from : 1e9, ch = C[c.name];
+    const vs = verses.filter(v => v[0] >= c.from && v[0] < to);
+    if (!ch || !vs.length) return;
+    if (!ch.double) { if (vs.some(v => v[1])) out.push(`<span class="warn">⚠ † in a single chant (${esc(c.name)}): sung as ordinary verses</span>`); return; }
+    let half = 1; const probs = [];
+    vs.forEach(v => { if (v[1]) { if (half !== 1) probs.push(`† at v. ${v[0]} falls on the second half`); return; } half = half === 1 ? 2 : 1; });
+    if (half !== 1) probs.push("ends in the middle of the chant: put a † on one verse (click its number in the text)");
+    out.push(probs.length ? `<span class="warn">⚠ ${esc(c.name)}: ${probs.join("; ")}</span>` : `<span class="hint">✓ the verses fit ${esc(c.name)} (double)</span>`);
+  });
+  return out.join("<br>");
+}
+function textBody(res) {
+  return res.map(r => ({id: r.id, title: TX[r.id].title, body: TX[r.id].body.filter(v => !r.verses || r.verses.includes(v[0]))}));
+}
+
+// quick preview of the whole page, without LilyPond
+function quickPreview() {
+  const out = [];
+  let lastMusic = null;
+  const gl = B.gloria === "yes" || (B.gloria === "auto" && /office|evensong|morning prayer|evening prayer/i.test(B.service));
+  B.psalms.forEach((p, pi) => {
+    const res = resolveSpec(p.spec, optOf(p)); if (!res.length) return;
+    const chants = p.chants.filter(c => c.name).map((c, i) => ({name: c.name, from: i === 0 ? null : +c.from || null}));
+    if (!chants.length && lastMusic) chants.push({name: lastMusic, from: null});
+    textBody(res).map(seg => ({...seg, body: withDaggers(seg.body, p.daggers)})).forEach((seg, si) => {
+      seg.body.forEach((v, vi) => {
+        const starts = chants.filter((c, i) => (i === 0 && pi >= 0 && si === 0 && vi === 0) || (c.from === v[0]));
+        starts.forEach(c => { out.push(musicHTML(c.name)); lastMusic = c.name; });
+        if (vi === 0) out.push(`<h2 style="font-weight:normal;margin:10px 0 0">${esc(seg.title)} <span class="latin">${esc(TX[seg.id].latin)}</span></h2>`);
+        out.push(pointedHTML([v]));
+      });
+    });
+  });
+  if (gl && D.gloria.length) out.push(pointedHTML(D.gloria));
+  return out.join("") || '<p class="hint">Choose a psalm to see it here.</p>';
+}
+function musicHTML(name) {
+  const tm = name.match(/^tone[:\s]+(.+)$/i);
+  if (tm) return `<div class="pv-music"><div class="pv-credit">Tone ${esc(tm[1])}</div><p class="hint">(The tone and the first verse set to it appear in the PDF.)</p></div>`;
+  const c = C[name];
+  if (!c) return `<p class="hint">${esc(name)}: not in the catalog</p>`;
+  return `<div class="pv-music"><div class="pv-credit">${esc(c.composer)}${c.years ? " (" + esc(c.years) + ")" : ""}</div>
+    ${c.img ? `<img src="notation/${encodeURIComponent(c.id)}.png" alt="${esc(c.id)}">` : esc(c.id)}</div>`;
+}
+async function pdfPreview() {
+  if (!(await saveSunday())) return;
+  B.status = "Making the PDF preview…"; B.log = ""; B.pdf = ""; renderBuilder();
+  const j = await post("/api/build", {name: B.name, pdfOnly: true});
+  B.status = j.ok ? "" : "The build stopped:"; B.log = j.ok ? "" : (j.log || j.error);
+  B.pdf = j.ok ? (j.files || []).find(f => f.endsWith(".pdf")) || "" : "";
+  B.pdfText = sundayText();
+  B.files = j.files || [];
+  B.previewOpen = true; renderBuilder();
+}
+
+// chant picker
+const P = {pi: 0, ci: 0, q: "", moods: new Set(), mode: "", key: "", sd: "", minRating: 0, sort: "match"};
+function openPicker(pi, ci) {
+  P.pi = pi; P.ci = ci;
+  dlg.classList.add("wide");
+  renderPicker(); dlg.showModal();
+}
+function renderPicker() {
+  const p = B.psalms[P.pi];
+  const res = resolveSpec(p.spec, optOf(p));
+  const mood = overlapMoods(res.map(r => r.id), res.length && res[0].verses);
+  const recent = recentChants(B.date);
+  let list = D.chants.map(c => ({c, ...score(mood, val(c, "mood"))})).filter(({c}) => {
+    const m = val(c, "mood"), r = val(c, "rating") || 0;
+    if (P.q && !(c.id + " " + c.composer).toLowerCase().includes(P.q)) return false;
+    if (P.moods.size && ![...P.moods].some(t => m.includes(t))) return false;
+    if (P.mode === "other" ? ["Major", "Minor"].includes(c.mode) : P.mode && c.mode !== P.mode) return false;
+    if (P.key && keyName(c) !== P.key) return false;
+    if (P.sd && (P.sd === "d") !== c.double) return false;
+    return r >= P.minRating;
+  });
+  const by = {
+    match: (a, b) => b.s - a.s || (val(b.c, "rating") || 0) - (val(a.c, "rating") || 0) || lastUsed(a.c.id).localeCompare(lastUsed(b.c.id)),
+    stale: (a, b) => lastUsed(a.c.id).localeCompare(lastUsed(b.c.id)),
+    rating: (a, b) => (val(b.c, "rating") || 0) - (val(a.c, "rating") || 0),
+    key: (a, b) => keyRank(a.c, false) - keyRank(b.c, false),
+    fifths: (a, b) => keyRank(a.c, true) - keyRank(b.c, true),
+    composer: (a, b) => a.c.id.localeCompare(b.c.id, undefined, {numeric: true}),
+  }[P.sort];
+  list.sort((a, b) => by(a, b) || a.c.id.localeCompare(b.c.id, undefined, {numeric: true}));
+  $("#dlgbody").innerHTML = `<h2 style="font-weight:normal;margin:6px 0">Choose a chant for ${esc(p.spec ? "Psalm " + p.spec : "this psalm")}
+      ${mood.length ? '<span style="font-size:15px">' + mood.map(m => chip(m)).join(" ") + "</span>" : ""}</h2>
+    <div class="pick"><div>
+      <input type="search" id="pq" placeholder="Composer or chant" value="${esc(P.q)}" style="width:100%">
+      <h3 class="hint" style="margin:10px 0 4px">Mood</h3>${D.vocabulary.map(g => `<div class="row" style="margin-bottom:5px">${g.tags.map(t =>
+        `<button class="chip g-${esc(g.group)} ${P.moods.has(t) ? "on" : ""}" data-pm="${esc(t)}">${esc(t)}</button>`).join("")}</div>`).join("")}
+      <h3 class="hint" style="margin:10px 0 4px">Key</h3><select id="pkey"><option value="">any</option>${KEYS_PRESENT.map(k => `<option ${P.key === k ? "selected" : ""}>${esc(k)}</option>`).join("")}</select>
+      <h3 class="hint" style="margin:10px 0 4px">Mode</h3><select id="pmode"><option value="">any</option>${["Major", "Minor"].map(m => `<option ${P.mode === m ? "selected" : ""}>${m}</option>`).join("")}<option value="other" ${P.mode === "other" ? "selected" : ""}>modal / other</option></select>
+      <h3 class="hint" style="margin:10px 0 4px">Single or double</h3><select id="psd"><option value="">either</option><option value="s" ${P.sd === "s" ? "selected" : ""}>single</option><option value="d" ${P.sd === "d" ? "selected" : ""}>double</option></select>
+      <h3 class="hint" style="margin:10px 0 4px">Rating at least</h3><select id="prt"><option value="0">any</option>${[1, 2, 3, 4, 5].map(n => `<option ${P.minRating === n ? "selected" : ""}>${n}</option>`).join("")}</select>
+      <h3 class="hint" style="margin:10px 0 4px">Sort</h3><select id="psort">${[["match", "best match"], ["stale", "longest since used"], ["rating", "rating"], ["key", "key (C, D♭, D …)"], ["fifths", "key (circle of fifths)"], ["composer", "composer"]].map(([v, l]) => `<option value="${v}" ${P.sort === v ? "selected" : ""}>${l}</option>`).join("")}</select>
+      <h3 class="hint" style="margin:14px 0 4px">Or a plainchant tone</h3><select id="ptone"><option value="">choose…</option>${TONE_NAMES.map(t => `<option>${t}</option>`).join("")}</select>
+    </div><div>
+      <p class="count">${list.length} chants</p>
+      ${list.slice(0, 80).map(({c, hits}) => `<div class="item">
+        <button class="small primary" style="float:right;margin-left:6px" onclick="pickChant('${esc(c.id)}')">Use</button>
+        <button class="small play" onclick="play('${esc(c.id)}', this)">▶ Play</button>
+        <b style="font-weight:normal;font-size:19px">${esc(c.id)}</b> <span class="who">${esc(c.composer)}</span>
+        <div class="facts"><b>${esc(keyName(c))}</b> · ${c.double ? "double" : "single"} ${stars(val(c, "rating"))} · last used ${esc(lastUsed(c.id) || "never")}${recent.has(c.id) ? " <b>(recent)</b>" : ""}</div>
+        <div class="moodrow">${val(c, "mood").map(t => chip(t, hits.includes(t) ? "on" : "")).join("")}</div>
+        ${c.img ? `<img loading="lazy" src="notation/${encodeURIComponent(c.id)}.png" alt="">` : ""}
+        ${val(c, "notes") ? `<div class="notes" style="font-size:15px">${esc(val(c, "notes"))}</div>` : ""}
+      </div>`).join("")}
+      ${list.length > 80 ? '<p class="hint">Showing the first 80: narrow the filters to see others.</p>' : ""}
+    </div></div>`;
+  $("#pq").oninput = e => { P.q = e.target.value.toLowerCase(); renderPicker(); setTimeout(() => { const el = $("#pq"); el.focus(); el.setSelectionRange(el.value.length, el.value.length); }, 0); };
+  document.querySelectorAll("[data-pm]").forEach(b => b.onclick = () => { const t = b.dataset.pm; P.moods.has(t) ? P.moods.delete(t) : P.moods.add(t); renderPicker(); });
+  $("#pkey").onchange = e => { P.key = e.target.value; renderPicker(); };
+  $("#pmode").onchange = e => { P.mode = e.target.value; renderPicker(); };
+  $("#psd").onchange = e => { P.sd = e.target.value; renderPicker(); };
+  $("#prt").onchange = e => { P.minRating = +e.target.value; renderPicker(); };
+  $("#psort").onchange = e => { P.sort = e.target.value; renderPicker(); };
+  $("#ptone").onchange = e => { if (e.target.value) pickChant("tone " + e.target.value); };
+}
+function pickChant(id) {
+  stopPlay();
+  B.psalms[P.pi].chants[P.ci].name = id;
+  dlg.close(); dlg.classList.remove("wide");
+  renderBuilder();
+}
+async function useInBuilder(id) {
+  if (!B.started) { B.started = true; await setDate(nextSunday()); }      // the builder not opened yet: start it first
+  const cs = B.psalms[0].chants; const slot = cs.find(c => !c.name) || cs[0]; slot.name = id;
+  document.querySelector('nav button[data-tab="builder"]').click();
+}
+
+function psalmBlock(p, pi, recent) {
+  const res = resolveSpec(p.spec, optOf(p)), opt = optionalVerses(p.spec);
+  const mood = overlapMoods(res.map(r => r.id), res.length && res[0].verses);
+  const sg = mood.length ? D.chants.map(ch => ({ch, ...score(mood, val(ch, "mood"))})).filter(x => x.s > 0 && !recent.has(x.ch.id))
+    .sort((a, b) => b.s - a.s || (val(b.ch, "rating") || 0) - (val(a.ch, "rating") || 0) || lastUsed(a.ch.id).localeCompare(lastUsed(b.ch.id))).slice(0, 8) : [];
+  return `<div class="card">
+    <div class="moodrow">Psalm <input type="text" value="${esc(p.spec)}" placeholder="e.g. 70, 72:1-7,18-19, 119 Aleph" style="width:260px"
+      onchange="B.psalms[${pi}].spec=this.value; renderBuilder()">
+      ${res.length ? res.map(r => `<span class="link" onclick="goText('${esc(r.id)}')">${esc(TX[r.id].title)}</span>`).join(", ") : (p.spec ? '<span class="hint">no matching text</span>' : "")}
+      ${mood.map(m => chip(m)).join("")}
+      ${B.psalms.length > 1 ? `<span class="link" style="margin-left:auto" onclick="B.psalms.splice(${pi},1); renderBuilder()">remove</span>` : ""}</div>
+    ${p.chants.some(c => /^tone[:\s]/i.test(c.name)) ? `<div class="moodrow"><label class="hint"><input type="checkbox" ${intoneEvery(p) ? "checked" : ""} onchange="B.psalms[${pi}].intonation=this.checked ? 'every' : 'first'; renderBuilder()"> sing the tone's intonation on every verse (otherwise on verse 1 only)</label></div>` : ""}
+    ${opt.length ? `<div class="moodrow"><label class="hint"><input type="checkbox" ${optOf(p) ? "checked" : ""} onchange="B.psalms[${pi}].optional=this.checked; renderBuilder()"> sing the optional verses (${esc(opt.length > 1 ? "vv. " + opt[0] + "–" + opt[opt.length - 1] : "v. " + opt[0])}, in brackets in the lectionary)</label></div>` : ""}
+    ${res.length ? `<details ${p.open ? "open" : ""} ontoggle="B.psalms[${pi}].open=this.open"><summary>The text</summary>
+      <p class="hint" style="margin:6px 0 0">Click a verse number to put a † (second half again) on it or take it off, for this file only (the psalm text keeps its own).${p.daggers ? ` <span class="link" onclick="B.psalms[${pi}].daggers=null; renderBuilder()">back to the text's own †</span>` : ""}</p>
+      ${textBody(res).map(seg => `<div class="hint" style="margin-top:6px">${esc(seg.title)}</div>` + pointedHTML(withDaggers(seg.body, p.daggers), null, pi)).join("")}</details>` : ""}
+    ${p.chants.map((c, ci) => {
+      const ch = C[c.name];
+      return `<div class="moodrow">${ci === 0 ? "Chant" : "then"} <input type="text" list="chantlist" value="${esc(c.name)}" placeholder="chant, or e.g. tone 7a" style="width:170px"
+        onchange="B.psalms[${pi}].chants[${ci}].name=this.value.trim(); renderBuilder()">
+        <button class="small" onclick="openPicker(${pi}, ${ci})">Choose…</button>
+        ${ci > 0 ? `from verse <input type="text" value="${esc(c.from)}" style="width:50px" onchange="B.psalms[${pi}].chants[${ci}].from=this.value.trim(); renderBuilder()">` : ""}
+        ${/^tone[:\s]/i.test(c.name) ? '<span class="hint">plainchant psalm tone (Liber Usualis)</span>' : ""}
+        ${ch ? `<span class="hint">${esc(keyName(ch))}, ${ch.double ? "double" : "single"} · last used ${esc(lastUsed(ch.id) || "never")}</span>
+          <span class="link" onclick="showChant('${esc(ch.id)}')">see</span>` : (c.name && !/^tone[:\s]/i.test(c.name)) ? '<span class="hint">not in the catalog</span>' : ""}
+        ${ci > 0 ? `<span class="link" onclick="B.psalms[${pi}].chants.splice(${ci},1); renderBuilder()">remove</span>` : ""}</div>`;
+    }).join("")}
+    <p style="margin:4px 0"><span class="link" onclick="B.psalms[${pi}].chants.push({name:'',from:''}); renderBuilder()">+ change chant partway</span></p>
+    ${res.length ? `<div style="margin:2px 0 6px">${fitReport(p, pi)}${(() => { const d = p.daggers || textDaggers(res); return `<div class="hint">† ${d.length ? "on v. " + d.join(", ") : "on no verse"}${p.daggers ? " (moved for this Sunday)" : " (as marked in the text)"} · <span class="link" onclick="B.psalms[${pi}].open=true; renderBuilder()">change</span></div>`; })()}</div>` : ""}
+    ${sg.length ? `<div class="used">Suggestions (moods match, not used in the last 12 weeks): ${sg.map(x =>
+      `<span class="link" onclick="useChant(${pi}, '${esc(x.ch.id)}')">${esc(x.ch.id)}</span>`).join(" · ")}</div>`
+      : mood.length ? '<p class="hint">No chant shares these moods yet. Tag chants on the Chants tab.</p>' : ""}
+  </div>`;
+}
+function usePsalm(spec) { B.psalms[0].spec = spec; renderBuilder(); }
+function addPsalm() { B.psalms.push({spec: "", chants: [{name: "", from: ""}]}); renderBuilder(); }
+function useChant(pi, id) { const cs = B.psalms[pi].chants; const slot = cs.find(c => !c.name) || cs[0]; slot.name = id; renderBuilder(); }
+function loadExisting() { parseSunday(B.existing); B.existing = null; renderBuilder(); }
+async function saveSunday() {
+  const text = sundayText();
+  if (SERVER) {
+    const j = await post("/api/sunday", {name: B.name, text});
+    B.status = j.ok ? "Saved " + j.path : "Could not save: " + j.error; B.existing = null; renderBuilder(); return j.ok;
+  }
+  try {
+    if ("showSaveFilePicker" in window) {
+      const h = await window.showSaveFilePicker({suggestedName: B.name + ".txt", types: [{description: "Sunday file", accept: {"text/plain": [".txt"]}}]});
+      const w = await h.createWritable(); await w.write(text); await w.close();
+      B.status = "Saved " + h.name + " (it belongs in the sundays folder).";
+    } else {
+      const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], {type: "text/plain"})); a.download = B.name + ".txt"; a.click();
+      B.status = "Downloaded " + B.name + ".txt: move it into the sundays folder.";
+    }
+  } catch (e) { if (e.name !== "AbortError") B.status = "Could not save: " + e.message; }
+  renderBuilder();
+}
+async function checkSunday() {
+  if (!(await saveSunday())) return;
+  B.status = "Checking…"; renderBuilder();
+  const j = await post("/api/check", {name: B.name});
+  B.status = j.ok ? "Checks done." : "Problem:"; B.log = j.log || j.error; renderBuilder();
+}
+async function buildSunday(pdfOnly) {
+  if (!(await saveSunday())) return;
+  B.status = "Building… (LilyPond takes a little while)"; B.log = ""; B.files = []; renderBuilder();
+  const j = await post("/api/build", {name: B.name, pdfOnly});
+  B.status = j.ok ? "Built." : "The build stopped:"; B.log = j.log || j.error; B.files = j.files || [];
+  if (j.ok && !pdfOnly) B.builtText = sundayText();
+  renderBuilder();
+}
+
+
+// ---------- the rest of the service, and the weekly email ----------
+const SV = D.service || {orders: {}, hymnals: {}, repertoire: {}, hymnHistory: {}, anthems: [], byDate: {}, email: {}};
+const REP = SV.repertoire || {};
+const ORDER_NAMES = Object.keys(SV.orders);
+const SVC_KEYS = new Set(["organist"].concat(...Object.values(SV.orders).map(o => o.map(s => s.key))));
+const SVC_ALIAS = {"gloria-in-excelsis": "gloria in excelsis", "lamb of god": "agnus dei", "agnus": "agnus dei", "sanctus & benedictus": "sanctus",
+  "opening hymn": "opening", "closing hymn": "closing", "gradual hymn": "gradual", "offertory hymn": "offertory", "offertory anthem": "offertory",
+  "communion anthem": "communion", "communion hymn": "communion"};
+const BOOKS = {EH1982: "EH1982", H82: "EH1982", EH: "EH1982", HYMNAL1982: "EH1982", LEVAS: "LEVAS", LEVAS2: "LEVAS", LEVASII: "LEVAS", WLP: "WLP", EH1940: "EH1940", EH1928: "EH1928"};
+function orderFor(service, label) {
+  const first = ORDER_NAMES[0];
+  for (const want of [service && service !== "Eucharist" ? service : "", label || ""]) {
+    if (!want) continue;
+    const exact = ORDER_NAMES.find(n => n.toLowerCase() === want.toLowerCase()); if (exact) return exact;
+    const part = ORDER_NAMES.find(n => n !== first && want.toLowerCase().includes(n.toLowerCase())); if (part) return part;
+  }
+  return first;
+}
+const curOrder = () => orderFor(B.service, B.label);
+const slotsOf = o => SV.orders[o] || SV.orders[ORDER_NAMES[0]] || [];
+const anySlot = k => slotsOf(curOrder()).find(s => s.key === k) || Object.values(SV.orders).flat().find(s => s.key === k);
+function hymnOf(v) {
+  const m = String(v || "").trim().match(/^(?:([A-Za-z][A-Za-z0-9]*)\s+)?(S\s?\d{1,3}|\d{1,3}[a-z]?)\.?(?:\s*\(([A-Za-z][A-Za-z0-9]*)\))?(?:\s+(.+))?$/);
+  if (!m || (m[4] && m[4].includes(" - "))) return null;
+  const b = (m[1] || m[3] || "EH1982").toUpperCase(); if (!BOOKS[b]) return null;
+  const book = BOOKS[b], number = m[2].replace(" ", "");
+  return {book, number, title: (m[4] || "").trim() || (SV.hymnals[book] || {})[number] || "", service: number.startsWith("S")};
+}
+function hymnsOf(v) {
+  v = String(v || "").trim(); if (!v) return [];
+  const parts = v.split(/\s*[;,]\s*/).filter(Boolean);
+  if (parts.length > 1) { const hs = parts.map(hymnOf); if (hs.every(Boolean)) return hs; }
+  const h = hymnOf(v); return h ? [h] : [];
+}
+const normT = s => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+function splitPiece(v) { const i = String(v).lastIndexOf(" - "); return i < 0 ? [String(v).trim(), ""] : [v.slice(0, i).trim(), v.slice(i + 3).trim()]; }
+function findAnthem(v) {
+  const [t, comp] = splitPiece(v);
+  const hits = SV.anthems.filter(a => normT(a.title) === normT(t));
+  const sur = x => (x.replace(/\(.*?\)/g, "").trim().split(/\s+/).pop() || "").toLowerCase();
+  return (hits.length > 1 && comp ? hits.find(a => sur(a.composer) === sur(comp)) : null) || hits[0] || null;
+}
+const family = s => s.kind === "anthem" ? "anthem" : (s.key === "prelude" || s.key === "postlude") ? "organ" : s.key;
+const sid = k => k.replace(/[^a-z0-9]/gi, "_");
+const isSeq = () => slotsOf(curOrder()).some(s => s.repeat);
+function svcLines() {
+  const L = [], done = new Set(["organist"]);
+  const pad = k => (k + ":").padEnd(Math.max(11, k.length + 2));
+  if ((B.svc.organist || "").trim()) L.push(pad("organist") + B.svc.organist.trim());
+  if (isSeq()) {                              // a service in a free order (Lessons and Carols): the list as it stands
+    (B.seq || []).forEach(([k, v]) => { if ((v || "").trim()) L.push(pad(k) + v.trim()); });
+    if ((B.lead || "").trim()) L.push(pad("lead") + B.lead.trim().replace(/\s*\n\s*/g, " "));
+    B.note.split("\n").map(x => x.trim()).filter(Boolean).forEach(x => L.push(pad("note") + x));
+    return L;
+  }
+  slotsOf(curOrder()).forEach(s => { done.add(s.key); const v = (B.svc[s.key] || "").trim(); if (v) L.push(pad(s.key) + v); });
+  Object.keys(B.svc).forEach(k => { const v = (B.svc[k] || "").trim(); if (!done.has(k) && v) L.push(pad(k) + v); });
+  if ((B.lead || "").trim()) L.push(pad("lead") + B.lead.trim().replace(/\s*\n\s*/g, " "));
+  B.also.split("\n").map(x => x.trim()).filter(Boolean).forEach(x => L.push(pad("also") + x));
+  B.note.split("\n").map(x => x.trim()).filter(Boolean).forEach(x => L.push(pad("note") + x));
+  return L;
+}
+function prefillService(date) {
+  B.svc = {}; B.also = ""; B.note = ""; B.lead = ""; B.showOpt = new Set(); B.seq = [];
+  const e = SV.byDate[date];
+  if (e && e.order !== ORDER_NAMES[0]) B.service = e.order;
+  if (e) e.items.forEach(([k, v]) => {
+    if (k === "lead") B.lead = v; else if (k === "note") B.note += (B.note ? "\n" : "") + v;
+    else { if (k === "also") B.also += (B.also ? "\n" : "") + v; else B.svc[k] = v; if (k !== "organist") B.seq.push([k, v]); }
+  });
+  carryService();
+}
+function carryService() {
+  const prev = previousService(B.date, curOrder());
+  slotsOf(curOrder()).forEach(s => { if (s.kind === "service" && !B.svc[s.key] && prev.svc[s.key]) B.svc[s.key] = prev.svc[s.key]; });
+  if (!B.svc.organist && prev.svc.organist) B.svc.organist = prev.svc.organist;
+}
+function previousService(date, order) {
+  const keys = slotsOf(order).filter(s => s.kind === "service").map(s => s.key);
+  const d = Object.keys(SV.byDate).filter(x => x < date && SV.byDate[x].order === order && SV.byDate[x].items.some(([k]) => keys.includes(k))).sort().pop();
+  const svc = {}; if (d) SV.byDate[d].items.forEach(([k, v]) => svc[k] = v);
+  return {date: d || "", svc};
+}
+function slotHint(s, value) {
+  const v = (value !== undefined ? value : (B.svc[s.key] || "")).trim(); if (!v) return "";
+  const hs = s.kind === "music" ? [] : hymnsOf(v);
+  if (hs.length && !hs.every(h => h.service)) {
+    return hs.map(h => {
+      const sung = (SV.hymnHistory[h.book + " " + h.number] || []).filter(d => d < B.date).sort().reverse();
+      return `${hs.length > 1 ? esc(h.number) + ". " : ""}${h.title ? esc(h.title) : '<span class="warn">not in the ' + esc(h.book) + ' index: add the title after the number</span>'} <span class="hint">(${esc(h.book)})${sung.length ? " · sung " + sung.length + "×, last " + esc(sung[0]) : " · not sung here before"}</span>`;
+    }).join("<br>");
+  }
+  if (hs.length) {
+    const prev = previousService(B.date, curOrder());
+    const pv = prev.svc[s.key];
+    return `<span class="hint">${hs.length === 1 && hs[0].title ? esc(hs[0].title) + " · " : ""}${pv && pv !== v ? "a change from " + esc(pv) + " (" + esc(prev.date) + "): the email will mention it" : pv ? "same as last time" : "the email lists service music only when it changes"}</span>`;
+  }
+  const r = (REP[family(s)] || []).find(x => x[0] === v);
+  const before = r ? r[1].filter(d => d < B.date) : [];
+  return `<span class="hint">${before.length ? `done ${before.length}× before · last ${esc(before[before.length - 1])}` : "not done here before"}</span>`;
+}
+function anthemBox(k) {
+  const v = (B.svc[k] || "").trim();
+  if (!v || hymnsOf(v).length) return "";
+  const a = findAnthem(v), t = splitPiece(v)[0], id = sid(k);
+  return `<details ${a ? "" : "open"} style="margin:4px 0 8px"><summary class="hint">${a ? "Anthem text" + (a.source ? " (" + esc(a.source) + ")" : "") + ": goes into the email" : "No words on file for this piece yet: paste them here (or leave empty)"}</summary>
+    <input type="text" id="asrc-${id}" value="${esc(a ? a.source : "")}" placeholder="Where the words come from (optional), e.g. John 3:16" style="width:100%;margin:6px 0">
+    <textarea id="atxt-${id}" style="width:100%;height:${a ? Math.min(24, a.text.split("\n").length + 1) * 1.45 : 8}em;font-family:inherit;font-size:15px;line-height:1.45">${esc(a ? a.text : "")}</textarea>
+    ${SERVER ? `<button class="small" onclick="saveAnthem('${k}')">Save the words</button> <span class="hint">kept in parish/anthems/, used whenever ${esc(t)} comes round again</span>` : ""}</details>`;
+}
+async function saveAnthem(k) {
+  const id = sid(k), [title, composer] = splitPiece(B.svc[k]);
+  const source = $("#asrc-" + id).value.trim(), text = $("#atxt-" + id).value;
+  const j = await post("/api/anthem", {title, composer, source, text});
+  if (!j.ok) { alert(j.error || "could not save"); return; }
+  const a = findAnthem(B.svc[k]);
+  if (a) Object.assign(a, {source, text}); else SV.anthems.push({title, composer, source, text});
+  refreshSlot(k);
+}
+function wordsHint(s) {
+  const a = SV.anthems.find(x => x.file === s.words) || SV.anthems.find(x => normT(x.title) === normT(s.words));
+  return `<div class="hint">${a ? "Words in the email: " + esc(a.title) + (a.source ? " (" + esc(a.source) + ")" : "") : '<span class="warn">no words on file: add parish/anthems/' + esc(s.words) + '.txt</span>'}</div>`;
+}
+// what was sung on this day of the lectionary before: the same readings (three years ago, six…) first
+function beforeCard() {
+  const me = (SV.lect || {})[B.date]; if (!me) return "";
+  const prior = Object.keys(SV.byDate).filter(d => d < B.date && (SV.lect[d] || [])[0] === me[0]).sort().reverse();
+  if (!prior.length) return "";
+  const same = prior.filter(d => SV.lect[d][1] === me[1]), other = prior.filter(d => SV.lect[d][1] !== me[1]);
+  const one = (d, open) => {
+    const e = SV.byDate[d], items = e.items.filter(([k]) => !["organist", "note", "lead"].includes(k));
+    return `<details ${open ? "open" : ""} style="margin:4px 0"><summary>${esc(d)} <span class="hint">· ${esc(SV.lect[d][2])}, Year ${esc(SV.lect[d][1])}${e.order !== ORDER_NAMES[0] ? " · " + esc(e.order) : ""}</span></summary>
+      <ul style="margin:4px 0 2px 1.1em;padding:0">${(e.psalms || []).map(ps => `<li><span class="hint">Psalm:</span> ${esc(ps.replace(/\s*\(\)$/, ""))}</li>`).join("")}${items.map(([k, v]) => `<li>${itemText(e.order, k, v)}</li>`).join("")}</ul></details>`;
+  };
+  return `<div class="card"><h3 style="font-weight:normal;margin:0 0 4px">Before on ${esc(me[2])}</h3>
+    ${same.length ? `<div class="hint">With these readings (Year ${esc(me[1])}):</div>${same.map((d, i) => one(d, i === 0)).join("")}` : `<p class="hint" style="margin:0">Not with these readings (Year ${esc(me[1])}) since the record began.</p>`}
+    ${other.length ? `<div class="hint" style="margin-top:6px">The same day in other years:</div>${other.map(d => one(d, false)).join("")}` : ""}</div>`;
+}
+// a service in a free order: rows to add, change, move and remove
+function seqCard() {
+  const order = curOrder(), sl = slotsOf(order);
+  const prev = Object.keys(SV.byDate).filter(d => d < (B.date || "9999") && SV.byDate[d].order === order).sort().pop();
+  let n = 0;
+  const rows = (B.seq || []).map(([k, v], i) => {
+    const s = sl.find(x => x.key === k) || (k === "also" ? {key: "also", label: "Other", kind: "music"} : anySlot(k) || {key: k, label: k, kind: "music"});
+    if (s.kind === "lesson") n++;
+    const opts = sl.map(x => `<option value="${esc(x.key)}" ${x.key === k ? "selected" : ""}>${esc(x.label.replace(/\s*\{hymn\|anthem\}/, ""))}</option>`).join("") + `<option value="also" ${k === "also" ? "selected" : ""}>Other (as written)</option>`;
+    const list = s.kind === "lesson" ? "rep-lesson" : s.kind === "hymn" ? "" : "rep-" + sid(family(s));
+    const ph = {lesson: "e.g. Isaiah 40:1-11 (the summary comes from earlier years) or Isaiah 40:1-11 | summary", hymn: "hymn number, e.g. 102", anthem: "Title - Composer (dates), or a hymn number", music: "Title - Composer (dates)"}[s.kind] || "";
+    const hint = s.kind === "lesson" ? lessonHint(v, n) : slotHint(s, v);
+    return `<div class="seqrow"><select onchange="B.seq[${i}][0]=this.value; renderBuilder()">${opts}</select>
+      <div><input type="text" value="${esc(v)}" ${list ? `list="${list}"` : ""} placeholder="${esc(ph)}" onchange="B.seq[${i}][1]=this.value.trim(); renderBuilder()" style="width:100%">
+        <div class="svhint">${hint}</div>${s.kind === "anthem" ? seqAnthemBox(i) : ""}</div>
+      <div class="seqbtn"><span class="link" title="move up" onclick="seqMove(${i},-1)">↑</span> <span class="link" title="move down" onclick="seqMove(${i},1)">↓</span> <span class="link" title="remove" onclick="B.seq.splice(${i},1); renderBuilder()">✕</span></div></div>`;
+  }).join("");
+  const adds = sl.filter(x => x.repeat || !(B.seq || []).some(([k]) => k === x.key));
+  return `<div class="card"><h3 style="font-weight:normal;margin:0 0 4px">The service <span class="hint">· ${esc(order)}, in the order it happens</span></h3>
+    <p class="hint" style="margin:0 0 8px">Add lessons, hymns and pieces in any order; ↑ ↓ move them. Lessons are numbered for you (The First Lesson…).${prev ? ` <span class="link" onclick="copySeq('${prev}')">Start from ${esc(prev)}'s order</span>` : ""}</p>
+    <div class="svrow"><label>Organist</label><div><input type="text" value="${esc(B.svc.organist || "")}" onchange="setSvc('organist', this.value)" style="width:120px"></div></div>
+    ${rows || '<p class="hint">Nothing yet.</p>'}
+    <p style="margin:8px 0" class="hint">add: ${adds.map(x => `<span class="link" onclick="B.seq.push(['${x.key}','']); renderBuilder()">${esc(x.label.replace(/\s*\{hymn\|anthem\}/, ""))}</span>`).join(" · ")} · <span class="link" onclick="B.seq.push(['also','']); renderBuilder()">other</span></p>
+    <div class="svrow"><label>Added to the opening line</label><div><input type="text" value="${esc(B.lead || "")}" style="width:100%" onchange="B.lead=this.value; refreshFile()"></div></div>
+    <div class="svrow"><label>Note for the email</label><div><textarea rows="2" style="width:100%" onchange="B.note=this.value; refreshFile()">${esc(B.note)}</textarea></div></div>
+    <datalist id="rep-lesson">${(SV.lessons || []).map(l => `<option value="${esc(l.reading)}">${esc(l.summary)}</option>`).join("")}</datalist>
+  </div>`;
+}
+function seqMove(i, d) { const j = i + d; if (j < 0 || j >= B.seq.length) return; [B.seq[i], B.seq[j]] = [B.seq[j], B.seq[i]]; renderBuilder(); }
+function copySeq(d) {
+  if (B.seq.length && !confirm("Replace this list with " + d + "'s?")) return;
+  B.seq = SV.byDate[d].items.filter(([k]) => !["organist", "note", "lead"].includes(k)).map(([k, v]) => [k, v]); renderBuilder();
+}
+const ORD = ["First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth", "Tenth", "Eleventh", "Twelfth"];
+function lessonKey(ref) { const m = String(ref).replace(/–/g, "-").match(/^\s*((?:\d\s*)?[A-Za-z]+)\s*(\d+)\s*:\s*(\d+)/); return m ? `${m[1].toLowerCase().replace(/ /g, "")} ${m[2]}:${m[3]}` : String(ref).trim().toLowerCase(); }
+function lessonHint(v, n) {
+  if (!(v || "").trim()) return "";
+  let [ref, summary] = v.split("|").map(x => x.trim());
+  if (!summary) { const hit = (SV.lessons || []).find(l => lessonKey(l.reading) === lessonKey(ref)); summary = hit ? hit.summary : ""; }
+  return `<span class="hint">The ${ORD[n - 1] || n + "th"} Lesson: ${esc(ref)}${summary ? " (" + esc(summary) + ")" : ' · <span class="warn">no summary yet: add one after a |</span>'}</span>`;
+}
+function seqAnthemBox(i) {
+  const v = (B.seq[i][1] || "").trim(); if (!v || hymnsOf(v).length) return "";
+  const a = findAnthem(v);
+  const [t] = splitPiece(v), id = "seq" + i;
+  return `<details style="margin:4px 0 8px"><summary class="hint">${a ? "Words" + (a.source ? " (" + esc(a.source) + ")" : "") + ": go into the email" : "No words on file yet: paste them here"}</summary>
+    <input type="text" id="asrc-${id}" value="${esc(a ? a.source : "")}" placeholder="Where the words come from (optional)" style="width:100%;margin:6px 0">
+    <textarea id="atxt-${id}" style="width:100%;height:${a ? Math.min(24, a.text.split("\n").length + 1) * 1.45 : 8}em;font-family:inherit;font-size:15px;line-height:1.45">${esc(a ? a.text : "")}</textarea>
+    ${SERVER ? `<button class="small" onclick="saveSeqAnthem(${i})">Save the words</button>` : ""}</details>`;
+}
+async function saveSeqAnthem(i) {
+  const [title, composer] = splitPiece(B.seq[i][1]), id = "seq" + i;
+  const source = $("#asrc-" + id).value.trim(), text = $("#atxt-" + id).value;
+  const j = await post("/api/anthem", {title, composer, source, text});
+  if (!j.ok) { alert(j.error || "could not save"); return; }
+  const a = findAnthem(B.seq[i][1]);
+  if (a) Object.assign(a, {source, text}); else SV.anthems.push({title, composer, source, text});
+  renderBuilder();
+}
+function serviceCard() {
+  if (!ORDER_NAMES.length) return "";
+  if (isSeq()) return seqCard();
+  const order = curOrder(), sl = slotsOf(order), prev = previousService(B.date, order);
+  const shown = sl.filter(s => !s.optional || B.svc[s.key] || B.showOpt.has(s.key));
+  const hidden = sl.filter(s => !shown.includes(s));
+  const others = Object.keys(B.svc).filter(k => k !== "organist" && !sl.some(s => s.key === k) && (B.svc[k] || "").trim());
+  const row = s => {
+    const list = s.kind === "hymn" || s.kind === "service" ? "" : "rep-" + sid(family(s));
+    const ph = {hymn: "hymn number(s), e.g. 390 or LEVAS 114", anthem: "hymn number, or Title - Composer (dates)", music: "Title - Composer (dates)", service: "e.g. S278"}[s.kind];
+    return `<div class="svrow"><label>${esc(s.label)}</label>
+      <div><input type="text" value="${esc(B.svc[s.key] || "")}" ${list ? `list="${list}"` : ""} placeholder="${ph}" onchange="setSvc('${s.key}', this.value)" style="width:100%">
+      <div id="sh-${sid(s.key)}" class="svhint">${slotHint(s)}</div>
+      <div id="ab-${sid(s.key)}">${s.kind === "anthem" ? anthemBox(s.key) : ""}${s.words ? wordsHint(s) : ""}</div></div></div>`;
+  };
+  return `${beforeCard()}<div class="card"><h3 style="font-weight:normal;margin:0 0 4px">The rest of the service <span class="hint">· order of service: ${esc(order)}</span></h3>
+    <p class="hint" style="margin:0 0 8px">${SV.byDate[B.date] ? "Already planned for this date (music schedule or this Sunday's file). " : ""}${sl.some(s => s.kind === "service") ? `Service music carries on from the last ${esc(order)}${prev.date ? " (" + esc(prev.date) + ")" : ""} unless you change it. ` : ""}The order of service comes from the Service box (or the day), and is set out in services.txt.</p>
+    <div class="svrow"><label>Organist</label><div><input type="text" value="${esc(B.svc.organist || "")}" onchange="setSvc('organist', this.value)" style="width:120px"></div></div>
+    ${shown.map(row).join("")}
+    ${others.map(k => row({key: k, label: k + " (not in this order)", kind: (anySlot(k) || {}).kind || "music"})).join("")}
+    ${hidden.length ? `<div class="svrow"><label></label><div class="hint">add: ${hidden.map(s => `<span class="link" onclick="B.showOpt.add('${s.key}'); renderBuilder()">${esc(s.label)}</span>`).join(" · ")}</div></div>` : ""}
+    <div class="svrow"><label>Added to the opening line</label><div><input type="text" value="${esc(B.lead || "")}" style="width:100%" placeholder="e.g. Most of the music is by Charles Villiers Stanford." onchange="B.lead=this.value; refreshFile()"></div></div>
+    <div class="svrow"><label>Other items</label><div><textarea rows="2" style="width:100%" placeholder="One per line, listed in the email as written, e.g. Te Deum: Collegium Regale - Herbert Howells (1892-1983)" onchange="B.also=this.value; refreshFile()">${esc(B.also)}</textarea></div></div>
+    <div class="svrow"><label>Note for the email</label><div><textarea rows="2" style="width:100%" placeholder="Anything else to tell the office this week" onchange="B.note=this.value; refreshFile()">${esc(B.note)}</textarea></div></div>
+  </div>`;
+}
+function repLists() { return Object.entries(REP).map(([f, list]) => `<datalist id="rep-${sid(f)}">${list.map(r => `<option value="${esc(r[0])}">${r[1].length}× · last ${esc(r[1][r[1].length - 1])}</option>`).join("")}</datalist>`).join(""); }
+function setSvc(k, v) {
+  B.svc[k] = v.trim(); refreshSlot(k);
+  // the Nunc dimittis usually follows the Magnificat's setting
+  const m = B.svc[k].match(/^Magnificat\b(.*)$/i);
+  if (k === "magnificat" && m && !(B.svc["nunc dimittis"] || "").trim() && slotsOf(curOrder()).some(x => x.key === "nunc dimittis")) {
+    B.svc["nunc dimittis"] = "Nunc dimittis" + m[1]; renderBuilder();
+  }
+}
+function refreshSlot(k) {
+  const s = anySlot(k);
+  if (s) { const h = $("#sh-" + sid(k)); if (h) h.innerHTML = slotHint(s); const ab = $("#ab-" + sid(k)); if (ab && s.kind === "anthem") ab.innerHTML = anthemBox(k); }
+  refreshFile();
+}
+function refreshFile() { const pre = $("#bfile"); if (pre) pre.textContent = sundayText(); if (B.mail) { B.mail.stale = true; const m = $("#mailcard"); if (m) m.outerHTML = mailCard(); } }
+
+// the email
+let GMAIL = {checked: false, connected: false, account: SV.email.account || ""};
+async function checkGmail() { if (!SERVER || GMAIL.checked) return; try { const j = await post("/api/gmail", {}); GMAIL = {checked: true, connected: j.connected, account: j.account || GMAIL.account}; const m = $("#mailcard"); if (m) m.outerHTML = mailCard(); } catch (e) {} }
+function gmailURL(m, body) {
+  const q = new URLSearchParams({view: "cm", fs: "1", to: m.to, cc: m.cc, su: m.subject, body});
+  return "https://mail.google.com/mail/" + (m.account ? "?authuser=" + encodeURIComponent(m.account) + "&" : "?") + q.toString();
+}
+function connectBox() {
+  return `<div style="margin:8px 0;padding:10px 12px;border:1px dashed var(--line);border-radius:8px">
+    <b style="font-weight:normal">Connect Gmail (once)</b> <span class="hint">so the email goes straight into ${esc(GMAIL.account || "the music account")}'s Drafts, images attached.</span>
+    <ol class="hint" style="margin:6px 0 6px 1.2em;padding:0">
+      <li>Signed in to Google as ${esc(GMAIL.account || "the music account")} (2-Step Verification on), open <a href="https://myaccount.google.com/apppasswords" target="_blank">myaccount.google.com/apppasswords</a> and make one called “Psalter”.</li>
+      <li>Paste the 16 letters here. It's kept in this computer's password store, never in the repositories.</li></ol>
+    <input type="password" id="gpw" autocomplete="off" placeholder="app password" style="width:220px"> <button class="small" onclick="connectGmail()">Connect</button> <span id="gmsg" class="hint"></span></div>`;
+}
+async function connectGmail() {
+  const pw = $("#gpw").value.trim(); if (!pw) return;
+  $("#gmsg").textContent = "checking with Gmail…";
+  const j = await post("/api/gmail", {password: pw});
+  if (!j.ok) { $("#gmsg").textContent = j.error; return; }
+  GMAIL.connected = true; GMAIL.checked = true;
+  if (B.mail) await draftMail(); else { const m = $("#mailcard"); if (m) m.outerHTML = mailCard(); }
+}
+function mailCard() {
+  setTimeout(checkGmail, 0);
+  const m = B.mail;
+  const title = `<h3 style="font-weight:normal;margin:0 0 6px">Email to the parish office</h3>`;
+  if (!SERVER) return `<div class="card" id="mailcard">${title}<p class="hint">Open the browser with the Psalter launcher to write the weekly email from here.</p></div>`;
+  const subj = "Music for " + B.date.slice(5, 7) + "/" + B.date.slice(8, 10);
+  if (!m) return `<div class="card" id="mailcard">${title}
+    <p style="margin:0"><button class="small primary" onclick="writeMail()">Save, build &amp; ${GMAIL.connected ? "draft" : "write"} the email</button>
+    <span class="hint">builds the psalm images if needed, then ${GMAIL.connected ? "puts “" + esc(subj) + "” in your Gmail Drafts" : "writes “" + esc(subj) + "”"} with them attached</span></p>
+    ${GMAIL.checked && !GMAIL.connected ? connectBox() : ""}
+    <div id="sheetbox" style="margin-top:10px">${sheetBox()}</div></div>`;
+  return `<div class="card" id="mailcard">${title}
+    ${m.drafted ? `<p style="margin:0 0 8px"><b style="font-weight:normal">✓ In your Gmail Drafts${m.replaced ? " (the earlier draft for this day went to the Trash)" : ""}.</b> <a href="${esc(m.link)}" target="_blank">Open Drafts</a> to look it over and send.</p>` : ""}
+    ${m.draftError ? `<p class="warn" style="margin:0 0 8px">Couldn't make the Gmail draft: ${esc(m.draftError)}</p>` : ""}
+    ${m.stale ? `<p class="warn" style="margin:0 0 8px">The service has changed since this was written: <span class="link" onclick="writeMail()">write it again</span>.</p>` : ""}
+    <div class="svrow"><label>To</label><div>${esc(m.to)}</div></div>
+    ${m.cc ? `<div class="svrow"><label>Cc</label><div>${esc(m.cc)}</div></div>` : ""}
+    <div class="svrow"><label>Subject</label><div>${esc(m.subject)}</div></div>
+    <textarea id="mailbody" spellcheck="true" oninput="B.mail.body=this.value" style="width:100%;height:${Math.min(40, m.body.split("\n").length + 2) * 1.45}em;font-family:inherit;font-size:15px;line-height:1.45;margin-top:6px">${esc(m.body)}</textarea>
+    <div class="svrow"><label>Attached</label><div>${m.files.length ? m.files.map(f => `<a href="/${encodeURI(f)}" target="_blank"><img src="/${encodeURI(f)}?t=${Date.now()}" style="height:70px;border:1px solid var(--line);vertical-align:middle;margin-right:6px" alt=""></a><span class="hint">${esc(f.split("/").pop())}</span> `).join(" ") : '<span class="warn">no psalm images: build first</span>'}</div></div>
+    <p style="margin:10px 0 0">
+      ${GMAIL.connected ? `<button class="small primary" onclick="draftMail()">${m.drafted ? "Update the Gmail draft with these edits" : "Put it in Gmail Drafts"}</button>` : ""}
+      <button class="small" onclick="copyMail(this)">Copy the text</button>
+      <span class="link" style="margin-left:8px" onclick="writeMail()">write it again from the planner</span></p>
+    ${GMAIL.connected ? "" : connectBox()}
+    <div id="sheetbox" style="margin-top:10px">${sheetBox()}</div>
+    <details style="margin-top:6px"><summary class="hint">Other ways to send it</summary>
+      <p style="margin:6px 0"><button class="small" onclick="openGmail()">Open a new Gmail message</button> <button class="small" onclick="openMailFolder()">Show the attachments folder</button>
+      <a class="small" href="/${encodeURI(m.eml)}" download>Email file (.eml) with attachments</a></p>
+      <p class="hint" style="margin:0">The new Gmail message has everything but the images (drag them in from the folder). The .eml file opens in Outlook or Thunderbird as a ready draft with the images attached.</p></details>
+  </div>`;
+}
+async function writeMail() {
+  if (!(await saveSunday())) return;
+  const psalmPart = t => t.split("# The rest of the service")[0];
+  const hasPsalm = B.psalms.some(p => (p.spec || "").trim());
+  if (hasPsalm && (!B.files.some(f => f.endsWith(".jpg")) || psalmPart(B.builtText || "") !== psalmPart(sundayText()))) {
+    B.status = "Building the PDF and images… (LilyPond takes a little while)"; B.log = ""; renderBuilder();
+    const j = await post("/api/build", {name: B.name, pdfOnly: false});
+    B.status = j.ok ? "Built." : "The build stopped:"; B.log = j.ok ? "" : (j.log || j.error); B.files = j.files || [];
+    if (!j.ok) { renderBuilder(); return; }
+    B.builtText = sundayText();
+  }
+  const j = await post("/api/email", {name: B.name});
+  if (!j.ok) { B.status = "Could not write the email:"; B.log = j.error || ""; renderBuilder(); return; }
+  B.mail = j;
+  if (GMAIL.connected) await draftMail(); else renderBuilder();
+  const m = $("#mailcard"); if (m) m.scrollIntoView({behavior: "smooth", block: "start"});
+}
+async function draftMail() {
+  const body = $("#mailbody") ? $("#mailbody").value : B.mail.body;
+  B.status = "Putting the email in Gmail Drafts…"; renderBuilder();
+  const j = await post("/api/draft", {name: B.name, body});
+  B.status = "";
+  if (j.ok) Object.assign(B.mail, {drafted: true, replaced: j.replaced, link: j.link, draftError: "", body, stale: false});
+  else Object.assign(B.mail, {draftError: j.error || "unknown error", body});
+  renderBuilder();
+}
+// the music schedule spreadsheet
+async function sheetCheck(write) {
+  if (!write && !(await saveSunday())) return;
+  B.sheet = {busy: true}; refreshSheet();
+  const j = await post("/api/spreadsheet", {name: B.name, write: !!write});
+  B.sheet = j; refreshSheet();
+}
+function sheetConnectBox() {
+  return `<div style="margin:8px 0;padding:10px 12px;border:1px dashed var(--line);border-radius:8px">
+    <b style="font-weight:normal">Connect the Google Sheet (once)</b> <span class="hint">A small script in the sheet lets the planner read and write it; it only answers to a secret made here.</span>
+    <ol class="hint" style="margin:6px 0 6px 1.2em;padding:0">
+      <li>As ${esc(SV.email.account || "the music account")}, open the music schedule in Google Sheets: <b style="font-weight:normal">Extensions › Apps Script</b>.</li>
+      <li>Replace what's there with this, and save: <button class="small" onclick="copySheetScript(this)">Copy the script</button></li>
+      <li><b style="font-weight:normal">Deploy › New deployment</b>, type <i>Web app</i>, execute as <i>Me</i>, access <i>Anyone</i>. Deploy, allow it, and copy the web app URL.</li>
+      <li>To check it: open the web app URL in a <b style="font-weight:normal">private (incognito) window</b>, which sees it as the planner does; it should say <i>"ok": true</i>. (In a normal window signed in to several Google accounts, Google often says it is "unable to open the file": that's the accounts, not the script.) A Google sign-in or "access denied" page means it isn't open to <i>Anyone</i> (Deploy › Manage deployments › edit).</li>
+      <li>Paste it here: <input type="text" id="sheeturl" placeholder="https://script.google.com/macros/s/…/exec" style="width:340px"> <button class="small" onclick="connectSheet()">Connect</button> <span id="sheetmsg"></span></li>
+      <li>While you're in the script editor: choose <i>fixHymnLinks</i> in the toolbar and click Run, to fix the hymn links that point to the wrong hymn. Each change, with a link to its cell, shows in the Execution log.</li></ol>
+    <p class="hint" style="margin:4px 0 0">If your Workspace only allows sharing the web app within the organization, skip steps 3–5: reload the sheet, and use its new <b style="font-weight:normal">Psalter</b> menu with <i>Copy for the sheet</i> here.</p></div>`;
+}
+async function copyForSheet(btn) {
+  if (!(await saveSunday())) return;
+  const j = await post("/api/spreadsheet", {name: B.name, blob: true});
+  if (!j.ok) { alert(j.error); return; }
+  try { await navigator.clipboard.writeText(j.blob); btn.textContent = "Copied: now paste it in the sheet"; }
+  catch (e) { prompt("Copy this, then paste it in the sheet (Psalter › Record a service from the planner…):", j.blob); }
+}
+async function copySheetScript(btn) {
+  const j = await post("/api/sheet", {action: "script"});
+  try { await navigator.clipboard.writeText(j.script); btn.textContent = "Copied"; }
+  catch (e) { const w = window.open("", "_blank"); w.document.write("<pre>" + esc(j.script) + "</pre>"); }
+}
+async function connectSheet() {
+  const url = $("#sheeturl").value.trim(); if (!url) return;
+  $("#sheetmsg").textContent = "checking…";
+  const j = await post("/api/sheet", {action: "connect", url});
+  if (!j.ok) { $("#sheetmsg").innerHTML = `<span class="warn">${esc(j.error)}</span>`; return; }
+  $("#sheetmsg").textContent = "Connected to " + j.title + ".";
+  setTimeout(() => sheetCheck(false), 600);
+}
+function refreshSheet() { const el = $("#sheetbox"); if (el) el.innerHTML = sheetBox(); }
+function sheetBox() {
+  const t = B.sheet;
+  if (((SV.meta || {})[curOrder()] || {}).spreadsheet === false) return `<span class="hint">${esc(curOrder())} isn't kept in the music schedule spreadsheet; its file here (${esc(B.name)}.txt) is the record.</span>`;
+  if (!t) return `<button class="small" onclick="sheetCheck(false)">Record in the music schedule…</button> <span class="hint">shows what will change in the spreadsheet before writing</span>`;
+  if (t.busy) return '<span class="hint">Reading the spreadsheet…</span>';
+  if (!t.ok) return `<span class="warn">${esc(t.error)}</span> <span class="link" onclick="sheetCheck(false)">try again</span>
+    ${/Google/.test(t.error) ? ` · <button class="small" onclick="copyForSheet(this)">Copy for the sheet</button> <span class="hint">then in the sheet: Psalter › Record a service from the planner…</span>` : ""}
+    ${/not connected|refused|reach/.test(t.error) ? sheetConnectBox() : ""}`;
+  const rows = t.changes.map(([k, o, n]) => `<tr><td>${esc(k)}</td><td class="hint">${esc(o || "(empty)")}</td><td>${esc(n)}</td></tr>`).join("");
+  return `<div class="hint" style="margin-bottom:4px">${esc(t.file)}, sheet ${esc(t.sheet)}${t.notes.length ? " · " + t.notes.map(esc).join(" · ") : ""}</div>
+    ${t.written ? `<b style="font-weight:normal">✓ Written to the music schedule (${t.changes.length} cell${t.changes.length === 1 ? "" : "s"}).</b>${t.url ? ` <a href="${esc(t.url)}" target="_blank">Open it in the sheet</a>` : " The old copy is in schedule/backups."}`
+      : t.changes.length ? `<table class="sheetdiff"><tr><th>Row</th><th>Now</th><th>Will be</th></tr>${rows}</table>
+        <p style="margin:6px 0 0"><button class="small primary" onclick="sheetCheck(true)">Write ${t.changes.length} change${t.changes.length === 1 ? "" : "s"}</button> <span class="link" onclick="B.sheet=null; refreshSheet()">cancel</span></p>`
+      : '<span class="hint">The music schedule already has all of this.</span>'}`;
+}
+function openGmail() { window.open(gmailURL(B.mail, $("#mailbody").value), "_blank"); }
+async function openMailFolder() { const j = await post("/api/open", {name: B.name, sub: "email"}); if (!j.ok) alert(j.error || "could not open the folder"); }
+async function copyMail(btn) {
+  try { await navigator.clipboard.writeText($("#mailbody").value); btn.textContent = "Copied"; setTimeout(() => btn.textContent = "Copy the text", 1500); }
+  catch (e) { $("#mailbody").select(); document.execCommand("copy"); }
+}
+
+// ---------- tabs ----------
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("nav button").forEach(x => x.classList.toggle("on", x === b));
+  ["upcoming", "builder", "chants", "texts", "history"].forEach(t => $("#tab-" + t).hidden = t !== b.dataset.tab);
+  stopPlay();
+  if (b.dataset.tab === "texts") renderTextsShell();
+  if (b.dataset.tab === "upcoming") renderUpcoming();
+  if (b.dataset.tab === "builder") renderBuilder();
+});
+const dlg = $("#dlg");
+dlg.addEventListener("close", () => { dlg.classList.remove("wide"); stopPlay(); if (!$("#tab-chants").hidden) renderChants(); else if (!$("#tab-texts").hidden) renderText(); });
+renderSavebar(); renderUpcoming(); renderChantsShell(); renderChants(); renderHistory();
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+# Evensong or the Office: the Gloria Patri is added after the last verse, sung to the last chant.
+# (gloria: yes / gloria: no overrides the default for any service.)
+date:    2026-10-31
+service: Evensong
+psalm:   147:13-21
+chant:   Walmisley-1

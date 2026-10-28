@@ -1,0 +1,8 @@
+# A long psalm with a change of chant partway through, and back again.
+# "from N" = this chant starts at verse N. The PDF prints each chant above its first verse,
+# and reprints the current chant at the top of a new page.
+date:    2024-03-03
+psalm:   19
+chant:   Wesley-3
+chant:   Smart-1 from 7
+chant:   Wesley-3 from 13

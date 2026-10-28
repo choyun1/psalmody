@@ -1,0 +1,8 @@
+# Psalm 119 (and psalms printed in parts: 18, 37, 78, 89, 105, 106, 107) can be given by name or by verses.
+#   119 Aleph       one section          89 Part 2     one part
+#   119:1-16        Aleph and Beth, each printed under its own heading
+#   89:20-37        the verses are found in whichever part holds them
+date:    2023-09-10
+psalm:   119:33-48
+chant:   Turle-2
+chant:   Goss-2 from 41

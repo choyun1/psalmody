@@ -1,0 +1,15 @@
+name: check
+on: [push, pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Texts match the 1979 BCP
+        run: python tools/check_texts.py
+      - name: Examples read and plan
+        run: for f in examples/*.txt; do python tools/build.py "$f" --check || exit 1; done

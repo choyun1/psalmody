@@ -1,0 +1,15 @@
+Psalm 131 | Domine, non est
+% unpointed draft: the words of the 1979 BCP. Pointing for Anglican chant goes in your parish folder
+% (parish/texts/), or use the pointing editor in the chant browser; plainchant tones need none.
+
+1   O LORD, I am not proud; *
+      I have no haughty looks.
+
+2   I do not occupy myself with great matters, *
+      or with things that are too hard for me.
+
+3   But I still my soul and make it quiet, like a child upon its mother's breast; *
+      my soul is quieted within me.
+
+4   O Israel, wait upon the LORD, *
+      from this time forth for evermore.

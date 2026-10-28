@@ -1,0 +1,11 @@
+# Less common switches, all optional:
+#   reprint: no      don't reprint the chant at the top of a new page
+#   gloria: yes      add the Gloria Patri even at the Eucharist
+#   service: Office  any name; Office, Evensong, Morning Prayer, Evening Prayer turn the Gloria on
+#   sung: yes        confirmed as sung, so it counts in the history (the browser's Mark as sung adds this)
+date:    2026-11-15
+service: Eucharist
+psalm:   90:1-8,(9-11),12
+chant:   Goss-1
+reprint: no
+gloria:  yes

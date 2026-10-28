@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+# your parish folder is your own (copy parish.example/ to parish/)
+parish/
+# built output, when there is no parish folder
+site/
+output/
+sundays/
+**/.img_*/

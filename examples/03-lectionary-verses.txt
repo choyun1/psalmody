@@ -1,0 +1,10 @@
+# Verses exactly as the lectionary prints them:
+#   72:1-7,18-19      two ranges (verses 8-17 are left out)
+#   34:1-8,(19-22)    verses in brackets are optional; they're included -- delete them to leave them out
+#   95:1-7a           a/b/c means part of a verse; the whole verse is printed, so trim the text by hand if you need to
+#
+# The check before the build warns when a double chant would end half-way (an odd number of verses):
+# add a † to a verse in the text file, or switch to a single chant.
+date:    2026-01-06
+psalm:   72:1-7,10-14
+chant:   Walmisley-1

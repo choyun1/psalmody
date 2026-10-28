@@ -1,0 +1,24 @@
+# Settings for your parish. Copy this folder to parish/ and edit; everything specific to one church lives
+# here, so the tools stay general. Lines starting with # are comments.
+name:          St Example's, Anytown
+# Season after Pentecost: which lectionary track's psalm to offer first (1 or 2).
+track:         2
+# Patronal feast (optional): month-day, the psalm-table key, and its name. Kept even when it falls on a Sunday.
+# patronal:    06-29 st_peter_and_st_paul Saint Peter and Saint Paul
+# Christmas: which of the three Christmas psalms (christmas1 = 96, christmas2 = 97, christmas3 = 98) comes first.
+christmas_eve: christmas1 christmas2 christmas3
+christmas_day: christmas2 christmas1 christmas3
+# Psalm verses the lectionary prints in brackets: "sing" or "leave out" by default.
+optional_verses: sing
+
+# The weekly email (optional). Several Cc addresses: separate with commas.
+# email_account:  music@example.org
+# email_to:       "Parish Office" <office@example.org>
+# email_cc:       "The Rector" <rector@example.org>
+# email_greeting: Hello,
+# email_subject:  Music for {mm}/{dd}
+# signature:      Your Name | Director of Music | St Example's Church | 1 Main Street | Anytown
+
+# The music schedule spreadsheet (optional): google (a Google Sheet, connected once from the planner),
+# or the path of an .xlsx file.
+# spreadsheet:    schedule/Music_Schedule.xlsx

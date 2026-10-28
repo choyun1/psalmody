@@ -1,0 +1,7 @@
+# Two services on the same day: name the files differently, e.g.
+#   sundays/2026-12-24-early.txt   and   sundays/2026-12-24-midnight.txt
+# Each builds into its own folder (output/2026-12-24-early/, output/2026-12-24-midnight/).
+# Christmas Eve defaults to Psalm 98 and Christmas Day to 97 (as in past years); 96 is the other choice.
+date:    2026-12-24
+psalm:   98
+chant:   Crotch-1

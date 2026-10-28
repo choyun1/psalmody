@@ -1,0 +1,9 @@
+# Two psalms in one service. Each psalm: line can have its own chants; a psalm with no chant: line
+# of its own carries on with the chant before it. The Gloria comes once, after the last psalm.
+date:    2026-11-07
+service: Evensong
+psalm:   121
+chant:   Turle-2
+psalm:   122
+chant:   Goss-7
+psalm:   123                       # no chant line: sung to Goss-7 again

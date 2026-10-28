@@ -1,0 +1,6 @@
+# The usual case: the appointed psalm, one chant.
+# Start a real one with:  python tools/new_sunday.py 2026-11-08
+# Proper 27, Year A (Track 2)
+date:    2026-11-08
+psalm:   70
+chant:   Turle-2
