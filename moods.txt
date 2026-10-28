@@ -4,4 +4,4 @@
 bright: jubilant, triumphant, majestic, joyful, bright
 calm: serene, confident, sweet, tender, delicate
 shadowed: wistful, yearning, plaintive, penitent
-dark: gloomy, anguished, stern, dramatic
+dark: gloomy, mournful, anguished, stern, wrathful, dramatic
