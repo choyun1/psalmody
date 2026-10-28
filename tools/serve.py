@@ -92,7 +92,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.send_header('Content-Type', 'application/json')
         self.send_header('Content-Length', str(len(body)))
         self.end_headers()
-        self.wfile.write(body)
+        try:
+            self.wfile.write(body)
+        except (BrokenPipeError, ConnectionResetError):     # the page was closed or reloaded before the answer came
+            pass
 
     def do_GET(self):
         u = urllib.parse.urlparse(self.path)
@@ -218,6 +221,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         return self.reply({'error': 'unknown request'}, 404)
 
 
+class Server(http.server.ThreadingHTTPServer):
+    def handle_error(self, request, client_address):
+        """A page closed or reloaded mid-request (BrokenPipe) is normal: say nothing; anything else, as usual."""
+        if isinstance(sys.exc_info()[1], (BrokenPipeError, ConnectionResetError, ConnectionAbortedError)):
+            return
+        super().handle_error(request, client_address)
+
+
 def main():
     history.ensure()
     if not os.path.exists(os.path.join(paths.SITE, 'data.js')):
@@ -229,7 +240,7 @@ def main():
     elif f'"linksSignature":"{lectionary.links_signature()}"' not in open(os.path.join(paths.SITE, 'data.js'), encoding='utf-8').read():
         print('updating the links to the lectionary…')        # the table changed since the page was built
         rebuild()
-    srv = http.server.ThreadingHTTPServer(('127.0.0.1', PORT), Handler)
+    srv = Server(('127.0.0.1', PORT), Handler)
     url = f'http://localhost:{PORT}{SITE_URL}'
     print(f'Chant browser with the Service planner: {url}\n(Ctrl+C to stop)')
     threading.Timer(0.6, lambda: webbrowser.open(url)).start()
