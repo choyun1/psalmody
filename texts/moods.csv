@@ -20,9 +20,9 @@ Psalm_014,all,stern; wistful,wisdom,the fool; longing for deliverance v.7
 Psalm_015,all,serene; stern,wisdom,who may dwell in your tabernacle
 Psalm_016,all,confident; sweet; joyful,trust,my portion and my cup; path of life
 Psalm_017,all,plaintive; confident,lament,plea of innocence; apple of your eye
-Psalm_018_Part_1,all,dramatic; triumphant,thanksgiving,theophany; storm and earthquake
+Psalm_018_Part_1,all,dramatic; triumphant; mysterious,thanksgiving,theophany; storm and earthquake
 Psalm_018_Part_2,all,triumphant; jubilant; confident,royal,victory song; battle imagery
-Psalm_019,1-6,majestic; joyful,praise,heavens declare; sun as bridegroom
+Psalm_019,1-6,majestic; joyful; mystical,praise,heavens declare; sun as bridegroom
 Psalm_019,7-14,sweet; serene,wisdom,law sweeter than honey; quiet ending prayer
 Psalm_020,all,confident; triumphant,royal,prayer before battle
 Psalm_021,all,triumphant; joyful; stern,royal,king's victory; judgment on foes vv.8-13
@@ -46,7 +46,7 @@ Psalm_033,all,joyful; majestic,praise,new song; creation by the word
 Psalm_034,all,joyful; sweet; confident,thanksgiving,taste and see; teaching from v.11
 Psalm_035,all,anguished; stern; mournful,lament,"imprecations; vows of praise vv.9-10, 18, 27-28"
 Psalm_036,1-4,stern; wrathful,wisdom,portrait of the wicked
-Psalm_036,5-12,serene; sweet,trust,your love reaches to the heavens; well of life
+Psalm_036,5-12,serene; sweet; mystical,trust,your love reaches to the heavens; well of life
 Psalm_037_Part_1,all,confident; serene; stern,wisdom,do not fret; be still before the LORD
 Psalm_037_Part_2,all,confident; stern,wisdom,proverbs on righteous and wicked
 Psalm_038,all,penitent; anguished,penitential,sickness and guilt; friends stand afar
@@ -54,7 +54,7 @@ Psalm_039,all,wistful; plaintive,lament,life a handful of days; sojourner
 Psalm_040,1-11,joyful; confident,thanksgiving,new song; I waited patiently
 Psalm_040,12-19,plaintive,lament,troubles crowd upon me; make haste
 Psalm_041,all,plaintive; confident,lament,sickbed; betrayed by friend; doxology v.13
-Psalm_042,all,yearning; plaintive,lament,"as the deer; refrain ""Why are you so full of heaviness"""
+Psalm_042,all,yearning; plaintive; mystical,lament,"as the deer; refrain ""Why are you so full of heaviness"""
 Psalm_043,all,yearning; plaintive; confident,lament,send out your light; continues 42
 Psalm_044,1-8,triumphant; majestic,history,God's past victories
 Psalm_044,9-26,anguished; plaintive; mournful,lament,"""Awake, O Lord! why are you sleeping?"""
@@ -62,7 +62,7 @@ Psalm_045,all,majestic; joyful; sweet,royal,royal wedding; bride from v.10
 Psalm_046,all,confident; majestic,Zion,refuge and strength; be still
 Psalm_047,all,jubilant; triumphant,royal,God has gone up with a shout; Ascension
 Psalm_048,all,majestic; joyful,Zion,walk round about her; kings dismayed vv.4-6
-Psalm_049,all,stern; gloomy,wisdom,riches cannot ransom from death
+Psalm_049,all,stern; gloomy; mysterious,wisdom,riches cannot ransom from death
 Psalm_050,all,stern; majestic; dramatic,wisdom,God summons the earth to judgment
 Psalm_051,all,penitent; yearning,penitential,Miserere; create in me a clean heart
 Psalm_052,all,stern; confident,lament,against the tyrant; green olive tree v.8
@@ -76,8 +76,8 @@ Psalm_058,all,stern; dramatic; wrathful,lament,cursing psalm; unjust rulers
 Psalm_059,all,anguished; stern,lament,howling dogs; song of strength vv.18-20
 Psalm_060,all,plaintive; dramatic,lament,nation defeated; oracle vv.6-8
 Psalm_061,all,yearning; confident,trust,from the ends of the earth; rock higher than I
-Psalm_062,all,serene; confident,trust,for God alone my soul in silence waits
-Psalm_063,1-8,yearning; sweet,trust,my soul thirsts; shadow of your wings
+Psalm_062,all,serene; mystical; confident,trust,for God alone my soul in silence waits
+Psalm_063,1-8,yearning; sweet; mystical,trust,my soul thirsts; shadow of your wings
 Psalm_063,9-11,stern,royal,cursing passage; king rejoices v.11
 Psalm_064,all,plaintive; stern; wrathful,lament,conspiracy of the wicked; rejoicing v.10
 Psalm_065,all,joyful; majestic; serene,thanksgiving,harvest; you crown the year
@@ -98,7 +98,7 @@ Psalm_074,17-22,plaintive,lament,do not hand over your dove; arise
 Psalm_075,all,stern; majestic,thanksgiving,God judges; cup of wrath
 Psalm_076,all,triumphant; dramatic; stern,Zion,God breaks the arrows; what terror you inspire
 Psalm_077,1-10,plaintive; anguished,lament,sleepless; has God forgotten to be gracious
-Psalm_077,11-20,dramatic; majestic,history,remembers the Exodus; waters saw you; thunder
+Psalm_077,11-20,dramatic; majestic; mysterious,history,remembers the Exodus; waters saw you; thunder
 Psalm_078_Part_1,all,stern; dramatic,history,parable of history; manna and quails
 Psalm_078_Part_2,40-64,stern; dramatic,history,plagues; Shiloh forsaken
 Psalm_078_Part_2,65-72,triumphant; majestic,history,God wakes; chooses David
@@ -106,14 +106,14 @@ Psalm_079,all,anguished; plaintive,lament,Jerusalem in ruins
 Psalm_080,all,plaintive; yearning,lament,"refrain ""Restore us""; the vine"
 Psalm_081,1-5,jubilant,praise,blow the ram's horn; festal
 Psalm_081,6-16,stern; wistful,wisdom,"divine admonition; ""Oh, that my people would listen"""
-Psalm_082,all,stern; majestic,wisdom,God judges the gods
+Psalm_082,all,stern; majestic; mysterious,wisdom,God judges the gods
 Psalm_083,all,stern; dramatic; wrathful,lament,cursing; enemy nations listed
 Psalm_084,all,sweet; yearning; joyful,pilgrimage,how dear to me is your dwelling
 Psalm_085,1-7,yearning; plaintive,lament,restore us again
 Psalm_085,8-13,serene; sweet,trust,mercy and truth have met together; Advent
 Psalm_086,all,plaintive; confident,lament,bow down your ear; none like you
 Psalm_087,all,joyful; majestic,Zion,glorious things are spoken of you
-Psalm_088,all,anguished; gloomy; mournful,lament,darkest psalm; no turn to hope
+Psalm_088,all,anguished; gloomy; mournful; mysterious,lament,darkest psalm; no turn to hope
 Psalm_089_Part_1,all,majestic; joyful,royal,God's faithfulness; ruler of the sea
 Psalm_089_Part_2,19-37,majestic; confident,royal,covenant with David
 Psalm_089_Part_2,38-52,anguished; plaintive,lament,covenant broken?; doxology v.52
@@ -126,7 +126,7 @@ Psalm_094,12-23,confident; plaintive,trust,"my foot slipped, your love held me"
 Psalm_095,1-7,jubilant; majestic,praise,Venite
 Psalm_095,8-11,stern,wisdom,warning: harden not your hearts
 Psalm_096,all,joyful; majestic; jubilant,royal,new song; trees shout for joy
-Psalm_097,all,majestic; dramatic; joyful,royal,clouds and darkness; light for the righteous
+Psalm_097,all,majestic; dramatic; joyful; mysterious,royal,clouds and darkness; light for the righteous
 Psalm_098,all,jubilant; joyful,royal,Cantate Domino; rivers clap hands
 Psalm_099,all,majestic; stern,royal,Holy is he; let the people tremble
 Psalm_100,all,jubilant; joyful,praise,Jubilate
@@ -147,7 +147,7 @@ Psalm_108,all,confident; triumphant,praise,my heart is fixed (cf. 57 and 60)
 Psalm_109,1-4,plaintive,lament,they repay evil for good
 Psalm_109,5-19,stern; dramatic; wrathful,lament,cursing passage
 Psalm_109,20-30,plaintive; confident,lament,I am poor and needy; thanks at v.29
-Psalm_110,all,triumphant; majestic; stern,royal,Dixit Dominus; sit at my right hand
+Psalm_110,all,triumphant; majestic; stern; mysterious,royal,Dixit Dominus; sit at my right hand
 Psalm_111,all,joyful; confident,praise,great are the deeds of the LORD
 Psalm_112,all,confident; serene,wisdom,the righteous will never be shaken
 Psalm_113,all,majestic; joyful,praise,raises the poor from the dust
@@ -189,7 +189,7 @@ Psalm_127,all,serene; confident,wisdom,unless the LORD builds the house
 Psalm_128,all,sweet; serene,wisdom,family blessing; weddings
 Psalm_129,all,stern; plaintive,pilgrimage,plowmen on my back; curse on haters
 Psalm_130,all,penitent; yearning,penitential,De profundis; hope in v.7
-Psalm_131,all,tender; sweet,trust,like a child upon its mother's breast
+Psalm_131,all,tender; sweet; mystical,trust,like a child upon its mother's breast
 Psalm_132,all,majestic; joyful,royal,ark to Zion; David's oath
 Psalm_133,all,sweet; tender,pilgrimage,brethren in unity; oil and dew
 Psalm_134,all,serene; sweet,pilgrimage,evening blessing; short
@@ -198,7 +198,7 @@ Psalm_136,all,joyful; majestic,thanksgiving,"litany refrain ""for his mercy endu
 Psalm_137,1-6,plaintive; wistful,lament,by the waters of Babylon
 Psalm_137,7-9,stern; anguished,lament,cursing passage; often omitted
 Psalm_138,all,joyful; confident,thanksgiving,whole-hearted thanks; cares for the lowly
-Psalm_139,1-17,tender; serene,wisdom,searched and known; marvelously made
+Psalm_139,1-17,mystical; tender; serene,wisdom,searched and known; marvelously made
 Psalm_139,18-21,stern; dramatic; wrathful,lament,cursing passage; perfect hatred
 Psalm_139,22-23,penitent; serene,wisdom,"search me out, O God"
 Psalm_140,all,anguished; stern; wrathful,lament,serpents' tongues; burning coals; confidence vv.12-13
