@@ -216,11 +216,14 @@ def line_syllables(text):
             if out:
                 out[-1]['text'] += w
             continue
-        sylls = split_word(core)
-        offs, pos = [], len(lead)
-        for s in sylls:
-            offs.append(pos)
-            pos += len(s)
+        sylls, joins, offs, pos = [], [], [], len(lead)
+        for pi, part in enumerate(core.split('-')):          # a hyphen inside the word (white-robed) stays
+            for si, s in enumerate(split_word(part) if part else []):
+                sylls.append(s)
+                joins.append('-' if pi and not si else '')
+                offs.append(pos)
+                pos += len(s)
+            pos += 1
         sylls[0] = lead + sylls[0]
         sylls[-1] = sylls[-1] + trail
         offs[0] = 0
@@ -230,7 +233,7 @@ def line_syllables(text):
             marked.add(k)
         for i, s in enumerate(sylls):
             out.append({'text': s, 'word': wi, 'stress': i in marked, 'pointed': bool(stressed),
-                        'join': '' if i else ('-' if hyph else ' '), 'core': core})
+                        'join': joins[i] if i else ('-' if hyph else ' '), 'core': core})
     return out
 
 
@@ -399,7 +402,7 @@ def line_markup(sylls, star=False):
         if s['join'] == ' ' and cur:
             words.append(cur)
             cur = []
-        if s['join'] == '-' and cur:
+        if s['join'] == '-' and cur and not sylls[i - 1]['text'].endswith('-'):   # loving- | kindness has its hyphen already
             cur.append('"-"')
         cur.append(syl_markup(s, i == first_cad))
     if cur:

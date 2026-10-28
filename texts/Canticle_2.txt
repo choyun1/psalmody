@@ -1,0 +1,26 @@
+Canticle 2 | A Song of Praise (Song of the Three Young Men, 29-34)
+% unpointed draft: the words of the 1979 BCP. Pointing for Anglican chant goes in your parish folder
+% (parish/texts/), or use the pointing editor in the chant browser; plainchant tones need none.
+% Rite One (traditional language); Benedictus es, Domine
+% no Gloria Patri (the BCP prints none with this canticle)
+
+1   Blessed art thou, O Lord God of our fathers; *
+      praised and exalted above all for ever.
+
+2   Blessed art thou for the name of thy Majesty; *
+      praised and exalted above all for ever.
+
+3   Blessed art thou in the temple of thy holiness; *
+      praised and exalted above all for ever.
+
+4   Blessed art thou that beholdest the depths, and dwellest between the Cherubim; *
+      praised and exalted above all for ever.
+
+5   Blessed art thou on the glorious throne of thy kingdom; *
+      praised and exalted above all for ever.
+
+6   Blessed art thou in the firmament of heaven; *
+      praised and exalted above all for ever.
+
+7   Blessed art thou, O Father, Son, and Holy Spirit; *
+      praised and exalted above all for ever.

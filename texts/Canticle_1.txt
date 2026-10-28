@@ -1,0 +1,75 @@
+Canticle 1 | A Song of Creation (Song of the Three Young Men, 35-65)
+% unpointed draft: the words of the 1979 BCP. Pointing for Anglican chant goes in your parish folder
+% (parish/texts/), or use the pointing editor in the chant browser; plainchant tones need none.
+% Rite One (traditional language); Benedicite, omnia opera Domini
+% no Gloria Patri (the BCP prints none with this canticle)
+
+% I Invocation
+1   O all ye works of the Lord, bless ye the Lord; *
+      praise him and magnify him for ever.
+
+2   O ye angels of the Lord, bless ye the Lord; *
+      praise him and magnify him for ever.
+
+% II The Cosmic Order
+3   O ye heavens, bless ye the Lord; *
+      O ye waters that be above the firmament, bless ye the Lord;
+
+4   O all ye powers of the Lord, bless ye the Lord; *
+      praise him and magnify him for ever.
+
+5   O ye sun and moon, bless ye the Lord; *
+      O ye stars of heaven, bless ye the Lord;
+
+6   O ye showers and dew, bless ye the Lord; *
+      praise him and magnify him for ever.
+
+7   O ye winds of God, bless ye the Lord; *
+      O ye fire and heat, bless ye the Lord;
+
+8   O ye winter and summer, bless ye the Lord; *
+      praise him and magnify him for ever.
+
+9   O ye dews and frosts, bless ye the Lord; *
+      O ye frost and cold, bless ye the Lord;
+
+10  O ye ice and snow, bless ye the Lord; *
+      praise him and magnify him for ever.
+
+11  O ye nights and days, bless ye the Lord; *
+      O ye light and darkness, bless ye the Lord;
+
+12  O ye lightnings and clouds, bless ye the Lord; *
+      praise him and magnify him for ever.
+
+% III The Earth and its Creatures
+13  O let the earth bless the Lord; *
+      O ye mountains and hills, bless ye the Lord;
+
+14  O all ye green things upon the earth, bless ye the Lord; *
+      praise him and magnify him for ever.
+
+15  O ye wells, bless ye the Lord; *
+      O ye seas and floods, bless ye the Lord;
+
+16  O ye whales and all that move in the waters, bless ye the Lord; *
+      praise him and magnify him for ever.
+
+17  O all ye fowls of the air, bless ye the Lord; *
+      O all ye beasts and cattle, bless ye the Lord;
+
+18  O ye children of men, bless ye the Lord; *
+      praise him and magnify him for ever.
+
+% IV The People of God
+19  O ye people of God, bless ye the Lord; *
+      O ye priests of the Lord, bless ye the Lord;
+
+20  O ye servants of the Lord, bless ye the Lord; *
+      praise him and magnify him for ever.
+
+21  O ye spirits and souls of the righteous, bless ye the Lord; *
+      O ye holy and humble men of heart, bless ye the Lord.
+
+22  Let us bless the Father, the Son, and the Holy Spirit; *
+      praise him and magnify him for ever.

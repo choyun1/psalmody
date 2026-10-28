@@ -1,0 +1,1029 @@
+{
+ "_source": "The canticles of the 1979 BCP (Daily Office, 1-21): words from the Venite project (github.com/gbj/venite, MIT; the texts themselves are public domain), checked against bcponline.org. The verse division of 6, 7, 20 and 21, printed as prose in the BCP, is editorial.",
+ "1": {
+  "title": "A Song of Creation",
+  "citation": "Song of the Three Young Men, 35-65",
+  "verses": [
+   {
+    "n": 1,
+    "text": "O all ye works of the Lord, bless ye the Lord; * praise him and magnify him for ever."
+   },
+   {
+    "n": 2,
+    "text": "O ye angels of the Lord, bless ye the Lord; * praise him and magnify him for ever."
+   },
+   {
+    "n": 3,
+    "text": "O ye heavens, bless ye the Lord; * O ye waters that be above the firmament, bless ye the Lord;"
+   },
+   {
+    "n": 4,
+    "text": "O all ye powers of the Lord, bless ye the Lord; * praise him and magnify him for ever."
+   },
+   {
+    "n": 5,
+    "text": "O ye sun and moon, bless ye the Lord; * O ye stars of heaven, bless ye the Lord;"
+   },
+   {
+    "n": 6,
+    "text": "O ye showers and dew, bless ye the Lord; * praise him and magnify him for ever."
+   },
+   {
+    "n": 7,
+    "text": "O ye winds of God, bless ye the Lord; * O ye fire and heat, bless ye the Lord;"
+   },
+   {
+    "n": 8,
+    "text": "O ye winter and summer, bless ye the Lord; * praise him and magnify him for ever."
+   },
+   {
+    "n": 9,
+    "text": "O ye dews and frosts, bless ye the Lord; * O ye frost and cold, bless ye the Lord;"
+   },
+   {
+    "n": 10,
+    "text": "O ye ice and snow, bless ye the Lord; * praise him and magnify him for ever."
+   },
+   {
+    "n": 11,
+    "text": "O ye nights and days, bless ye the Lord; * O ye light and darkness, bless ye the Lord;"
+   },
+   {
+    "n": 12,
+    "text": "O ye lightnings and clouds, bless ye the Lord; * praise him and magnify him for ever."
+   },
+   {
+    "n": 13,
+    "text": "O let the earth bless the Lord; * O ye mountains and hills, bless ye the Lord;"
+   },
+   {
+    "n": 14,
+    "text": "O all ye green things upon the earth, bless ye the Lord; * praise him and magnify him for ever."
+   },
+   {
+    "n": 15,
+    "text": "O ye wells, bless ye the Lord; * O ye seas and floods, bless ye the Lord;"
+   },
+   {
+    "n": 16,
+    "text": "O ye whales and all that move in the waters, bless ye the Lord; praise him and magnify him for ever."
+   },
+   {
+    "n": 17,
+    "text": "O all ye fowls of the air, bless ye the Lord; * O all ye beasts and cattle, bless ye the Lord;"
+   },
+   {
+    "n": 18,
+    "text": "O ye children of men, bless ye the Lord; * praise him and magnify him for ever."
+   },
+   {
+    "n": 19,
+    "text": "O ye people of God, bless ye the Lord; * O ye priests of the Lord, bless ye the Lord;"
+   },
+   {
+    "n": 20,
+    "text": "O ye servants of the Lord, bless ye the Lord; * praise him and magnify him for ever."
+   },
+   {
+    "n": 21,
+    "text": "O ye spirits and souls of the righteous, bless ye the Lord; * O ye holy and humble men of heart, bless ye the Lord."
+   },
+   {
+    "n": 22,
+    "text": "Let us bless the Father, the Son, and the Holy Spirit; * praise him and magnify him for ever."
+   }
+  ]
+ },
+ "2": {
+  "title": "A Song of Praise",
+  "citation": "Song of the Three Young Men, 29-34",
+  "verses": [
+   {
+    "n": 1,
+    "text": "Blessed art thou, O Lord God of our fathers; * praised and exalted above all for ever."
+   },
+   {
+    "n": 2,
+    "text": "Blessed art thou for the name of thy Majesty; * praised and exalted above all for ever."
+   },
+   {
+    "n": 3,
+    "text": "Blessed art thou in the temple of thy holiness; * praised and exalted above all for ever."
+   },
+   {
+    "n": 4,
+    "text": "Blessed art thou that beholdest the depths, and dwellest between the Cherubim; * praised and exalted above all for ever."
+   },
+   {
+    "n": 5,
+    "text": "Blessed art thou on the glorious throne of thy kingdom; * praised and exalted above all for ever."
+   },
+   {
+    "n": 6,
+    "text": "Blessed art thou in the firmament of heaven; * praised and exalted above all for ever."
+   },
+   {
+    "n": 7,
+    "text": "Blessed art thou, O Father, Son, and Holy Spirit; * praised and exalted above all for ever."
+   }
+  ]
+ },
+ "3": {
+  "title": "The Song of Mary",
+  "citation": "Luke 1:46-55",
+  "verses": [
+   {
+    "n": 1,
+    "text": "My soul doth magnify the Lord, * and my spirit hath rejoiced in God my Savior."
+   },
+   {
+    "n": 2,
+    "text": "For he hath regarded * the lowliness of his handmaiden."
+   },
+   {
+    "n": 3,
+    "text": "For behold from henceforth * all generations shall call me blessed."
+   },
+   {
+    "n": 4,
+    "text": "For he that is mighty hath magnified me, * and holy is his Name."
+   },
+   {
+    "n": 5,
+    "text": "And his mercy is on them that fear him * throughout all generations."
+   },
+   {
+    "n": 6,
+    "text": "He hath showed strength with his arm; * he hath scattered the proud in the imagination of their hearts."
+   },
+   {
+    "n": 7,
+    "text": "He hath put down the mighty from their seat, * and hath exalted the humble and meek."
+   },
+   {
+    "n": 8,
+    "text": "He hath filled the hungry with good things, * and the rich he hath sent empty away."
+   },
+   {
+    "n": 9,
+    "text": "He remembering his mercy hath holpen his servant Israel, * as he promised to our forefathers, Abraham and his seed for ever."
+   }
+  ]
+ },
+ "4": {
+  "title": "The Song of Zechariah",
+  "citation": "Luke 1:68-79",
+  "verses": [
+   {
+    "n": 1,
+    "text": "Blessed be the Lord God of Israel, * for he hath visited and redeemed his people;"
+   },
+   {
+    "n": 2,
+    "text": "And hath raised up a mighty salvation for us * in the house of his servant David,"
+   },
+   {
+    "n": 3,
+    "text": "As he spake by the mouth of his holy prophets, * which have been since the world began:"
+   },
+   {
+    "n": 4,
+    "text": "That we should be saved from our enemies, * and from the hand of all that hate us;"
+   },
+   {
+    "n": 5,
+    "text": "To perform the mercy promised to our forefathers, * and to remember his holy covenant;"
+   },
+   {
+    "n": 6,
+    "text": "To perform the oath which he sware to our forefather Abraham, * that he would give us,"
+   },
+   {
+    "n": 7,
+    "text": "That we being delivered out of the hand of our enemies * might serve him without fear,"
+   },
+   {
+    "n": 8,
+    "text": "In holiness and righteousness before him, * all the days of our life."
+   },
+   {
+    "n": 9,
+    "text": "And thou, child, shalt be called the prophet of the Highest, * for thou shalt go before the face of the Lord to prepare his ways;"
+   },
+   {
+    "n": 10,
+    "text": "To give knowledge of salvation unto his people * for the remission of their sins,"
+   },
+   {
+    "n": 11,
+    "text": "Through the tender mercy of our God, * whereby the dayspring from on high hath visited us;"
+   },
+   {
+    "n": 12,
+    "text": "To give light to them that sit in darkness and in the shadow of death, * and to guide our feet into the way of peace."
+   }
+  ]
+ },
+ "5": {
+  "title": "The Song of Simeon",
+  "citation": "Luke 2:29-32",
+  "verses": [
+   {
+    "n": 1,
+    "text": "Lord, now lettest thou thy servant depart in peace, * according to thy word;"
+   },
+   {
+    "n": 2,
+    "text": "For mine eyes have seen thy salvation, * which thou hast prepared before the face of all people,"
+   },
+   {
+    "n": 3,
+    "text": "To be a light to lighten the Gentiles, * and to be the glory of thy people Israel."
+   }
+  ]
+ },
+ "6": {
+  "title": "Glory be to God",
+  "citation": "",
+  "verses": [
+   {
+    "n": 1,
+    "text": "Glory be to God on high, * and on earth peace, good will towards men."
+   },
+   {
+    "n": 2,
+    "text": "We praise thee, we bless thee, * we worship thee,"
+   },
+   {
+    "n": 3,
+    "text": "we glorify thee, * we give thanks to thee for thy great glory,"
+   },
+   {
+    "n": 4,
+    "text": "O Lord God, heavenly King, * God the Father Almighty."
+   },
+   {
+    "n": 5,
+    "text": "O Lord, the only-begotten Son, * Jesus Christ;"
+   },
+   {
+    "n": 6,
+    "text": "O Lord God, Lamb of God, * Son of the Father,"
+   },
+   {
+    "n": 7,
+    "text": "that takest away the sins of the world, * have mercy upon us."
+   },
+   {
+    "n": 8,
+    "text": "Thou that takest away the sins of the world, * receive our prayer."
+   },
+   {
+    "n": 9,
+    "text": "Thou that sittest at the right hand of God the Father, * have mercy upon us."
+   },
+   {
+    "n": 10,
+    "text": "For thou only art holy, * thou only art the Lord,"
+   },
+   {
+    "n": 11,
+    "text": "thou only, O Christ, * with the Holy Ghost,"
+   },
+   {
+    "n": 12,
+    "text": "art most high * in the glory of God the Father. Amen."
+   }
+  ]
+ },
+ "7": {
+  "title": "We Praise Thee",
+  "citation": "",
+  "verses": [
+   {
+    "n": 1,
+    "text": "We praise thee, O God; * we acknowledge thee to be the Lord."
+   },
+   {
+    "n": 2,
+    "text": "All the earth doth worship thee, * the Father everlasting."
+   },
+   {
+    "n": 3,
+    "text": "To thee all Angels cry aloud, * the Heavens and all the Powers therein."
+   },
+   {
+    "n": 4,
+    "text": "To thee Cherubim and Seraphim * continually do cry:"
+   },
+   {
+    "n": 5,
+    "text": "Holy, holy, holy, * Lord God of Sabaoth;"
+   },
+   {
+    "n": 6,
+    "text": "Heaven and earth are full of the majesty * of thy glory."
+   },
+   {
+    "n": 7,
+    "text": "The glorious company of the apostles * praise thee."
+   },
+   {
+    "n": 8,
+    "text": "The goodly fellowship of the prophets * praise thee."
+   },
+   {
+    "n": 9,
+    "text": "The noble army of martyrs * praise thee."
+   },
+   {
+    "n": 10,
+    "text": "The holy Church throughout all the world * doth acknowledge thee,"
+   },
+   {
+    "n": 11,
+    "text": "the Father, * of an infinite majesty,"
+   },
+   {
+    "n": 12,
+    "text": "thine adorable, true, * and only Son,"
+   },
+   {
+    "n": 13,
+    "text": "also the Holy Ghost * the Comforter."
+   },
+   {
+    "n": 14,
+    "text": "Thou art the King of glory, * O Christ."
+   },
+   {
+    "n": 15,
+    "text": "Thou art the everlasting Son * of the Father."
+   },
+   {
+    "n": 16,
+    "text": "When thou tookest upon thee to deliver man, * thou didst humble thyself to be born of a Virgin."
+   },
+   {
+    "n": 17,
+    "text": "When thou hadst overcome the sharpness of death, * thou didst open the kingdom of heaven to all believers."
+   },
+   {
+    "n": 18,
+    "text": "Thou sittest at the right hand of God, * in the glory of the Father."
+   },
+   {
+    "n": 19,
+    "text": "We believe that thou shalt come * to be our judge."
+   },
+   {
+    "n": 20,
+    "text": "We therefore pray thee, help thy servants, * whom thou hast redeemed with thy precious blood."
+   },
+   {
+    "n": 21,
+    "text": "Make them to be numbered with thy saints, * in glory everlasting."
+   }
+  ]
+ },
+ "8": {
+  "title": "The Song of Moses",
+  "citation": "Exodus 15:1-6, 11-13, 17-18",
+  "verses": [
+   {
+    "n": 1,
+    "text": "I will sing to the Lord, for he is lofty and uplifted; * the horse and its rider has he hurled into the sea."
+   },
+   {
+    "n": 2,
+    "text": "The Lord is my strength and my refuge; * the Lord has become my Savior."
+   },
+   {
+    "n": 3,
+    "text": "This is my God and I will praise him, * the God of my people and I will exalt him."
+   },
+   {
+    "n": 4,
+    "text": "The Lord is a mighty warrior; * Yahweh is his Name."
+   },
+   {
+    "n": 5,
+    "text": "The chariots of Pharoah and his army has he hurled into the sea; * the finest of those who bear armor have been drowned in the Red Sea."
+   },
+   {
+    "n": 6,
+    "text": "The fathomless deep has overwhelmed them; * they sank into the depths like a stone."
+   },
+   {
+    "n": 7,
+    "text": "Your right hand, O Lord, is glorious in might; * your right hand, O Lord, has overthrown the enemy."
+   },
+   {
+    "n": 8,
+    "text": "Who can be compared with you, O Lord, among the gods? * who is like you, glorious in holiness, awesome in renown, and worker of wonders?"
+   },
+   {
+    "n": 9,
+    "text": "You stretched forth your right hand; * the earth swallowed them up."
+   },
+   {
+    "n": 10,
+    "text": "With your constant love you led the people you redeemed; * with your might you brought them in safety to your holy dwelling."
+   },
+   {
+    "n": 11,
+    "text": "You will bring them in and plant them * on the mount of your possession,"
+   },
+   {
+    "n": 12,
+    "text": "The resting-place you have made for yourself, O Lord, * the sanctuary, O Lord, that your hand has established."
+   },
+   {
+    "n": 13,
+    "text": "The Lord shall reign * for ever and for ever."
+   }
+  ]
+ },
+ "9": {
+  "title": "The First Song of Isaiah",
+  "citation": "Isaiah 12:2-6",
+  "verses": [
+   {
+    "n": 1,
+    "text": "Surely, it is God who saves me; * I will trust in him and not be afraid."
+   },
+   {
+    "n": 2,
+    "text": "For the Lord is my stronghold and my sure defense, * and he will be my Savior."
+   },
+   {
+    "n": 3,
+    "text": "Therefore you shall draw water with rejoicing * from the springs of salvation."
+   },
+   {
+    "n": 4,
+    "text": "And on that day you shall say, * Give thanks to the Lord and call upon his Name;"
+   },
+   {
+    "n": 5,
+    "text": "Make his deeds known among the peoples; * see that they remember that his Name is exalted."
+   },
+   {
+    "n": 6,
+    "text": "Sing the praises of the Lord, for he has done great things, * and this is known in all the world."
+   },
+   {
+    "n": 7,
+    "text": "Cry aloud, inhabitants of Zion, ring out your joy, * for the great one in the midst of you is the Holy One of Israel."
+   }
+  ]
+ },
+ "10": {
+  "title": "The Second Song of Isaiah",
+  "citation": "Isaiah 55:6-11",
+  "verses": [
+   {
+    "n": 1,
+    "text": "Seek the Lord while he wills to be found; * call upon him when he draws near."
+   },
+   {
+    "n": 2,
+    "text": "Let the wicked forsake their ways * and the evil ones their thoughts;"
+   },
+   {
+    "n": 3,
+    "text": "And let them turn to the Lord, and he will have compassion, * and to our God, for he will richly pardon."
+   },
+   {
+    "n": 4,
+    "text": "For my thoughts are not your thoughts, * nor your ways my ways, says the Lord."
+   },
+   {
+    "n": 5,
+    "text": "For as the heavens are higher than the earth, * so are my ways higher than your ways, and my thoughts than your thoughts."
+   },
+   {
+    "n": 6,
+    "text": "For as rain and snow fall from the heavens * and return not again, but water the earth,"
+   },
+   {
+    "n": 7,
+    "text": "Bringing forth life and giving growth, * seed for sowing and bread for eating,"
+   },
+   {
+    "n": 8,
+    "text": "So is my word that goes forth from my mouth; * it will not return to me empty;"
+   },
+   {
+    "n": 9,
+    "text": "But it will accomplish that which I have purposed, * and prosper in that for which I sent it."
+   }
+  ]
+ },
+ "11": {
+  "title": "The Third Song of Isaiah",
+  "citation": "Isaiah 60:1-3, 11a, 14c, 18-19",
+  "verses": [
+   {
+    "n": 1,
+    "text": "Arise, shine, for your light has come, * and the glory of the Lord has dawned upon you."
+   },
+   {
+    "n": 2,
+    "text": "For behold, darkness covers the land; * deep gloom enshrouds the peoples."
+   },
+   {
+    "n": 3,
+    "text": "But over you the Lord will rise, * and his glory will appear upon you."
+   },
+   {
+    "n": 4,
+    "text": "Nations will stream to your light, * and kings to the brightness of your dawning."
+   },
+   {
+    "n": 5,
+    "text": "Your gates will always be open; * by day or night they will never be shut."
+   },
+   {
+    "n": 6,
+    "text": "They will call you, The City of the Lord, * The Zion of the Holy One of Israel."
+   },
+   {
+    "n": 7,
+    "text": "Violence will no more be heard in your land, * ruin or destruction within your borders."
+   },
+   {
+    "n": 8,
+    "text": "You will call your walls, Salvation, * and all your portals, Praise."
+   },
+   {
+    "n": 9,
+    "text": "The sun will no more be your light by day; * by night you will not need the brightness of the moon."
+   },
+   {
+    "n": 10,
+    "text": "The Lord will be your everlasting light, * and your God will be your glory."
+   }
+  ]
+ },
+ "12": {
+  "title": "A Song of Creation",
+  "citation": "Song of the Three Young Men, 35-65",
+  "verses": [
+   {
+    "n": 1,
+    "text": "Glorify the Lord, all you works of the Lord, * praise him and highly exalt him for ever."
+   },
+   {
+    "n": 2,
+    "text": "In the firmament of his power, glorify the Lord, * praise him and highly exalt him for ever."
+   },
+   {
+    "n": 3,
+    "text": "Glorify the Lord, you angels and all powers of the Lord, * O heavens and all waters above the heavens."
+   },
+   {
+    "n": 4,
+    "text": "Sun and moon and stars of the sky, glorify the Lord, * praise him and highly exalt him for ever."
+   },
+   {
+    "n": 5,
+    "text": "Glorify the Lord, every shower of rain and fall of dew, * all winds and fire and heat."
+   },
+   {
+    "n": 6,
+    "text": "Winter and Summer, glorify the Lord, * praise him and highly exalt him for ever."
+   },
+   {
+    "n": 7,
+    "text": "Glorify the Lord, O chill and cold, * drops of dew and flakes of snow"
+   },
+   {
+    "n": 8,
+    "text": "Frost and cold, ice and sleet, glorify the Lord, * praise him and highly exalt him for ever."
+   },
+   {
+    "n": 9,
+    "text": "Glorify the Lord, O nights and days, * O shining light and enfolding dark."
+   },
+   {
+    "n": 10,
+    "text": "Storm clouds and thunderbolts, glorify the Lord, * praise him and highly exalt him for ever."
+   },
+   {
+    "n": 11,
+    "text": "Let the earth glorify the Lord, * praise him and highly exalt him for ever."
+   },
+   {
+    "n": 12,
+    "text": "Glorify the Lord, O mountains and hills, and all that grows upon the earth, * praise him and highly exalt him for ever."
+   },
+   {
+    "n": 13,
+    "text": "Glorify the Lord, O springs of water, seas, and streams, * O whales and all that move in the waters."
+   },
+   {
+    "n": 14,
+    "text": "All birds of the air, glorify the Lord, * praise him and highly exalt him for ever."
+   },
+   {
+    "n": 15,
+    "text": "Glorify the Lord, O beasts of the wild, * and all you flocks and herds."
+   },
+   {
+    "n": 16,
+    "text": "O men and women everywhere, glorify the Lord, * praise him and highly exalt him for ever."
+   },
+   {
+    "n": 17,
+    "text": "Let the people of God glorify the Lord, * praise him and highly exalt him for ever."
+   },
+   {
+    "n": 18,
+    "text": "Glorify the Lord, O priests and servants of the Lord, * praise him and highly exalt him for ever."
+   },
+   {
+    "n": 19,
+    "text": "Glorify the Lord, O spirits and souls of the righteous, * praise him and highly exalt him for ever."
+   },
+   {
+    "n": 20,
+    "text": "You that are holy and humble of heart, glorify the Lord, * praise him and highly exalt him for ever."
+   },
+   {
+    "n": 21,
+    "text": "Let us glorify the Lord: Father, Son, and Holy Spirit; * praise him and highly exalt him for ever."
+   },
+   {
+    "n": 22,
+    "text": "In the firmament of his power, glorify the Lord, * praise him and highly exalt him for ever."
+   }
+  ]
+ },
+ "13": {
+  "title": "A Song of Praise",
+  "citation": "Song of the Three Young Men, 29-34",
+  "verses": [
+   {
+    "n": 1,
+    "text": "Glory to you, Lord God of our fathers; * you are worthy of praise; glory to you."
+   },
+   {
+    "n": 2,
+    "text": "Glory to you for the radiance of your holy Name; * we will praise you and highly exalt you for ever."
+   },
+   {
+    "n": 3,
+    "text": "Glory to you in the splendor of your temple; * on the throne of your majesty, glory to you."
+   },
+   {
+    "n": 4,
+    "text": "Glory to you, seated between the Cherubim; * we will praise you and highly exalt you for ever."
+   },
+   {
+    "n": 5,
+    "text": "Glory to you, beholding the depths; * in the high vault of heaven, glory to you."
+   },
+   {
+    "n": 6,
+    "text": "Glory to you, Father, Son, and Holy Spirit; * we will praise you and highly exalt you for ever."
+   }
+  ]
+ },
+ "14": {
+  "title": "A Song of Penitence",
+  "citation": "Prayer of Manasseh 1-2, 4, 6-7, 11-15",
+  "verses": [
+   {
+    "n": 1,
+    "text": "O Lord and Ruler of the hosts of heaven, * God of Abraham, Isaac, and Jacob, and of all their righteous offspring:"
+   },
+   {
+    "n": 2,
+    "text": "You made the heavens and the earth, * with all their vast array."
+   },
+   {
+    "n": 3,
+    "text": "All things quake with fear at your presence; * they tremble because of your power."
+   },
+   {
+    "n": 4,
+    "text": "But your merciful promise is beyond all measure; * it surpasses all that our minds can fathom."
+   },
+   {
+    "n": 5,
+    "text": "O Lord, you are full of compassion, * long-suffering, and abounding in mercy."
+   },
+   {
+    "n": 6,
+    "text": "You hold back your hand; * you do not punish as we deserve."
+   },
+   {
+    "n": 7,
+    "text": "In your great goodness, Lord, you have promised forgiveness to sinners, * that they may repent of their sin and be saved."
+   },
+   {
+    "n": 8,
+    "text": "And now, O Lord, I bend the knee of my heart, * and make my appeal, sure of your gracious goodness."
+   },
+   {
+    "n": 9,
+    "text": "I have sinned, O Lord, I have sinned, * and I know my wickedness only too well."
+   },
+   {
+    "n": 10,
+    "text": "Therefore I make this prayer to you: * Forgive me, Lord, forgive me."
+   },
+   {
+    "n": 11,
+    "text": "Do not let me perish in my sin, * nor condemn me to the depths of the earth."
+   },
+   {
+    "n": 12,
+    "text": "For you, O Lord, are the God of those who repent, * and in me you will show forth your goodness."
+   },
+   {
+    "n": 13,
+    "text": "Unworthy as I am, you will save me, in accordance with your great mercy, * and I will praise you without ceasing all the days of my life."
+   },
+   {
+    "n": 14,
+    "text": "For all the powers of heaven sing your praises, * and yours is the glory to ages of ages. Amen."
+   }
+  ]
+ },
+ "15": {
+  "title": "The Song of Mary",
+  "citation": "Luke 1:46-55",
+  "verses": [
+   {
+    "n": 1,
+    "text": "My soul proclaims the greatness of the Lord, my spirit rejoices in God my Savior; * for he has looked with favor on his lowly servant."
+   },
+   {
+    "n": 2,
+    "text": "From this day all generations will call me blessed: * the Almighty has done great things for me, and holy is his Name."
+   },
+   {
+    "n": 3,
+    "text": "He has mercy on those who fear him * in every generation."
+   },
+   {
+    "n": 4,
+    "text": "He has shown the strength of his arm, * he has scattered the proud in their conceit."
+   },
+   {
+    "n": 5,
+    "text": "He has cast down the mighty from their thrones, * and has lifted up the lowly."
+   },
+   {
+    "n": 6,
+    "text": "He has filled the hungry with good things, * and the rich he has sent away empty."
+   },
+   {
+    "n": 7,
+    "text": "He has come to the help of his servant Israel, * for he has remembered his promise of mercy,"
+   },
+   {
+    "n": 8,
+    "text": "The promise he made to our fathers, * to Abraham and his children for ever."
+   }
+  ]
+ },
+ "16": {
+  "title": "The Song of Zechariah",
+  "citation": "Luke 1:68-79",
+  "verses": [
+   {
+    "n": 1,
+    "text": "Blessed be the Lord, the God of Israel; * he has come to his people and set them free."
+   },
+   {
+    "n": 2,
+    "text": "He has raised up for us a mighty savior, * born of the house of his servant David."
+   },
+   {
+    "n": 3,
+    "text": "Through his holy prophets he promised of old, that he would save us from our enemies, * from the hands of all who hate us."
+   },
+   {
+    "n": 4,
+    "text": "He promised to show mercy to our fathers * and to remember his holy covenant."
+   },
+   {
+    "n": 5,
+    "text": "This was the oath he swore to our father Abraham, * to set us free from the hands of our enemies,"
+   },
+   {
+    "n": 6,
+    "text": "Free to worship him without fear, * holy and righteous in his sight all the days of our life."
+   },
+   {
+    "n": 7,
+    "text": "You, my child, shall be called the prophet of the Most High, * for you will go before the Lord to prepare his way,"
+   },
+   {
+    "n": 8,
+    "text": "To give his people knowledge of salvation * by the forgiveness of their sins."
+   },
+   {
+    "n": 9,
+    "text": "In the tender compassion of our God * the dawn from on high shall break upon us,"
+   },
+   {
+    "n": 10,
+    "text": "To shine on those who dwell in darkness and the shadow of death, * and to guide our feet into the way of peace."
+   }
+  ]
+ },
+ "17": {
+  "title": "The Song of Simeon",
+  "citation": "Luke 2:29-32",
+  "verses": [
+   {
+    "n": 1,
+    "text": "Lord, you now have set your servant free * to go in peace as you have promised;"
+   },
+   {
+    "n": 2,
+    "text": "For these eyes of mine have seen the Savior, * whom you have prepared for all the world to see:"
+   },
+   {
+    "n": 3,
+    "text": "A Light to enlighten the nations, * and the glory of your people Israel."
+   }
+  ]
+ },
+ "18": {
+  "title": "A Song to the Lamb",
+  "citation": "Revelation 4:11, 5:9-10, 13",
+  "verses": [
+   {
+    "n": 1,
+    "text": "Splendor and honor and kingly power * are yours by right, O Lord our God,"
+   },
+   {
+    "n": 2,
+    "text": "For you created everything that is, * and by your will they were created and have their being;"
+   },
+   {
+    "n": 3,
+    "text": "And yours by right, O Lamb that was slain, * for with your blood you have redeemed for God,"
+   },
+   {
+    "n": 4,
+    "text": "From every family, language, people, and nation, * a kingdom of priests to serve our God."
+   },
+   {
+    "n": 5,
+    "text": "And so, to him who sits upon the throne, * and to Christ the Lamb,"
+   },
+   {
+    "n": 6,
+    "text": "Be worship and praise, dominion and splendor, * for ever and for evermore."
+   }
+  ]
+ },
+ "19": {
+  "title": "The Song of the Redeemed",
+  "citation": "Revelation 15:3-4",
+  "verses": [
+   {
+    "n": 1,
+    "text": "O ruler of the universe, Lord God, great deeds are they that you have done, * surpassing human understanding."
+   },
+   {
+    "n": 2,
+    "text": "Your ways are ways of righteousness and truth, * O King of all the ages."
+   },
+   {
+    "n": 3,
+    "text": "Who can fail to do you homage, Lord, and sing the praises of your Name? * for you only are the Holy One."
+   },
+   {
+    "n": 4,
+    "text": "All nations will draw near and fall down before you, * because your just and holy works have been revealed."
+   }
+  ]
+ },
+ "20": {
+  "title": "Glory to God",
+  "citation": "",
+  "verses": [
+   {
+    "n": 1,
+    "text": "Glory to God in the highest, * and peace to his people on earth."
+   },
+   {
+    "n": 2,
+    "text": "Lord God, heavenly King, almighty God and Father, * we worship you, we give you thanks, we praise you for your glory."
+   },
+   {
+    "n": 3,
+    "text": "Lord Jesus Christ, only Son of the Father, * Lord God, Lamb of God,"
+   },
+   {
+    "n": 4,
+    "text": "you take away the sin of the world: * have mercy on us;"
+   },
+   {
+    "n": 5,
+    "text": "you are seated at the right hand of the Father: * receive our prayer."
+   },
+   {
+    "n": 6,
+    "text": "For you alone are the Holy One, * you alone are the Lord,"
+   },
+   {
+    "n": 7,
+    "text": "you alone are the Most High, * Jesus Christ,"
+   },
+   {
+    "n": 8,
+    "text": "with the Holy Spirit, * in the glory of God the Father. Amen."
+   }
+  ]
+ },
+ "21": {
+  "title": "You are God",
+  "citation": "",
+  "verses": [
+   {
+    "n": 1,
+    "text": "You are God: * we praise you;"
+   },
+   {
+    "n": 2,
+    "text": "You are the Lord; * we acclaim you;"
+   },
+   {
+    "n": 3,
+    "text": "You are the eternal Father: * All creation worships you."
+   },
+   {
+    "n": 4,
+    "text": "To you all angels, all the powers of heaven, * Cherubim and Seraphim, sing in endless praise:"
+   },
+   {
+    "n": 5,
+    "text": "Holy, holy, holy Lord, God of power and might, * heaven and earth are full of your glory."
+   },
+   {
+    "n": 6,
+    "text": "The glorious company of apostles * praise you."
+   },
+   {
+    "n": 7,
+    "text": "The noble fellowship of prophets * praise you."
+   },
+   {
+    "n": 8,
+    "text": "The white-robed army of martyrs * praise you."
+   },
+   {
+    "n": 9,
+    "text": "Throughout the world the holy Church * acclaims you;"
+   },
+   {
+    "n": 10,
+    "text": "Father, * of majesty unbounded,"
+   },
+   {
+    "n": 11,
+    "text": "your true and only Son, * worthy of all worship,"
+   },
+   {
+    "n": 12,
+    "text": "and the Holy Spirit, * advocate and guide."
+   },
+   {
+    "n": 13,
+    "text": "You, Christ, are the king of glory, * the eternal Son of the Father."
+   },
+   {
+    "n": 14,
+    "text": "When you became man to set us free * you did not shun the Virgin’s womb."
+   },
+   {
+    "n": 15,
+    "text": "You overcame the sting of death * and opened the kingdom of heaven to all believers."
+   },
+   {
+    "n": 16,
+    "text": "You are seated at God’s right hand * in glory."
+   },
+   {
+    "n": 17,
+    "text": "We believe that you will come * and be our judge."
+   },
+   {
+    "n": 18,
+    "text": "Come then, Lord, and help your people, * bought with the price of your own blood,"
+   },
+   {
+    "n": 19,
+    "text": "and bring us with your saints * to glory everlasting."
+   }
+  ]
+ }
+}
