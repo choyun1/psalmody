@@ -13,3 +13,5 @@ jobs:
         run: python tools/check_texts.py
       - name: Examples read and plan
         run: for f in examples/*.txt; do python tools/build.py "$f" --check || exit 1; done
+      - name: README contents and links
+        run: python tools/check_readme.py

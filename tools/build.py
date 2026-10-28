@@ -89,7 +89,7 @@ def parse_sunday(path):
                 name = 'tone:' + name.replace(' ', '')
             s['items'][-1]['chants'].append((name, int(m.group(2)) if m.group(2) else None))
         elif key in service.KEYS:
-            s['music'].append((key, val))         # the rest of the service, for the email
+            s['music'].append((key, val))         # the rest of the service
         else:
             raise SystemExit(f'{path}: unknown line {line!r}')
     if s['gloria'] is None:

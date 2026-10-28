@@ -115,7 +115,7 @@ def service_lines(date, service_name=None):
     _, have = service.planned(date)
     have = dict((k, v) for k, v in have if k not in ('also', 'note'))
     _, prev = service.previous_service_music(date, order)
-    out = ['', f'# The rest of the service ({order}), for the email (python tools/service.py email <this file>)']
+    out = ['', f'# The rest of the service ({order})']
     pad = lambda k: (k + ':').ljust(max(11, len(k) + 2))
     out.append(pad('organist') + have.get('organist', ''))
     for s in service.slots(order):

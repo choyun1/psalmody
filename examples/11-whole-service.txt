@@ -1,7 +1,5 @@
-# The whole service, for the weekly email to the parish office.
-# Everything after the psalm is optional; the build ignores it, and
-#     python tools/service.py email examples/11-whole-service.txt
-# writes the email ("Music for 10/25") with the psalm images attached.
+# The whole service. Everything after the psalm is optional: the build ignores it, and the
+# planner and the history read it (what was sung, when; the music schedule spreadsheet).
 date:      2026-10-25
 psalm:     34:1-8,(19-22)
 chant:     Goss-1
@@ -14,10 +12,10 @@ offertory: 336
 communion: Dear Lord and Father of Mankind - C. H. H. Parry (1848-1918)
 closing:   680
 postlude:  Melody in B-flat major - C. H. H. Parry (1848-1918)
-# Service music: the email lists it only when it differs from the last service.
+# Service music: the planner carries it on from the last service of the same kind.
 gloria in excelsis: S278
 sanctus:   S128
 agnus dei: S165
-# Anything else, listed in the email where it stands, and a note for the office:
+# Anything else, listed where it stands, and a note:
 also:      Processional hymn: 787 (WLP)
 note:      The choir will sing from the gallery this week.

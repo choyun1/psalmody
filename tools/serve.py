@@ -170,19 +170,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                                          data.get('source', '').strip(), data.get('text', ''))
                 threading.Thread(target=lambda: run(['browser.py']), daemon=True).start()
                 return self.reply({'ok': True, 'file': os.path.relpath(f, ROOT).replace(os.sep, '/')})
-            if path == '/api/gmail':
-                import gmail, service
-                acct = service.settings()['account']
-                if data.get('forget'):
-                    gmail.forget(acct)
-                    return self.reply({'ok': True, 'connected': False})
-                if data.get('password'):
-                    try:
-                        where = gmail.connect(acct, data['password'])
-                    except RuntimeError as e:
-                        return self.reply({'ok': False, 'error': str(e)})
-                    return self.reply({'ok': True, 'connected': True, 'where': where})
-                return self.reply({'ok': True, 'connected': gmail.connected(acct), 'account': acct})
             if path == '/api/sheet':
                 import spreadsheet, keystore, lectionary
                 act = data.get('action', 'status')
@@ -221,26 +208,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                     return self.reply({'ok': False, 'error': str(e)})
                 return self.reply({'ok': True, 'file': plan['name'], 'sheet': plan['sheet'], 'url': plan.get('url'),
                                    'changes': plan['changes'], 'notes': plan['notes'], 'written': bool(plan.get('written'))})
-            if path == '/api/draft':
-                import service
-                name = safe_name(data['name'])
-                try:
-                    e = service.draft(os.path.join(paths.SUNDAYS, name + '.txt'), data.get('body'))
-                except (RuntimeError, OSError) as e:
-                    return self.reply({'ok': False, 'error': str(e)})
-                return self.reply({'ok': True, 'replaced': e['replaced'], 'link': e['link'],
-                                   'files': [os.path.basename(f) for f in e['files']]})
-            if path == '/api/email':
-                import service
-                name = safe_name(data['name'])
-                e = service.write_email(os.path.join(paths.SUNDAYS, name + '.txt'), data.get('body'))
-                rel = lambda f: os.path.relpath(f, ROOT).replace(os.sep, '/')
-                return self.reply({'ok': True, 'subject': e['subject'], 'to': e['to'], 'cc': e['cc'],
-                                   'account': e['account'], 'body': e['body'],
-                                   'files': [rel(f) for f in e['files']], 'eml': rel(e['eml'])})
             if path == '/api/open':
                 name = safe_name(data['name'])
-                folder = os.path.join(paths.OUTPUT, name, data.get('sub') == 'email' and 'email' or '')
+                folder = os.path.join(paths.OUTPUT, name, safe_name(data['sub']) if data.get('sub') else '')
                 if not os.path.isdir(folder):
                     raise ValueError('nothing built yet for ' + name)
                 if sys.platform.startswith('win'):
@@ -268,6 +238,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 if code == 0:
                     run(['browser.py'])          # refresh history and "coming up"
                 return self.reply({'ok': code == 0, 'log': out, 'files': sorted(files)})
+            import plugins                      # a parish plugin's own requests (parish/plugins/)
+            handler = plugins.routes().get(path)
+            if handler:
+                return self.reply(handler(data, {'safe_name': safe_name, 'root': ROOT}))
         except (KeyError, ValueError) as e:
             return self.reply({'error': str(e)}, 400)
         except subprocess.TimeoutExpired:

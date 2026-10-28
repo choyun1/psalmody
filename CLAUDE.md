@@ -5,5 +5,5 @@
 - Only public-domain chants go in `chants/` (with a row in `chants/catalog.csv`); anything still under copyright goes in a parish's `parish/chants/`.
 - Mood vocabulary lives in `moods.txt`; use only those tags in `texts/moods.csv` and the Mood column of a parish's chant notes.
 - `parish/` is each user's own folder (often its own private repository) and is never committed here; `parish.example/` is the template. `tools/paths.py` says where everything is.
-- Anything specific to one parish (name, track, email, spreadsheet, orders of service) belongs in its `parish/` folder, not in code.
-- Never store a Gmail app password or a Google Sheet web-app address or secret in a repository; `tools/keystore.py` keeps them in the OS keyring or `~/.psalter/`.
+- Anything specific to one parish (name, track, spreadsheet, orders of service, plugins such as an email to the office) belongs in its `parish/` folder, not in code.
+- Never store a password (a plugin's too) or a Google Sheet web-app address or secret in a repository; `tools/keystore.py` keeps them in the OS keyring or `~/.psalter/`.

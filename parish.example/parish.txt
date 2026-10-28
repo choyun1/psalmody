@@ -11,29 +11,6 @@ christmas_day: christmas2 christmas1 christmas3
 # Psalm verses the lectionary prints in brackets: "sing" or "leave out" by default.
 optional_verses: sing
 
-# The weekly email (optional). Several Cc addresses: separate with commas.
-# email_account:  music@example.org
-# email_to:       "Parish Office" <office@example.org>
-# email_cc:       "The Rector" <rector@example.org>
-# email_greeting: Hello,
-# email_subject:  Music for {mm}/{dd}
-# signature:      Your Name | Director of Music | St Example's Church | 1 Main Street | Anytown
-# How it's laid out (these are the defaults). The wording around the list of music, with {occasion},
-# {month}, {dayth} (15th), {mm}, {dd}, {weekday}, {year}; each order of service in services.txt can
-# have its own "email subject:" and "email intro:".
-# email_intro:    Here's the music for {occasion}:
-# email_change:   There's a change to the service music this week:
-# email_rest:     And here's the rest of the music for {occasion}:
-# Service music (Gloria, Sanctus…) at the usual service: listed when it "changes" from the last time,
-# "always", or "never". Other services always list theirs.
-# email_service_music: changes
-# What each piece of music starts with ("none" for nothing), and what goes above and below an anthem's
-# words ("none", or e.g. """ or ---).
-# email_bullet:   *
-# email_quotes:   none
-# The psalm images' file names: {yymmdd} (261025), {date} (2026-10-25), {mm}, {dd}, {kind} (chant, text, tone).
-# email_attachments: psalm_{yymmdd}_{kind}
-
 # The music schedule spreadsheet (optional): google (a Google Sheet, connected once from the planner),
 # or the path of an .xlsx file.
 # spreadsheet:    schedule/Music_Schedule.xlsx

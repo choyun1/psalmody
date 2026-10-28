@@ -237,11 +237,12 @@ def service_data():
             continue
         if a.get('key'):
             lect[d] = [a['key'], a['year'], a['label']]
-    S = service.settings()
+    import plugins
     return {'lect': lect, 'orders': service.ORDERS, 'hymnals': service.hymnals(), 'repertoire': service.repertoire(),
             'hymnHistory': service.hymn_history(), 'anthems': service.anthems(), 'byDate': by_date,
             'lessons': service.lessons(), 'meta': service.META,
-            'email': {'to': S['to'], 'cc': S['cc'], 'account': S['account']}}
+            'spreadsheet': bool(lectionary.PARISH.get('spreadsheet', '').strip()),
+            'plugins': plugins.data(), 'pluginKeys': sorted(plugins.sunday_keys())}
 
 
 # ------------------------------------------------------------- plainchant psalm tones
@@ -364,7 +365,9 @@ def main():
         fh.write('window.PSALTER = ' + json.dumps(data, ensure_ascii=False, separators=(',', ':')) + ';\n')
     tpl = open(os.path.join(TOOLS, 'browser_template.html'), encoding='utf-8').read()
     fonts = os.path.relpath(os.path.join(ROOT, 'style', 'fonts'), SITE).replace(os.sep, '/')
-    open(os.path.join(SITE, 'index.html'), 'w', encoding='utf-8').write(tpl.replace('../style/fonts', fonts))
+    import plugins
+    page = tpl.replace('../style/fonts', fonts).replace('/*PLUGINS*/', plugins.scripts().replace('</script', '<\\/script'))
+    open(os.path.join(SITE, 'index.html'), 'w', encoding='utf-8').write(page)
     tagged = sum(1 for c in chants if c['mood'])
     print(f'{len(chants)} chants ({tagged} with moods), {len(data["texts"])} texts, {len(data["history"])} history rows')
     if drawn or failed:
