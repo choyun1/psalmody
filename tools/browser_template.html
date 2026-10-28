@@ -123,8 +123,6 @@ details > summary { cursor: pointer; color: var(--accent); }
 #dlg.wide { max-width: min(1100px, 96vw); }
 dialog { border: 1px solid var(--line); border-radius: 12px; background: var(--bg); color: var(--ink); max-width: min(900px, 94vw); width: 100%; padding: 8px 16px; }
 dialog::backdrop { background: rgba(0,0,0,.35); }
-.tag { color: var(--muted); font-size: 14px; }
-.tag + .tag::before { content: "· "; }
 .info { display: inline-flex; width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--muted); color: var(--muted); font: italic 11px/1 Georgia, serif;
   align-items: center; justify-content: center; cursor: help; margin-left: 6px; vertical-align: 2px; text-transform: none; letter-spacing: 0; }
 .clist { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
@@ -174,7 +172,6 @@ const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&
 const GROUP = {}; const ORDER = [];
 D.vocabulary.forEach(g => g.tags.forEach(t => { GROUP[t] = g.group; ORDER.push(t); }));
 const gclass = t => GROUP[t] ? "g-" + GROUP[t] : "";
-const tagText = t => `<span class="tag">${esc(t)}</span>`;          // a mood, quietly, where it's only read
 const info = t => `<span class="info" title="${esc(t)}">i</span>`;  // an explanation, on hover
 const chip = (t, extra = "") => `<span class="chip ${gclass(t)} ${extra}">${esc(t)}</span>`;
 
@@ -615,7 +612,7 @@ function renderChants() {
     const pins = val(c, "pins") || [], open = OPEN.has(c.id);
     return head + `<div class="crow ${open ? "open" : ""}" onclick="toggleRow('${esc(c.id)}')"><span class="nm">${pins.includes("favorite") ? "★ " : pins.includes("to try") ? "📌 " : ""}${esc(CN(c.id))}</span>
       <span class="meta">${esc(keyName(c))}${c.double ? "" : ", single"}</span><span>${stars(val(c, "rating"))}</span>
-      <span class="meta">${esc(lastUsed(c.id) || "never")}</span><span class="mo">${val(c, "mood").map(tagText).join(" ")}</span></div>`
+      <span class="meta">${esc(lastUsed(c.id) || "never")}</span><span class="mo">${val(c, "mood").map(t => chip(t)).join(" ")}</span></div>`
       + (open ? chantCard(c, {editing: openEdits.has(c.id)}) : "");
   }).join("") + `</div>`;
 }
@@ -893,7 +890,7 @@ function renderUpcoming() {
           .sort((a, b) => b.s - a.s || (val(b.ch, "rating") || 0) - (val(a.ch, "rating") || 0)).slice(0, 4) : [];
         return `<div class="section"><div class="moodrow"><b style="font-weight:normal">${o.track ? esc(o.track) + ": " : ""}${/^\d/.test(o.spec) ? "Psalm " : ""}${esc(o.spec)}</b>
           ${o.texts.map(id => `<span class="link" onclick="goText('${esc(id)}')">${esc(TX[id] ? TX[id].title : id)}</span>`).join(", ")}
-          ${mood.map(m => tagText(m)).join(" ")}${o.error ? ` <span class="hint">${/^\d/.test(o.spec) ? esc(o.error) : "not in the library yet"}</span>` : ""}</div>
+          ${mood.map(m => chip(m)).join(" ")}${o.error ? ` <span class="hint">${/^\d/.test(o.spec) ? esc(o.error) : "not in the library yet"}</span>` : ""}</div>
           ${sg.length ? `<div class="used">Try: ${sg.map(x => `<span class="link" onclick="showChant('${esc(x.ch.id)}')">${esc(CN(x.ch.id))}</span>`).join(" · ")}</div>` : ""}</div>`;
       }).join("") : '<p class="hint">No psalm in the table for this day.</p>'}</div>`;
   }).join("") + `</div>` + (all.length > rows.length ? `<span class="link more" onclick="UPCOMING.n += 12; renderUpcoming()">Show more weeks</span>` : "");
@@ -1269,7 +1266,7 @@ function psalmBlock(p, pi, recent) {
     <div class="moodrow">Psalm <input type="text" value="${esc(p.spec)}" placeholder="e.g. 70, 72:1-7,18-19, 119 Aleph" style="width:260px"
       onchange="B.psalms[${pi}].spec=this.value; renderBuilder()">
       ${res.length ? res.map(r => `<span class="link" onclick="goText('${esc(r.id)}')">${esc(TX[r.id].title)}</span>`).join(", ") : (p.spec ? '<span class="hint">no matching text</span>' : "")}
-      ${mood.map(m => tagText(m)).join(" ")}
+      ${mood.map(m => chip(m)).join(" ")}
       ${B.psalms.length > 1 ? `<span class="link" style="margin-left:auto" onclick="B.psalms.splice(${pi},1); renderBuilder()">remove</span>` : ""}</div>
     ${p.chants.some(c => /^tone[:\s]/i.test(c.name)) ? `<div class="moodrow"><label class="hint"><input type="checkbox" ${intoneEvery(p) ? "checked" : ""} onchange="B.psalms[${pi}].intonation=this.checked ? 'every' : 'first'; renderBuilder()"> sing the tone's intonation on every verse (otherwise on verse 1 only)</label></div>` : ""}
     ${opt.length ? `<div class="moodrow"><label class="hint"><input type="checkbox" ${optOf(p) ? "checked" : ""} onchange="B.psalms[${pi}].optional=this.checked; renderBuilder()"> sing the optional verses (${esc(opt.length > 1 ? "vv. " + opt[0] + "–" + opt[opt.length - 1] : "v. " + opt[0])}, in brackets in the lectionary)</label></div>` : ""}
