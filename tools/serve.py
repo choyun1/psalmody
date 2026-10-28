@@ -127,8 +127,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         try:
             if path == '/api/notes':
                 paths.write_notes(list(csv.DictReader(io.StringIO(data['csv']))))
-                code, out = run(['browser.py'])
-                return self.reply({'ok': code == 0, 'log': out})
+                code, out = run(['browser.py'])          # the notes are saved; this only refreshes the page
+                return self.reply({'ok': True, 'rebuilt': code == 0, 'log': out})
             if path == '/api/sunday':
                 name = safe_name(data['name'])
                 os.makedirs(paths.SUNDAYS, exist_ok=True)

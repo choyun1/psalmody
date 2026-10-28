@@ -227,7 +227,9 @@ async function saveCatalog() {
   if (SERVER) {
     savedNote = "Saving…"; renderSavebar();
     const j = await post("/api/notes", {csv: text});
-    savedNote = j.ok ? "Saved. Reload the page to see it everywhere." : "Could not save: " + (j.error || j.log);
+    savedNote = !j.ok ? "Could not save: " + (j.error || j.log)
+      : j.rebuilt === false ? "Saved to chant_notes.csv, but the page couldn't be refreshed: " + (j.log || "").trim().split("\n").pop()
+      : "Saved. Reload the page to see it everywhere.";
     renderSavebar(); return;
   }
   if (!("showSaveFilePicker" in window)) {
