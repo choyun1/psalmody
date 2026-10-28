@@ -96,6 +96,8 @@ To change chant partway, add `chant: Smart-1 from 9`; for a psalm tone, `tone: 7
 
 The build prints its checks (double chants coming out even, keys at a change of chant), then writes to `parish/output/2026-11-08/` the choir's PDF (a chant is printed again at the top of a page when its verses continue there), the LilyPond file behind it, and the cropped images, numbered in the order they're sung. `--check` shows only the checks; `--pdf-only` skips the images. `python tools/lectionary.py 2026-11-08 8` lists the next eight Sundays' psalms.
 
+**Links to the readings.** Wherever the planner names a day (Proper 27, Year A), it links to that day on the Episcopal Church's lectionary site. The site numbers its pages, so `python tools/lectionary_links.py` reads its month pages once and keeps the numbers in `reference/lectionary_links.csv` (the launcher runs it the first time); a day it hasn't found yet links to its month's calendar.
+
 ## Orders of service
 
 What music a service has is written down once, in `services.txt`: one block per kind of service, one line per piece in the order it happens.

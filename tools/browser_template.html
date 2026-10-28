@@ -609,16 +609,18 @@ function itemText(order, k, v) {
   return label ? `<span class="hint">${esc(label)}:</span> ${esc(body)}` : esc(body);
 }
 function csvCell(v) { v = String(v ?? ""); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+// a day's name, linked to its readings on the Episcopal Church's lectionary site (tools/lectionary_links.py)
+function lectLink(text, url) { return url ? `<a href="${esc(url)}" target="_blank" title="The readings, on lectionary.episcopalchurch.org">${esc(text)}</a>` : esc(text); }
 function downloadRecord() {
   // every service on record, one row per piece, with hymn titles spelled out
-  const rows = [["date", "service", "lectionary day", "slot", "item", "title"]];
+  const rows = [["date", "service", "lectionary day", "slot", "item", "title", "readings"]];
   Object.keys(SV.byDate).sort().forEach(d => {
-    const e = SV.byDate[d], day = (SV.lect || {})[d], lect = day ? `${day[2]}, Year ${day[1]}` : "";
-    (e.psalms || []).forEach(ps => rows.push([d, e.order, lect, "Psalm", ps.replace(/\s*\(\)$/, ""), ""]));
+    const e = SV.byDate[d], day = (SV.lect || {})[d], lect = day ? `${day[2]}, Year ${day[1]}` : "", url = day ? day[3] || "" : "";
+    (e.psalms || []).forEach(ps => rows.push([d, e.order, lect, "Psalm", ps.replace(/\s*\(\)$/, ""), "", url]));
     e.items.filter(([k]) => !["organist", "note"].includes(k) && !PLUGIN_KEYS.has(k)).forEach(([k, v]) => {
       const s = (SV.orders[e.order] || []).find(x => x.key === k) || anySlot(k) || {label: k === "also" ? "Other" : k, kind: "music"};
       const hs = s.kind !== "music" && s.kind !== "lesson" ? hymnsOf(v) : [];
-      rows.push([d, e.order, lect, s.label.replace(/\s*\{hymn\|anthem\}/, ""), hs.length ? hs.map(h => (h.book === "EH1982" ? "" : h.book + " ") + h.number).join("; ") : v, hs.map(h => h.title).join("; ")]);
+      rows.push([d, e.order, lect, s.label.replace(/\s*\{hymn\|anthem\}/, ""), hs.length ? hs.map(h => (h.book === "EH1982" ? "" : h.book + " ") + h.number).join("; ") : v, hs.map(h => h.title).join("; "), url]);
     });
   });
   const a = document.createElement("a");
@@ -695,7 +697,7 @@ function renderUpcoming() {
     To start a Sunday: <code>python tools/new_sunday.py DATE</code></p>` + rows.map(c => {
     const recent = recentChants(c.date);
     return `<div class="card"><h2>${esc(new Date(c.date + "T12:00").toLocaleDateString(undefined, {weekday: "short", month: "long", day: "numeric", year: "numeric"}))}</h2>
-      <span class="who">${esc(c.label)} · Year ${esc(c.year)}</span>
+      <span class="who">${lectLink(c.label + " · Year " + c.year, c.link)}</span>
       ${c.planned.map(pl => ` <span class="chip ${pl.sung ? "g-calm on" : "g-calm"}">${pl.sung ? "sung" : "planned"}: ${esc(pl.chants.join(", ") || "chant not chosen")}</span>`).join("")}
       ${c.options.length ? c.options.map(o => {
         const mood = overlapMoods(o.texts, o.verses);
@@ -840,7 +842,7 @@ function renderBuilder() {
   $("#tab-builder").innerHTML = `<div class="layout"><aside>
       <h3>Planning</h3><div class="seg"><button class="${B.mode !== "psalm" ? "on" : ""}" onclick="setMode('service')">Whole service</button><button class="${B.mode === "psalm" ? "on" : ""}" onclick="setMode('psalm')">Psalm only</button></div>
       <h3>Day</h3><input type="date" id="bdate" value="${esc(B.date)}" style="width:100%">
-      <p class="hint" style="margin:6px 0">${c ? esc(c.label) + " · Year " + esc(c.year) : B.date ? "Not in the calendar: type the psalm yourself." : "No date: a psalm on its own (a rehearsal, a one-off). Name the file below."}${B.mode === "psalm" && B.date ? ` <span class="link" onclick="setDate('')">no date</span>` : ""}</p>
+      <p class="hint" style="margin:6px 0">${c ? lectLink(c.label + " · Year " + c.year, ((SV.lect || {})[B.date] || [])[3]) : B.date ? "Not in the calendar: type the psalm yourself." : "No date: a psalm on its own (a rehearsal, a one-off). Name the file below."}${B.mode === "psalm" && B.date ? ` <span class="link" onclick="setDate('')">no date</span>` : ""}</p>
       <h3>File name</h3><input type="text" id="bname" value="${esc(B.name)}" style="width:100%">
       <p class="hint" style="margin:4px 0">Use e.g. ${esc(B.date)}-midnight for a second service that day.</p>
       <h3>Service</h3><select id="bservice">${[...new Set(SERVICES.concat([B.service]))].map(sv => `<option ${sv === B.service ? "selected" : ""}>${esc(sv)}</option>`).join("")}</select>
@@ -1270,7 +1272,7 @@ function beforeCard() {
     return `<details ${open ? "open" : ""} style="margin:4px 0"><summary>${esc(d)} <span class="hint">· ${esc(SV.lect[d][2])}, Year ${esc(SV.lect[d][1])}${e.order !== ORDER_NAMES[0] ? " · " + esc(e.order) : ""}</span></summary>
       <ul style="margin:4px 0 2px 1.1em;padding:0">${(e.psalms || []).map(ps => `<li><span class="hint">Psalm:</span> ${esc(ps.replace(/\s*\(\)$/, ""))}</li>`).join("")}${items.map(([k, v]) => `<li>${itemText(e.order, k, v)}</li>`).join("")}</ul></details>`;
   };
-  return `<div class="card"><h3 style="font-weight:normal;margin:0 0 4px">Before on ${esc(me[2])}</h3>
+  return `<div class="card"><h3 style="font-weight:normal;margin:0 0 4px">Before on ${lectLink(me[2], me[3])}</h3>
     ${same.length ? `<div class="hint">With these readings (Year ${esc(me[1])}):</div>${same.map((d, i) => one(d, i === 0)).join("")}` : `<p class="hint" style="margin:0">Not with these readings (Year ${esc(me[1])}) since the record began.</p>`}
     ${other.length ? `<div class="hint" style="margin-top:6px">The same day in other years:</div>${other.map(d => one(d, false)).join("")}` : ""}</div>`;
 }

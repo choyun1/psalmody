@@ -212,6 +212,12 @@ def main():
     if not os.path.exists(os.path.join(paths.SITE, 'data.js')):
         print('building the browser first…')
         run(['browser.py'])
+    import lectionary
+    if len(lectionary.links()) < 100:               # first run: find the lectionary site's pages, in the background
+        def find_links():
+            if run(['lectionary_links.py'])[0] == 0:
+                run(['browser.py'])
+        threading.Thread(target=find_links, daemon=True).start()
     srv = http.server.ThreadingHTTPServer(('127.0.0.1', PORT), Handler)
     url = f'http://localhost:{PORT}{SITE_URL}'
     print(f'Chant browser with the Service planner: {url}\n(Ctrl+C to stop)')

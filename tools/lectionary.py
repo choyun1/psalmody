@@ -147,6 +147,40 @@ def table():
     return rows
 
 
+# ------------------------------------------------------------------ links to the Episcopal Church's lectionary
+SITE = 'https://lectionary.episcopalchurch.org'
+_links = None
+
+
+def links():
+    """reference/lectionary_links.csv: (key, year) -> the site's page number for that day (filled in by
+    tools/lectionary_links.py, which reads the site's month pages)."""
+    global _links
+    if _links is None:
+        p = os.path.join(ROOT, 'reference', 'lectionary_links.csv')
+        _links = {(r['key'], r['year']): r['post'] for r in csv.DictReader(open(p, encoding='utf-8'))} \
+            if os.path.exists(p) else {}
+    return _links
+
+
+def office_year(d):
+    """The Daily Office year, I or II: Year One begins at Advent before an odd-numbered year."""
+    y = d.year + 1 if d >= advent1(d.year) else d.year
+    return 'I' if y % 2 else 'II'
+
+
+def link(d, key=None):
+    """The page for this date on lectionary.episcopalchurch.org: the day itself when its page number is
+    known, else that month's calendar."""
+    if key is None:
+        key = day_of(d)[0]
+    post = links().get((key, lect_year(d))) if key else None
+    if post:
+        from urllib.parse import quote
+        return f'{SITE}/lectionary-post/{post}?date={d.isoformat()}&year=' + quote(f'Year {lect_year(d)} / {office_year(d)}', safe='')
+    return f'{SITE}/{d.year}/{d.month}'
+
+
 def appointed(d, rows=None):
     """-> dict(date, key, label, year, psalm, alt) for a date."""
     rows = rows if rows is not None else table()

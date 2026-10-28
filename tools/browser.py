@@ -213,6 +213,7 @@ def calendar(weeks=110):
                     track = 'Track 1' if i == 0 else ('Track 2' if i == 1 else '')
                 opts.append({'spec': spec, 'texts': texts, 'verses': verses, 'track': track, 'error': err})
             out.append({'date': d.isoformat(), 'label': a['label'], 'year': a['year'], 'options': opts,
+                        'link': lectionary.link(d, key),
                         'planned': planned.get(d.isoformat(), [])})
         d += dt.timedelta(days=1)
     return out
@@ -236,7 +237,7 @@ def service_data():
         except Exception:
             continue
         if a.get('key'):
-            lect[d] = [a['key'], a['year'], a['label']]
+            lect[d] = [a['key'], a['year'], a['label'], lectionary.link(dt.date.fromisoformat(d), a['key'])]
     import plugins
     return {'lect': lect, 'orders': service.ORDERS, 'hymnals': service.hymnals(), 'repertoire': service.repertoire(),
             'hymnHistory': service.hymn_history(), 'anthems': service.anthems(), 'byDate': by_date,
