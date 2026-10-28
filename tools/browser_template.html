@@ -664,7 +664,7 @@ function renderText() {
       </div>`;
     }).join("") || '<p class="hint">No mood tags for this text (texts/moods.csv).</p>'}
     <h3 style="font-weight:normal;margin-bottom:4px">${D.parish.name ? "Sung at " + esc(D.parish.name) : "Past use"}</h3>
-    ${hist.length ? `<table class="hist">${hist.map(h => `<tr><td>${esc(h.date)}</td><td>${esc(h.verses)}</td><td>${h.chant && h.chant !== "?" ? `<span class="link" onclick="showChant('${esc(h.chant)}')">${esc(h.chant)}</span>` : "?"}</td><td class="hint">${esc(h.note)}</td></tr>`).join("")}</table>` : '<p class="hint">Not yet.</p>'}
+    ${hist.length ? `<table class="hist">${hist.map(h => `<tr><td>${esc(h.date)}</td><td>${esc(h.verses)}</td><td>${h.chant && h.chant !== "?" ? `<span class="link" onclick="showChant('${esc(h.chant)}')">${esc(h.chant)}</span>` : '<span class="hint">no chant</span>'}</td><td class="hint">${esc(h.note)}</td></tr>`).join("")}</table>` : '<p class="hint">Not yet.</p>'}
   </div>`;
 }
 
@@ -742,7 +742,7 @@ function renderHistory() {
     $("#hcount").textContent = rows.length + " entries";
     $("#htab").innerHTML = `<tr><th>Date</th><th>Text</th><th>Verses</th><th>Chant</th><th></th></tr>` + rows.map(h =>
       `<tr><td>${lectLink(h.date, ((SV.lect || {})[h.date] || [])[3])}</td><td>${esc(textTitle[h.text] || h.text)}</td><td>${esc(h.verses)}</td>
-       <td>${C[h.chant] ? `<span class="link" onclick="showChant('${esc(h.chant)}')">${esc(h.chant)}</span>` : esc(h.chant)}</td><td class="hint">${esc(h.note)}</td></tr>`).join("");
+       <td>${C[h.chant] ? `<span class="link" onclick="showChant('${esc(h.chant)}')">${esc(h.chant)}</span>` : h.chant && h.chant !== "?" ? esc(h.chant) : '<span class="hint">no chant</span>'}</td><td class="hint">${esc(h.note)}</td></tr>`).join("");
   };
   $("#hq").oninput = draw; draw();
 }

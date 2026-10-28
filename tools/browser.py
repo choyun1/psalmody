@@ -119,7 +119,8 @@ def schedule_history(have):
             vs = take or [v['n'] for v in pointed.parse(open(path_, encoding='utf-8').read())['verses']]
             out.append({'date': r['date'], 'text': os.path.basename(path_)[:-4],
                         'verses': f'{vs[0]}-{vs[-1]}' if len(vs) > 1 else str(vs[0]),
-                        'chant': chant or '?', 'note': note, 'source': 'schedule'})
+                        'chant': chant, 'source': 'schedule',      # no chant: the psalm was said (no choir that week)
+                        'note': note if chant else 'no chant setting (no choir that week), from the imported record'})
     return out
 
 
