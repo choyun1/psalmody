@@ -34,7 +34,7 @@ TEXT_DIRS = [os.path.join(CORE, 'texts')] + ([os.path.join(PARISH, 'texts')] if 
 OWN_TEXTS = TEXT_DIRS[-1]                   # where pointing done in the browser is saved
 
 CATALOG_COLUMNS = ['Chant', 'Composer', 'Years', 'Key', 'Mode', 'Single/Double', 'Source', 'ACP Psalm']
-NOTE_COLUMNS = ['Chant', 'Rating', 'Mood', 'Notes']
+NOTE_COLUMNS = ['Chant', 'Rating', 'Mood', 'Notes', 'Pin']    # Pin: favourite, to try
 
 
 def text_file(name):
@@ -91,7 +91,7 @@ def catalog():
 
 
 def write_notes(rows):
-    """rows: dicts with Chant, Rating, Mood, Notes."""
+    """rows: dicts with Chant, Rating, Mood, Notes, Pin."""
     os.makedirs(os.path.dirname(NOTES), exist_ok=True)
     with open(NOTES, 'w', encoding='utf-8', newline='') as fh:
         w = csv.DictWriter(fh, NOTE_COLUMNS, extrasaction='ignore')

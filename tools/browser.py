@@ -351,7 +351,7 @@ def main():
             'mode': row.get('Mode') or info['mode'].capitalize(),
             'double': (row.get('Single/Double') or ('Double' if info['double'] else 'Single')) == 'Double',
             'range': info['range'], 'rating': int(rating) if rating.isdigit() else None,
-            'mood': tags(row.get('Mood')), 'notes': row.get('Notes', ''),
+            'mood': tags(row.get('Mood')), 'notes': row.get('Notes', ''), 'pins': tags(row.get('Pin')),
             'source': row.get('Source', ''), 'acp': row.get('ACP Psalm', ''),
             'img': os.path.exists(img), 'voices': info['voices'],
             'private': row['private'],
