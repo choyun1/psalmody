@@ -264,8 +264,8 @@ const textTitle = {}; D.texts.forEach(t => textTitle[t.id] = t.title);
 const lastUsed = id => (usedBy[id] || []).map(h => h.date).sort().pop() || "";
 
 // ---------- playback ----------
-let audio = null, playing = null;
-function stopPlay() { if (playing) { playing.forEach(o => { try { o.stop(); } catch (e) {} }); playing = null; } document.querySelectorAll(".play").forEach(b => b.textContent = "▶ Play"); }
+let audio = null, playing = null, playId = 0;     // playId: which playback is current, so an old one's timer can't stop a new one
+function stopPlay() { playId++; if (playing) { playing.forEach(o => { try { o.stop(); } catch (e) {} }); playing = null; } document.querySelectorAll(".play").forEach(b => b.textContent = "▶ Play"); }
 function play(id, btn) { playVoices(C[id].voices, btn); }
 function playTone(name, btn) { playVoices((D.tones || []).find(t => t.name === name).voices, btn); }
 function playVoices(voices, btn) {
@@ -289,7 +289,8 @@ function playVoices(voices, btn) {
     });
   });
   btn.textContent = "■ Stop";
-  setTimeout(() => { if (btn.textContent.startsWith("■")) stopPlay(); }, (end - audio.currentTime + 0.2) * 1000);
+  const me = ++playId;
+  setTimeout(() => { if (me === playId) stopPlay(); }, (end - audio.currentTime + 0.2) * 1000);
 }
 
 // ---------- chant card ----------
