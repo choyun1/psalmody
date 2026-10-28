@@ -41,6 +41,7 @@ It was built for one parish's weekly use and is shared in case it helps others. 
 | `chant_notes.csv` | Your ratings, mood tags and notes on every chant. |
 | `chants/` | Chants you may not publish (still under copyright), with their own `catalog.csv`. |
 | `anthems/` | The words of each anthem, one file per anthem, for the email. |
+| `hymnals/` | Hymnal indexes, `<BOOK>.csv` with columns `number,title` (e.g. `EH1982.csv`), so hymn titles fill in from numbers. |
 | `hymn_titles.csv` | Hymn titles by number (`book,number,title`), or your own wording for some. |
 | `lessons.csv` | Readings for Lessons and Carols, with the one-line summary printed under each. |
 | `sundays/` | One file per Sunday or service. |

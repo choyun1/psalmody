@@ -154,12 +154,14 @@ def hymnals():
     global _hymnals
     if _hymnals is None:
         _hymnals = {}
-        d = os.path.join(ROOT, 'reference', 'hymnals')
-        if os.path.isdir(d):
+        # hymnal indexes, <BOOK>.csv with columns number,title: in reference/hymnals/ or the parish's hymnals/
+        for d in (os.path.join(ROOT, 'reference', 'hymnals'), os.path.join(paths.HOME, 'hymnals')):
+            if not os.path.isdir(d):
+                continue
             for f in sorted(os.listdir(d)):
                 if f.endswith('.csv'):
-                    _hymnals[f[:-4]] = {r['number'].strip(): r['title'].strip()
-                                        for r in csv.DictReader(open(os.path.join(d, f), encoding='utf-8'))}
+                    _hymnals.setdefault(f[:-4], {}).update({r['number'].strip(): r['title'].strip()
+                                        for r in csv.DictReader(open(os.path.join(d, f), encoding='utf-8'))})
         # your own wording wins: hymn_titles.csv (book,number,title) in the parish folder
         own = os.path.join(paths.HOME, 'hymn_titles.csv')
         if os.path.exists(own):
