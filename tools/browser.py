@@ -39,8 +39,9 @@ def tags(s):
 
 
 # ------------------------------------------------------------- notation
-def draw(exe, name, out_png):
-    c = build.read_chant(name)
+def draw(exe, name, out_png, c=None):
+    """The picture of a chant for the browser (c: the chant already read, e.g. edited or transposed)."""
+    c = c or build.read_chant(name)
     defs, score = build.prefixed(c, 'ch')
     m = re.search(r'\\score\s*\{', score)
     score = score[m.start():build._brace_block(score, m.end() - 1)]      # the bare score, without the centring markup

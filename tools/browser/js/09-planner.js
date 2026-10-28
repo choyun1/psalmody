@@ -203,12 +203,16 @@ function pointedLine(t) {
   return h.replace(/\u0001/g, '<span class="pbar"></span>').replace(/\u0004/g, "·")
           .replace(/\u0002/g, '<span class="held">').replace(/\u0003/g, "</span>");
 }
-function pointedHTML(body, verses, pi) {
-  // pi given: the verse numbers can be clicked to put a † on the verse or take it off (this Sunday only)
+function pointedHTML(body, verses, pi, textId) {
+  // pi given: the verse numbers can be clicked to put a † on the verse or take it off (this Sunday only);
+  // textId given too (with the launcher): ✎ beside a verse edits its pointing there and then
   const vn = (n, dag) => pi === undefined || n === "" ? `<span class="vn">${dag ? "† " : ""}${esc(n)}</span>`
     : `<span class="vn vclick" title="click: † on this verse or off (this file only)" onclick="toggleDagger(${pi}, ${n})">${dag ? "† " : ""}${esc(n)}</span>`;
+  const t = textId && D.texts.find(x => x.id === textId);
+  const pen = n => t && SERVER && n !== "" ? ` <span class="link pen" title="Edit this verse's pointing (for every use of this text)" onclick="startEdit(${JSON.stringify(n)}, '${esc(textId)}', renderBuilder)">✎</span>` : "";
   return '<div class="ptext">' + body.filter(v => !verses || verses.includes(v[0]) || v[0] === "").map(([n, dag, lines]) =>
-    `<div class="v">${lines.map((l, i) => `<div class="${i === 0 ? "" : l[2] ? "wrap" : l[1] === 2 ? "l2" : "l1"}">${i === 0 ? vn(n, dag) : ""}${pointedLine(l[0])}</div>`).join("")}</div>`).join("") + "</div>";
+    t && editing(textId, n) ? verseEditor(t, t.body.find(x => x[0] === n)) :
+    `<div class="v">${lines.map((l, i) => `<div class="${i === 0 ? "" : l[2] ? "wrap" : l[1] === 2 ? "l2" : "l1"}">${i === 0 ? vn(n, dag) : ""}${pointedLine(l[0])}${i === lines.length - 1 ? pen(n) : ""}</div>`).join("")}</div>`).join("") + "</div>";
 }
 // second-half repeats (†): the text's own, or this Sunday's
 function textDaggers(res) { return textBody(res).flatMap(seg => seg.body.filter(v => v[1]).map(v => v[0])); }
@@ -273,8 +277,21 @@ function musicHTML(name, shift = 0) {
   const c = C[name];
   if (!c) return `<p class="hint">${esc(name)}: not in the catalog</p>`;
   return `<div class="pv-music"><div class="pv-credit">${esc(c.composer)}${c.years ? " (" + esc(c.years) + ")" : ""}</div>
-    ${c.img ? `<img src="notation/${encodeURIComponent(c.id)}.png" alt="${esc(c.id)}">` : esc(c.id)}
-    ${shift ? `<p class="hint">Shown as written; the PDF prints it in ${esc(keyAt(c, shift))} (${shiftWords(shift)}).</p>` : ""}</div>`;
+    ${shift && SERVER ? transposedImg(c.id, shift) : c.img ? `<img src="${esc(chantImg(c))}" alt="${esc(c.id)}">` : esc(c.id)}
+    ${shift ? `<p class="hint">${SERVER ? `In ${esc(keyAt(c, shift))} (${shiftWords(shift)}), as the PDF prints it.` : `Shown as written; the PDF prints it in ${esc(keyAt(c, shift))} (${shiftWords(shift)}).`}</p>` : ""}
+    ${SERVER ? `<p class="hint" style="margin:2px 0"><span class="link" onclick="editMusic('${esc(c.id)}', renderBuilder)">edit the music</span></p>` : ""}</div>`;
+}
+// a chant transposed, drawn by the launcher once and kept: an <img> filled in when the picture comes
+const TRANS = {};
+function transposedImg(id, shift) {
+  const k = id + "@" + shift;
+  if (TRANS[k]) return `<img src="${esc(TRANS[k])}" alt="${esc(id)} ${shiftWords(shift)}">`;
+  post("/api/chant/preview", {name: id, shift}).then(j => {
+    if (!j.ok) return;
+    TRANS[k] = j.img;
+    document.querySelectorAll(`img[data-trans="${CSS.escape(k)}"]`).forEach(el => { el.src = j.img; el.style.opacity = 1; });
+  });
+  return `<img data-trans="${esc(k)}" src="${esc(chantImg(C[id]))}" alt="${esc(id)}" style="opacity:.35">`;
 }
 async function pdfPreview() {
   if (!(await saveSunday())) return;
@@ -319,7 +336,7 @@ function renderPicker() {
       <h3 class="hint" style="margin:10px 0 4px">Key</h3><select id="pkey"><option value="">any</option>${KEYS_PRESENT.map(k => `<option ${P.key === k ? "selected" : ""}>${esc(k)}</option>`).join("")}</select>
       <h3 class="hint" style="margin:10px 0 4px">Mode</h3><select id="pmode"><option value="">any</option>${["Major", "Minor"].map(m => `<option ${P.mode === m ? "selected" : ""}>${m}</option>`).join("")}<option value="other" ${P.mode === "other" ? "selected" : ""}>modal / other</option></select>
       <h3 class="hint" style="margin:10px 0 4px">Single or double</h3><select id="psd"><option value="">either</option><option value="s" ${P.sd === "s" ? "selected" : ""}>single</option><option value="d" ${P.sd === "d" ? "selected" : ""}>double</option></select>
-      <h3 class="hint" style="margin:10px 0 4px">Pinned</h3><select id="ppin">${[["", "all chants"], ["favorite", "★ favorites"], ["to try", "📌 to try"]].map(([v, l]) => `<option value="${v}" ${P.pin === v ? "selected" : ""}>${l}</option>`).join("")}</select>
+      <h3 class="hint" style="margin:10px 0 4px">Pinned</h3><select id="ppin">${[["", "all chants"], ["favorite", "★ favorites"], ["to try", "📌 to try"], ["to check", "⚑ to check"]].map(([v, l]) => `<option value="${v}" ${P.pin === v ? "selected" : ""}>${l}</option>`).join("")}</select>
       <h3 class="hint" style="margin:10px 0 4px">Rating at least</h3><select id="prt"><option value="0">any</option>${[1, 2, 3, 4, 5].map(n => `<option ${P.minRating === n ? "selected" : ""}>${n}</option>`).join("")}</select>
       <h3 class="hint" style="margin:10px 0 4px">Sort</h3>${sortControl("picker", true)}
       <h3 class="hint" style="margin:14px 0 4px">Or a plainchant tone</h3><div id="ptone">${toneMenus(P.tone, "t => { P.tone = t; renderPicker(); }")}</div>
@@ -332,7 +349,7 @@ function renderPicker() {
         <b style="font-weight:normal;font-size:19px">${esc(CN(c.id))}</b> <span class="who">${esc(c.composer)} · ${esc(c.id)}</span>
         <div class="facts"><b>${esc(keyName(c))}</b> · ${c.double ? "double" : "single"} ${stars(val(c, "rating"))} · last used ${esc(lastUsed(c.id) || "never")}${recent.has(c.id) ? " <b>(recent)</b>" : ""}</div>
         <div class="moodrow">${val(c, "mood").map(t => chip(t, hits.includes(t) ? "on" : "")).join("")}</div>
-        ${c.img ? `<img loading="lazy" src="notation/${encodeURIComponent(c.id)}.png" alt="">` : ""}
+        ${c.img ? `<img loading="lazy" src="${esc(chantImg(c))}" alt="">` : ""}
         ${notesBox(val(c, "notes"), false)}
       </div>`).join("")}
       ${list.length > 80 ? '<p class="hint">Showing the first 80: narrow the filters to see others.</p>' : ""}
@@ -371,8 +388,8 @@ function psalmBlock(p, pi, recent) {
     ${p.chants.some(c => /^tone[:\s]/i.test(c.name)) ? `<div class="moodrow"><label class="hint"><input type="checkbox" ${intoneEvery(p) ? "checked" : ""} onchange="B.psalms[${pi}].intonation=this.checked ? 'every' : 'first'; renderBuilder()"> sing the tone's intonation on every verse (otherwise on verse 1 only)</label></div>` : ""}
     ${opt.length ? `<div class="moodrow"><label class="hint"><input type="checkbox" ${optOf(p) ? "checked" : ""} onchange="B.psalms[${pi}].optional=this.checked; renderBuilder()"> sing the optional verses (${esc(opt.length > 1 ? "vv. " + opt[0] + "–" + opt[opt.length - 1] : "v. " + opt[0])}, in brackets in the lectionary)</label></div>` : ""}
     ${res.length ? `<details ${p.open ? "open" : ""} ontoggle="B.psalms[${pi}].open=this.open"><summary>The text</summary>
-      <p class="hint" style="margin:6px 0 0">Click a verse number to put a † (second half again) on it or take it off, for this file only (the psalm text keeps its own).${p.daggers ? ` <span class="link" onclick="B.psalms[${pi}].daggers=null; renderBuilder()">back to the text's own †</span>` : ""}</p>
-      ${textBody(res).map(seg => `<div class="hint" style="margin-top:6px">${esc(seg.title)}</div>` + pointedHTML(withDaggers(seg.body, p.daggers), null, pi)).join("")}</details>` : ""}
+      <p class="hint" style="margin:6px 0 0">Click a verse number to put a † (second half again) on it or take it off, for this file only (the psalm text keeps its own).${SERVER ? " ✎ beside a verse changes its pointing, for every use of the text." : ""}${p.daggers ? ` <span class="link" onclick="B.psalms[${pi}].daggers=null; renderBuilder()">back to the text's own †</span>` : ""}</p>
+      ${textBody(res).map(seg => `<div class="hint" style="margin-top:6px">${esc(seg.title)}</div>` + pointedHTML(withDaggers(seg.body, p.daggers), null, pi, seg.id)).join("")}</details>` : ""}
     ${B.choir === false ? '<p class="hint" style="margin:6px 0">No choir this week: the psalm is said, so no chant (untick <i>no choir</i> under Options to choose one).</p>' : p.chants.map((c, ci) => {
       const ch = C[c.name];
       return `<div class="moodrow">${ci === 0 ? "Chant" : "then"} <input type="text" list="chantlist" value="${esc(c.name)}" placeholder="chant, or e.g. tone 7a" style="width:170px"

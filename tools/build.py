@@ -237,8 +237,9 @@ def _brace_block(s, start):
     raise ValueError('unbalanced braces')
 
 
-def read_chant(name):
-    src = paths.read(chant_path(name))
+def read_chant(name, src=None):
+    """A chant's file, taken apart for the PDF (src: the file's text, when it isn't saved yet)."""
+    src = src if src is not None else paths.read(chant_path(name))
     info = {'name': name}
     hm = re.search(r'\\header\s*\{', src)
     credit = []

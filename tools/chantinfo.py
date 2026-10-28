@@ -17,8 +17,9 @@ def first(x):
     return x[0] if isinstance(x, list) else x
 
 
-def info(path):
-    c = load_chant(path)
+def info(path, text=None):
+    """The facts of the chant file at path (or of text, a chant not yet saved)."""
+    c = load_chant(text, is_text=True) if text is not None else load_chant(path)
     tonic, mode = c['key'] or ('c', 'major')
     voices = {}
     for v, (notes, sections) in c['voices'].items():

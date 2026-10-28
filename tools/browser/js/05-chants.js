@@ -11,10 +11,11 @@ function chantCard(c, opts = {}) {
     <div class="facts"><b>${esc(keyName(c))}</b> · ${c.double ? "double" : "single"}
       ${c.range ? " · soprano " + esc(c.range.join("–")) : ""} ${c.acp ? " · ACP sets it to Ps " + esc(c.acp) : ""} ${stars(val(c, "rating"))}</div>
     <div class="moodrow">${mood.length ? mood.map(t => chip(t)).join("") : '<span class="hint">no mood tags yet</span>'}</div>
-    ${c.img ? `<div class="notation"><img loading="lazy" src="notation/${encodeURIComponent(c.id)}.png" alt="${esc(c.id)}"></div>` : ""}
+    ${c.img ? `<div class="notation"><img loading="lazy" src="${esc(chantImg(c))}" alt="${esc(c.id)}"></div>` : ""}
     ${notesBox(val(c, "notes"))}
     <div class="used">${usedTxt} ${uses.length > 1 ? `<span class="link" onclick="showUses('${esc(c.id)}')">all</span>` : ""}</div>
-    ${editing ? editBox(c) : `<p style="margin:6px 0 0"><span class="link" onclick="openEdit('${esc(c.id)}')">Edit mood, rating, notes</span>
+    ${editing ? editBox(c) : detailsOpen.has(c.id) ? detailsBox(c) : `<p style="margin:6px 0 0"><span class="link" onclick="openEdit('${esc(c.id)}')">Edit mood, rating, notes</span>
+      ${SERVER ? `· <span class="link" onclick="openDetails('${esc(c.id)}')">Edit details</span> · <span class="link" onclick="editMusic('${esc(c.id)}')">Edit music</span>` : ""}
       · <span class="link" onclick="dlg.close(); useInBuilder('${esc(c.id)}')">Use in the Service planner</span></p>`}
   </div>`;
 }
@@ -125,8 +126,9 @@ function topNote(c) {                                   // the soprano's highest
   const n = String([].concat(c.range || []).slice(-1)[0] || "").split(/[–-]/).pop().trim().match(/^([A-G])([#♯b♭]?)(-?\d)$/);
   return n ? 12 * (+n[3] + 1) + NOTE_PC[n[1]] + (/[#♯]/.test(n[2]) ? 1 : /[b♭]/.test(n[2]) ? -1 : 0) : null;
 }
-// pins: ★ a favorite, 📌 one to try; kept with the ratings in chant_notes.csv (the Pin column)
-const PINS = [["favorite", "★", "☆", "favorite"], ["to try", "📌", "📌", "to try"]];
+// pins: ★ a favorite, 📌 one to try, ⚑ one to check (a doubt about a note); kept with the ratings in chant_notes.csv
+const PINS = [["favorite", "★", "☆", "favorite"], ["to try", "📌", "📌", "to try"], ["to check", "⚑", "⚑", "to check"]];
+const pinMarks = c => PINS.filter(([p]) => pinned(c, p)).map(([, on]) => on).join(" ");
 const pinned = (c, p) => (val(c, "pins") || []).includes(p);
 function togglePin(id, p) {
   const cur = val(C[id], "pins") || [];
@@ -152,8 +154,8 @@ const SORT_FIELDS = {
   fifths:   {label: "key (circle of fifths)", dir: 1, val: c => keyRank(c, true), head: c => keyName(c)},
   sd:       {label: "single / double", dir: 1, val: c => c.double ? 1 : 0, head: c => c.double ? "Double chants" : "Single chants"},
   rating:   {label: "rating", dir: -1, val: c => val(c, "rating") || null},
-  pinned:   {label: "pinned first (★, then 📌)", dir: 1, val: c => pinned(c, "favorite") ? 0 : pinned(c, "to try") ? 1 : null,
-             head: c => pinned(c, "favorite") ? "★ Favorites" : pinned(c, "to try") ? "📌 To try" : "The rest"},
+  pinned:   {label: "pinned first (★, 📌, then ⚑)", dir: 1, val: c => pinned(c, "favorite") ? 0 : pinned(c, "to try") ? 1 : pinned(c, "to check") ? 2 : null,
+             head: c => pinned(c, "favorite") ? "★ Favorites" : pinned(c, "to try") ? "📌 To try" : pinned(c, "to check") ? "⚑ To check" : "The rest"},
   stale:    {label: "last used", dir: 1, val: c => lastUsed(c.id)},
   used:     {label: "times used", dir: -1, val: c => (usedBy[c.id] || []).length},
   range:    {label: "highest soprano note", dir: 1, val: topNote},
@@ -217,7 +219,7 @@ function renderChantsShell() {
     <h3>Mood</h3>${D.vocabulary.map(g => `<div class="row" style="margin-bottom:5px">${g.tags.map(t =>
       `<button class="chip g-${esc(g.group)}" data-mood="${esc(t)}">${esc(t)}</button>`).join("")}</div>`).join("")}
     <label class="hint"><input type="checkbox" id="untagged"> only chants without moods</label>
-    <h3>Pinned</h3><select id="pinf"><option value="">all chants</option><option value="favorite">★ favorites</option><option value="to try">📌 to try</option></select>
+    <h3>Pinned</h3><select id="pinf"><option value="">all chants</option><option value="favorite">★ favorites</option><option value="to try">📌 to try</option><option value="to check">⚑ to check</option></select>
     <h3>Mode</h3><select id="mode"><option value="">any</option><option>Major</option><option>Minor</option><option value="other">modal / other</option></select>
     <h3>Key</h3><select id="keyf"><option value="">any</option>${KEYS_PRESENT.map(k => `<option>${esc(k)}</option>`).join("")}</select>
     <h3>Single or double</h3><select id="sd"><option value="">either</option><option value="s">single</option><option value="d">double</option></select>
@@ -225,6 +227,7 @@ function renderChantsShell() {
     <h3>Sort</h3><div id="sortbox">${sortControl("chants", false)}</div>
   </aside><div>
     <div class="seg" style="max-width:440px;margin-bottom:10px"><button class="${CV.tones ? "" : "on"}" onclick="CV.tones=false; renderChantsShell(); renderChants()">Anglican chants</button><button class="${CV.tones ? "on" : ""}" onclick="CV.tones=true; renderChantsShell(); renderChants()">Plainchant psalm tones</button></div>
+    ${SERVER && !CV.tones ? '<p style="margin:0 0 8px"><span class="link" onclick="newChant()">+ New chant</span></p>' : ""}
     <p class="count" id="ccount"></p><div id="clist"></div></div></div>`;
   if (CV.tones) { $("#tab-chants aside").style.display = "none"; $("#tab-chants .layout").style.gridTemplateColumns = "1fr"; }
   // the controls show the filters still in force (after the tones and back)
@@ -296,8 +299,8 @@ function renderChants() {
       if (k !== prevKey) head = `<h3 class="grp">${esc(k)}</h3>`;
       prevKey = k;
     }
-    const pins = val(c, "pins") || [], open = OPEN.has(c.id);
-    return head + `<div class="crow ${open ? "open" : ""}" onclick="toggleRow('${esc(c.id)}')"><span class="nm">${pins.includes("favorite") ? "★ " : pins.includes("to try") ? "📌 " : ""}${esc(CN(c.id))}</span>
+    const open = OPEN.has(c.id);
+    return head + `<div class="crow ${open ? "open" : ""}" onclick="toggleRow('${esc(c.id)}')"><span class="nm">${pinMarks(c) ? pinMarks(c) + " " : ""}${esc(CN(c.id))}</span>
       <span class="meta">${esc(keyName(c))}${c.double ? "" : ", single"}</span><span>${stars(val(c, "rating"))}</span>
       <span class="meta">${esc(lastUsed(c.id) || "never")}</span><span class="mo">${val(c, "mood").map(t => chip(t)).join(" ")}</span></div>`
       + (open ? chantCard(c, {editing: openEdits.has(c.id)}) : "");

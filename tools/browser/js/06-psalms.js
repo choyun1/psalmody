@@ -1,5 +1,6 @@
 // ---------- pointing editor ----------
-const E = {on: false, n: null, lines: [], msg: "", busy: false};
+// one verse at a time, in the Psalms tab or in the Service planner's text; E.redraw draws whichever it is
+const E = {text: null, n: null, lines: [], msg: "", busy: false, redraw: () => renderText()};
 function verseBlock(v) {
   const [n, dag, lines] = v;
   const num = (dag ? "†" : "") + n;
@@ -10,15 +11,16 @@ function verseBlock(v) {
   }).join("\n");
 }
 function editableText(t) {
-  return '<div class="ptext">' + t.body.map(v => v[0] === E.n ? verseEditor(t, v) :
+  return '<div class="ptext">' + t.body.map(v => editing(t.id, v[0]) ? verseEditor(t, v) :
     `<div class="v" style="cursor:pointer" title="Click to edit this verse" onclick="startEdit(${JSON.stringify(v[0])})">${pointedHTML([v]).replace(/^<div class="ptext">|<\/div>$/g, "")}</div>`).join("") +
     '</div><p class="hint">Click a verse to edit it. In the editor, click a word to put a bar before it (or take it away); Shift+click to mark it held; or type in the box. Saving checks that the words still match the 1979 BCP.</p>';
 }
-function startEdit(n) {
-  const t = D.texts.find(x => x.id === curText);
+function startEdit(n, textId = curText, redraw = () => renderText()) {
+  const t = D.texts.find(x => x.id === textId);
   const v = t.body.find(x => x[0] === n);
-  E.n = n; E.lines = verseBlock(v).split("\n"); E.msg = ""; renderText();
+  Object.assign(E, {text: textId, n, lines: verseBlock(v).split("\n"), msg: "", redraw}); E.redraw();
 }
+const editing = (textId, n) => E.text === textId && E.n === n;
 function editorPreview() {
   return E.lines.map((line, li) => {
     const m = line.match(/^(\s*(?:†?\d+\s+)?(?:\+ )?)(.*)$/);
@@ -36,7 +38,7 @@ function verseEditor(t, v) {
     <div id="eprev" style="font: 16px/1.7 EBG, Georgia, serif">${preview}</div>
     <textarea id="eta" spellcheck="false" oninput="E.lines=this.value.split('\\n'); $('#eprev').innerHTML=editorPreview()" style="width:100%;height:${E.lines.length * 1.6 + 1.2}em;font: 14px/1.6 ui-monospace, Menlo, Consolas, monospace;margin-top:6px">${esc(E.lines.join("\n"))}</textarea>
     <p style="margin:6px 0 0"><button class="small primary" ${E.busy ? "disabled" : ""} onclick="saveVerse()">Save verse</button>
-      <button class="small" onclick="E.n=null; E.msg=''; renderText()">Cancel</button>
+      <button class="small" onclick="E.n=null; E.msg=''; E.redraw()">Cancel</button>
       ${E.msg ? `<span class="hint" style="margin-left:8px">${esc(E.msg)}</span>` : ""}</p>
     <p class="hint" style="margin:4px 0 0">| bar · . split · * mediant · =word held · word- | -word divided word · + line runs over · † before the number: second half again</p>
   </div>`;
@@ -54,18 +56,18 @@ function clickTok(ev, li, ti) {
     toks.splice(ti, 0, "|");
   }
   E.lines[li] = m[1] + toks.join(" ");
-  renderText();
+  E.redraw();
 }
 async function saveVerse() {
   const ta = $("#eta"); if (ta) E.lines = ta.value.split("\n");
-  E.busy = true; E.msg = "Saving…"; renderText();
-  const j = await post("/api/text", {id: curText, n: E.n, block: E.lines.join("\n")});
+  E.busy = true; E.msg = "Saving…"; E.redraw();
+  const j = await post("/api/text", {id: E.text, n: E.n, block: E.lines.join("\n")});
   E.busy = false;
-  if (!j.ok) { E.msg = j.error || "Could not save"; renderText(); return; }
-  const t = D.texts.find(x => x.id === curText);
+  if (!j.ok) { E.msg = j.error || "Could not save"; E.redraw(); return; }
+  const t = D.texts.find(x => x.id === E.text);
   const i = t.body.findIndex(x => x[0] === E.n);
   t.body[i] = j.verse;
-  E.n = null; E.msg = ""; renderText();
+  E.n = null; E.msg = ""; E.redraw();
 }
 
 // ---------- psalms tab ----------

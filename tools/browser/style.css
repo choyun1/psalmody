@@ -149,3 +149,9 @@ dialog::backdrop { background: rgba(0,0,0,.35); }
 /* a small box beside a button: Sync's confirmation and outcome */
 .pop { position: fixed; z-index: 20; max-width: 340px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
   box-shadow: 0 6px 20px rgba(0,0,0,.15); padding: 10px 12px; font-size: 15px; }
+.ptext .pen { visibility: hidden; font-size: 14px; margin-left: 4px; }
+.ptext .v:hover .pen { visibility: visible; }
+@media (hover: none) { .ptext .pen { visibility: visible; } }
+.me-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.me-grid .notation img { max-width: 100%; }
+@media (max-width: 760px) { .me-grid { grid-template-columns: 1fr; } }

@@ -11,7 +11,7 @@ output and the fonts. Opening site/index.html directly still works, without thos
 Each request the page can make is one function below, listed in ROUTES; a parish's plugins add
 their own (tools/plugins.py). Every save is recorded for Undo (tools/history.py).
 """
-import csv, io, http.server, json, os, subprocess, sys, threading, urllib.parse, webbrowser
+import csv, io, http.server, json, os, re, subprocess, sys, threading, urllib.parse, webbrowser
 
 TOOLS = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(TOOLS)
@@ -213,7 +213,89 @@ def api_build(data):
     return {'ok': code == 0, 'log': out, 'files': files}
 
 
-ROUTES = {'/api/notes': api_notes, '/api/sunday': api_sunday, '/api/sung': api_sung, '/api/commit': api_commit,
+# ------------------------------------------------------------------ editing chants (tools/chantedit.py)
+def chant_name(data, key='name'):
+    name = safe_name(data.get(key))
+    if not re.fullmatch(r'[A-Za-z][A-Za-z0-9]*-\d+', name):
+        raise ValueError('a chant is named like its composer and a number: Turle-7')
+    return name
+
+
+def chant_text(data):
+    """The chant's file with the editor's parts put in: the saved file, or a new one from the template."""
+    import chantedit
+    name = chant_name(data)
+    f = paths.chant_file(name)
+    text = paths.read(f) if f else chantedit.template(text_arg(data, 'credit', required=False))
+    if not isinstance(data.get('parts'), dict) or data['parts'] == chantedit.parts(text):
+        return name, text                          # nothing changed: the file as it is, spacing and all
+    return name, chantedit.apply(text, data['parts'])
+
+
+def api_chant_open(data):
+    """What the music editor shows of a chant (or of a new one)."""
+    import chantedit
+    name, text = chant_text(data)
+    return {'ok': True, 'exists': bool(paths.chant_file(name)), 'parts': chantedit.parts(text)}
+
+
+def api_chant_preview(data):
+    """A picture of the chant as edited (or of a saved one, transposed), its notes for Play, and what's amiss."""
+    import chantedit
+    name, text = chant_text(data)
+    shift = data.get('shift') or 0
+    if not isinstance(shift, int) or abs(shift) > 11:
+        raise ValueError('shift: whole semitones, -11 to 11')
+    problems, facts = chantedit.check(text)
+    img, err = chantedit.render(text, shift)
+    return {'ok': img is not None, 'img': img and '/api/chant/img?f=' + img, 'error': err, 'problems': problems,
+            'voices': facts and facts['voices'], 'double': facts and facts['double']}
+
+
+def api_chant_save(data):
+    """Save a chant's notes (a new chant: its file and its catalog row)."""
+    import chantedit
+    name, text = chant_text(data)
+    new = not paths.chant_file(name)
+    private = bool(data.get('private'))
+    if new and data.get('details') is None:
+        raise ValueError('a new chant needs its details (composer, key…)')
+    f, problems = chantedit.save_music(name, text, private)
+    files = [f]
+    if new or isinstance(data.get('details'), dict):
+        files.append(chantedit.save_details(name, data.get('details') or {}, private))
+    history.record(files, ('New chant: ' if new else 'Chant music: ') + name)
+    rebuild_later()
+    return {'ok': True, 'problems': problems, 'file': rel(f)}
+
+
+def api_chant_details(data):
+    """A chant's facts in its catalog: composer, years, key, mode, single/double, source, ACP psalm."""
+    import chantedit
+    name = chant_name(data)
+    if not paths.chant_file(name):
+        raise ValueError(f'no chant {name}')
+    fields = data.get('fields')
+    if not isinstance(fields, dict):
+        raise ValueError('fields: the facts to write')
+    p = chantedit.save_details(name, fields)
+    history.record([p], 'Chant details: ' + name)
+    rebuild_later()
+    return {'ok': True}
+
+
+def get_chant_img(q):
+    import chantedit
+    f = os.path.basename(q.get('f', [''])[0])
+    p = os.path.join(chantedit.PREVIEWS, f)
+    if not re.fullmatch(r'[0-9a-f]{16}\.png', f) or not os.path.exists(p):
+        raise ValueError('no such picture')
+    return p
+
+
+ROUTES = {'/api/chant/open': api_chant_open, '/api/chant/preview': api_chant_preview, '/api/chant/save': api_chant_save,
+          '/api/chant/details': api_chant_details,
+          '/api/notes': api_notes, '/api/sunday': api_sunday, '/api/sung': api_sung, '/api/commit': api_commit,
           '/api/undo': api_undo, '/api/anthem': api_anthem, '/api/open': api_open, '/api/text': api_text,
           '/api/check': api_check, '/api/build': api_build}
 
@@ -265,6 +347,18 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.send_response(302)
             self.send_header('Location', SITE_URL)
             self.end_headers()
+            return
+        if u.path == '/api/chant/img':                 # a picture of a chant being edited (not in the site)
+            try:
+                body = open(get_chant_img(urllib.parse.parse_qs(u.query)), 'rb').read()
+            except ValueError as e:
+                return self.reply({'error': str(e)}, 404)
+            self.send_response(200)
+            self.send_header('Content-Type', 'image/png')
+            self.send_header('Content-Length', str(len(body)))
+            self.send_header('Cache-Control', 'max-age=86400')
+            self.end_headers()
+            self.wfile.write(body)
             return
         if u.path in GETS:
             try:

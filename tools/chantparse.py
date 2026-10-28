@@ -116,7 +116,11 @@ def parse_voice(body):
 
 
 def load_chant(path_or_text, is_text=False):
-    text = path_or_text if is_text else open(path_or_text).read()
+    if is_text:
+        text = path_or_text
+    else:
+        with open(path_or_text, encoding='utf-8') as fh:
+            text = fh.read()
     key = re.search(r'\\key\s+(\w+)\s+\\(\w+)', text)
     comp = re.search(r'composer\s*=.*?"([^"]+)"', text)
     bodies = var_bodies(to_abs(text))

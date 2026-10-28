@@ -8,7 +8,7 @@ import datetime as dt, os, re, subprocess, sys, tempfile, unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
-import build, emit, history, lectionary, paths, service   # noqa: E402
+import build, chantedit, emit, history, lectionary, paths, service   # noqa: E402
 
 D = dt.date.fromisoformat
 
@@ -93,6 +93,35 @@ class Chants(unittest.TestCase):
         self.assertIn('\\scs "S"', emit.word_markup("=GOD'S"))
 
 
+class ChantEditing(unittest.TestCase):
+    def test_parts_round_trip(self):
+        text = paths.read(paths.chant_file('Turle-2'))
+        p = chantedit.parts(text)
+        self.assertEqual([v['var'] for v in p['voices']], ['S_notes', 'A_notes', 'T_notes', 'B_notes'])
+        self.assertEqual(chantedit.parts(chantedit.apply(text, p)), p)
+
+    def test_an_edit_lands(self):
+        text = paths.read(paths.chant_file('Turle-2'))
+        p = chantedit.parts(text)
+        p['key'] = {'tonic': 'c', 'mode': 'minor'}
+        p['voices'][0]['body'] = 'c2 | ' + p['voices'][0]['body']      # a bar too many in the soprano's first phrase
+        out = chantedit.apply(text, p)
+        self.assertIn('\\key c \\minor', out)
+        self.assertTrue(chantedit.check(out)[0])            # said so
+
+    def test_the_template_is_a_good_double_chant(self):
+        problems, facts = chantedit.check(chantedit.template('A. N. Other (1900-1990)'))
+        self.assertEqual(problems, [])
+        self.assertTrue(facts['double'])
+
+    def test_bad_input(self):
+        text = chantedit.template()
+        with self.assertRaises(ValueError):
+            chantedit.apply(text, {'key': {'tonic': 'h', 'mode': 'major'}})
+        with self.assertRaises(ValueError):
+            chantedit.apply(text, {'voices': [{'var': 'S_notes', 'start': "c''", 'body': 'c2 { d'}]})
+
+
 class Service(unittest.TestCase):
     def test_service_music_with_a_space(self):
         self.assertEqual(service.hymn('S 278')['number'], 'S278')
@@ -141,11 +170,11 @@ class History(unittest.TestCase):
         last = history.changes()[0]
         self.assertEqual(last['message'], 'Service: a')
         self.assertTrue(history.undo('parish', last['sha'])[0])
-        self.assertEqual(open(f).read(), 'one\n')
+        self.assertEqual(paths.read(f), 'one\n')
         self.assertEqual(history.changes()[0]['message'], 'Undid: Service: a')
         self.assertFalse(history.undo('parish', last['sha'])[0])            # already undone
         self.assertTrue(history.undo('parish', history.changes()[0]['sha'])[0])
-        self.assertEqual(open(f).read(), 'two\n')
+        self.assertEqual(paths.read(f), 'two\n')
         self.assertEqual(history.changes()[0]['message'], 'Redid: Service: a')
 
     def test_only_a_change_id_reaches_git(self):
