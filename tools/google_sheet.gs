@@ -17,13 +17,21 @@
  * the text gets one link on the whole cell to that hymn on hymnary.org (the first hymn, when a cell
  * names several). Each change is listed, with a link to the cell, under Execution log.
  * addMissingHymnLinks() does the same and also links hymn cells that have no link at all.
+ *
+ * LAYOUT is how this sheet is laid out, from the spreadsheet_ lines of parish.txt when the planner made
+ * this copy (the planner also sends its current settings with every request).
  */
 const SECRET = '__SECRET__';
-const HYMNARY = {EH1982: 'EH1982', LEVAS: 'LEVS1993', LEVAS2: 'LEVS1993', WLP: 'WLP1997'};
+const LAYOUT = __LAYOUT__;
+let L = LAYOUT;
+function useLayout_(q) { L = Object.assign({}, LAYOUT, (q && q.layout) || {}); }
 
 function linkFor(text) {
-  const m = String(text || '').match(/\b(S?\d{1,3}[a-z]?) \((EH1982|LEVAS2?|WLP)\)/);
-  return m ? 'https://hymnary.org/hymn/' + HYMNARY[m[2]] + '/' + m[1].toLowerCase() : null;
+  if (!L.hymnRe) return null;
+  const m = String(text || '').match(new RegExp(L.hymnRe));
+  if (!m) return null;
+  const book = L.hymnary[(m.groups && m.groups.b) || 'EH1982'] || 'EH1982';
+  return 'https://hymnary.org/hymn/' + book + '/' + m.groups.n.toLowerCase();
 }
 
 function setCell(range, value) {
@@ -53,13 +61,30 @@ function labels(sheet) {
   return out;
 }
 
+function tabName_(year) { return L.tabs.split('{year}').join(String(year)); }
+
+/** The tab a new one is modelled on: the latest year's (or the one tab, when the name has no {year}). */
+function latestTab_() {
+  const ss = SpreadsheetApp.getActive();
+  if (L.tabs.indexOf('{year}') < 0) {
+    const one = ss.getSheetByName(L.tabs);
+    if (!one) throw new Error('This spreadsheet has no tab named "' + L.tabs + '" (spreadsheet_tabs: in parish.txt).');
+    return one;
+  }
+  const esc = L.tabs.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').split('\\{year\\}').join('(\\d{4})');
+  const re = new RegExp('^' + esc + '$');
+  const tabs = ss.getSheets().filter(s => re.test(s.getName()))
+    .sort((a, b) => Number(b.getName().match(re)[1]) - Number(a.getName().match(re)[1]));
+  if (!tabs.length) throw new Error('This spreadsheet has no tab named like "' + L.tabs + '" (spreadsheet_tabs: in parish.txt).');
+  return tabs[0];
+}
+
 function yearSheet(year, create) {
   const ss = SpreadsheetApp.getActive();
-  let sh = ss.getSheetByName(String(year));
+  let sh = ss.getSheetByName(tabName_(year));
   if (sh || !create) return sh;
-  const years = ss.getSheets().map(s => s.getName()).filter(n => /^\d{4}$/.test(n)).sort();
-  const model = ss.getSheetByName(years[years.length - 1]);
-  sh = model.copyTo(ss).setName(String(year));
+  const model = latestTab_();
+  sh = model.copyTo(ss).setName(tabName_(year));
   const lastCol = sh.getLastColumn(), lastRow = sh.getLastRow();
   if (lastCol > 1) sh.getRange(1, 2, lastRow, lastCol - 1).clearContent();   // keep the layout, no services
   ss.setActiveSheet(sh);
@@ -74,7 +99,7 @@ function columnFor(sheet, date, create) {
   if (hit || !create) return hit ? hit.col : null;
   const d = date.split('-').map(Number), stamp = new Date(d[0], d[1] - 1, d[2]);
   if (!cols.length) { sheet.getRange(1, 2).setValue(stamp); return 2; }
-  const width = cols.length > 1 ? cols[1].col - cols[0].col : 2;
+  const width = cols.length > 1 ? cols[1].col - cols[0].col : (L.width || 1);
   const later = cols.find(c => c.date > date);
   const rows = sheet.getMaxRows();
   if (!later) {
@@ -95,9 +120,8 @@ function columnFor(sheet, date, create) {
   return at;
 }
 
-const ROW_ALIASES = {'opening hymn': 'Opening', 'gradual hymn': 'Gradual', 'communion hymn': 'Communion',
-                     'closing hymn': 'Closing', 'anthem': 'Offertory'};
-function canon(l) { l = String(l).trim(); return ROW_ALIASES[l.toLowerCase()] || l; }
+/** A row name in the sheet -> the name the planner uses for it (spreadsheet_rows: in parish.txt). */
+function canon(l) { l = String(l).trim(); return (L.rows || {})[l.toLowerCase()] || l; }
 
 /** Open the web app's address in a browser to check it can be reached: it answers {"ok": true, …}. */
 function doGet() {
@@ -145,13 +169,14 @@ function pasted_(text) {
   let q;
   try { q = JSON.parse(text); } catch (e) { throw new Error('That isn\'t what the planner copies: click "Copy for the sheet" again.'); }
   if (!q.psalter || !q.date || !q.cells) throw new Error('That isn\'t what the planner copies.');
+  useLayout_(q);
   return q;
 }
 
 function plan_(q) {
   const ss = SpreadsheetApp.getActive(), year = q.date.slice(0, 4);
   const sh = yearSheet(year, false);
-  const model = sh || ss.getSheets().filter(s => /^\d{4}$/.test(s.getName())).sort((a, b) => b.getName() - a.getName())[0];
+  const model = sh || latestTab_();
   const lab = labels(model), byCanon = {};
   Object.keys(lab).forEach(l => { if (!(canon(l) in byCanon)) byCanon[canon(l)] = l; });
   const col = sh ? columnFor(sh, q.date, false) : null;
@@ -164,7 +189,7 @@ function plan_(q) {
     const now = col ? sh.getRange(lab[l], col).getDisplayValue() : '';
     if (String(now).trim() !== String(cells[k]).trim()) { changes.push([l, now, cells[k]]); write[l] = cells[k]; }
   });
-  return {changes, missing, write, where: 'Sheet ' + year + ', ' + q.date + (sh ? (col ? '' : ' (a new column)') : ' (a new sheet)')};
+  return {changes, missing, write, where: 'Tab ' + tabName_(year) + ', ' + q.date + (sh ? (col ? '' : ' (a new column)') : ' (a new tab)')};
 }
 
 function previewFromPlanner(text) { const r = plan_(pasted_(text)); delete r.write; return r; }
@@ -184,6 +209,7 @@ function doPost(e) {
   let q;
   try { q = JSON.parse(e.postData.contents); } catch (err) { return reply({ok: false, error: 'bad request'}); }
   if (q.secret !== SECRET) return reply({ok: false, error: 'wrong secret'});
+  useLayout_(q);
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
@@ -192,12 +218,12 @@ function doPost(e) {
     const year = q.date.slice(0, 4);
     if (q.action === 'read') {
       const sh = yearSheet(year, false);
-      const model = sh || ss.getSheets().filter(s => /^\d{4}$/.test(s.getName())).sort((a, b) => b.getName() - a.getName())[0];
+      const model = sh || latestTab_();
       const lab = labels(model);
       const col = sh ? columnFor(sh, q.date, false) : null;
       const cells = {};
       if (col) Object.keys(lab).forEach(l => { cells[l] = sh.getRange(lab[l], col).getDisplayValue(); });
-      return reply({ok: true, title: ss.getName(), sheet: year, sheetExists: !!sh, column: !!col, labels: Object.keys(lab), cells});
+      return reply({ok: true, title: ss.getName(), sheet: tabName_(year), sheetExists: !!sh, column: !!col, labels: Object.keys(lab), cells});
     }
     if (q.action === 'write') {
       const sh = yearSheet(year, true);

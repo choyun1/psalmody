@@ -26,9 +26,9 @@ music under those names as well as the psalm:
 An anthem's words come from parish/anthems/ (one file per anthem; the planner writes them), so they're
 typed once and turn up again whenever the anthem is sung.
 
-The email (subject, recipients, greeting, signature) is set up in parish.txt. Its files go to
-output/<Sunday>/email/: the psalm images under the names the office knows (psalm_261025_chant.jpg,
-psalm_261025_text.jpg), the text, and a .eml file.
+The email (recipients, subject, greeting, wording, layout, signature, attachment names) is set up in
+parish.txt; see parish.example/parish.txt. Its files go to output/<Sunday>/email/: the psalm images
+(by default psalm_261025_chant.jpg, psalm_261025_text.jpg), the text, and a .eml file.
 """
 import csv, datetime as dt, os, re, shutil, sys
 
@@ -432,6 +432,11 @@ def settings():
         'intro': P.get('email_intro', "Here's the music for {occasion}:"),
         'change': P.get('email_change', "There's a change to the service music this week:"),
         'rest': P.get('email_rest', "And here's the rest of the music for {occasion}:"),
+        # the usual service's service music: listed only when it "changes" from last time, "always", or "never"
+        'service_music': (P.get('email_service_music', 'changes').strip().lower() or 'changes').split()[0],
+        'bullet': P.get('email_bullet', '*').strip(),
+        'quotes': '' if P.get('email_quotes', 'none').strip().lower() in ('', 'none', 'no') else P['email_quotes'].strip(),
+        'attachments': P.get('email_attachments', '').strip() or 'psalm_{yymmdd}_{kind}',
         'signature': [s.strip() for s in P.get('signature', '').split('|') if s.strip()],
     }
 
@@ -476,15 +481,21 @@ def words_for(name, lib):
     return next((a for a in lib if a['file'] == name), None) or find_anthem(name, lib)
 
 
-def item_line(s, v, lib, n=0):
+def bullet(text, S=None):
+    b = (S or settings())['bullet']
+    return f'{b} {text}' if b else text
+
+
+def item_line(s, v, lib, n=0, S=None):
     """One piece of music as the email lists it (plus its words). n counts lessons."""
+    S = S or settings()
     if s['kind'] == 'lesson':
         ref, summary = split_lesson(v)
         name = f"The {ORDINALS[n - 1] if 0 < n <= len(ORDINALS) else str(n) + 'th'} {s['label']}"
-        return [f"* {name}: {ref}" + (f" ({summary})" if summary else '')]
+        return [bullet(f"{name}: {ref}" + (f" ({summary})" if summary else ''), S)]
     hs = hymns(v) if s['kind'] in ('hymn', 'anthem') else []
     label = s['label'].replace('{hymn|anthem}', 'hymn' if hs else 'anthem')
-    out = [f"* {v}" if s.get('bare') and not hs else f"* {label}: {hymns_text(hs) if hs else v}"]
+    out = [bullet(v if s.get('bare') and not hs else f"{label}: {hymns_text(hs) if hs else v}", S)]
     if hs:
         return out
     a, head = None, 'Anthem text' if re.search(r'anthem', label, re.I) else f"{s['label']} text"
@@ -494,7 +505,8 @@ def item_line(s, v, lib, n=0):
         a = find_anthem(v, lib)
     if a and a['text'].strip():
         out.append(f"{head}{' (' + a['source'] + ')' if a['source'] else ''}:")
-        out += ['"""'] + a['text'].strip('\n').splitlines() + ['"""']
+        q = [S['quotes']] if S['quotes'] else []
+        out += q + a['text'].strip('\n').splitlines() + q
     return out
 
 
@@ -510,7 +522,8 @@ def email(sunday, name):
     _, prev = previous_service_music(sunday['date'][:10], order, name)
     regular = order == next(iter(ORDERS))
     # the usual service: mention service music only when it changes; a special one: list it all
-    changed = [s for s in svc_slots if regular and given.get(s['key']) and prev and given[s['key']] != prev.get(s['key'])]
+    changed = [s for s in svc_slots if regular and S['service_music'] == 'changes' and given.get(s['key']) and prev
+               and given[s['key']] != prev.get(s['key'])]
     when = occasion(sunday, order)
     meta = META.get(order, {})
     day = d.day
@@ -523,7 +536,7 @@ def email(sunday, name):
         lines.append(S['change'].format(**fmt))
         for s in changed:
             hs = hymns(given[s['key']])
-            lines.append(f"* {s['label']} - {', '.join(h['number'] for h in hs) if hs and all(h['service'] for h in hs) else (hymns_text(hs) if hs else given[s['key']])}")
+            lines.append(bullet(f"{s['label']} - {', '.join(h['number'] for h in hs) if hs and all(h['service'] for h in hs) else (hymns_text(hs) if hs else given[s['key']])}", S))
         lines += ['', S['rest'].format(**fmt) + (' ' + lead if lead else '')]
     else:
         lines.append(intro + (' ' + lead if lead else ''))
@@ -535,17 +548,17 @@ def email(sunday, name):
         elif k == 'lead':
             continue
         elif k == 'also':
-            lines.append('* ' + v)
+            lines.append(bullet(v, S))
         elif k != 'organist':
             s = slot(order, k) or next((x for o in ORDERS.values() for x in o if x['key'] == k), None)
             if s and s['kind'] == 'service':
-                if not regular:
+                if not regular or S['service_music'] == 'always':
                     hs = hymns(v)
-                    lines.append(f"* {s['label']}: {', '.join(h['number'] for h in hs) if hs else v}")
+                    lines.append(bullet(f"{s['label']}: {', '.join(h['number'] for h in hs) if hs else v}", S))
             elif s:
                 if s['kind'] == 'lesson':
                     nlesson += 1
-                lines += item_line(s, v, lib, nlesson)
+                lines += item_line(s, v, lib, nlesson, S)
     if notes:
         lines += [''] + notes
     lines += [''] + S['signature']
@@ -554,7 +567,8 @@ def email(sunday, name):
 
 
 def attachments(name, date):
-    """Copy the admin images to output/<name>/email/ under the names the office knows."""
+    """Copy the admin images to output/<name>/email/ under the names the office knows (email_attachments:
+    in parish.txt, with {yymmdd}, {date}, {mm}, {dd}, {kind} = chant, text or tone; a number is added for a second)."""
     src = os.path.join(paths.OUTPUT, name, 'admin')
     dst = os.path.join(paths.OUTPUT, name, 'email')
     if os.path.isdir(dst):
@@ -562,7 +576,8 @@ def attachments(name, date):
     os.makedirs(dst)
     if not os.path.isdir(src):
         return dst, []
-    yymmdd = date[2:4] + date[5:7] + date[8:10] + (name[10:] if name.startswith(date) else '')   # 2026-12-24-midnight -> 261224-midnight
+    extra = name[10:] if name.startswith(date) else ''              # 2026-12-24-midnight -> 261224-midnight
+    pattern = settings()['attachments']
     count, out = {}, []
     for f in sorted(os.listdir(src)):
         if not f.endswith('.jpg'):
@@ -570,7 +585,9 @@ def attachments(name, date):
         kind = 'text' if '_text_' in f else 'tone' if '_tone_' in f else 'chant'
         count[kind] = count.get(kind, 0) + 1
         n = count[kind]
-        target = os.path.join(dst, f'psalm_{yymmdd}_{kind}{"" if n == 1 else n}.jpg')
+        stem = pattern.format(yymmdd=date[2:4] + date[5:7] + date[8:10] + extra, date=date + extra, mm=date[5:7],
+                              dd=date[8:10], kind=kind)
+        target = os.path.join(dst, f'{stem}{"" if n == 1 else n}.jpg')
         shutil.copy(os.path.join(src, f), target)
         out.append(target)
     return dst, out
@@ -606,7 +623,7 @@ def write_email(path, body=None):
         f"To: {e['to']}\nCc: {e['cc']}\nSubject: {e['subject']}\n\n{e['body']}")
     m = message(e, files, name)
     m['X-Unsent'] = '1'                               # Outlook opens it as a draft
-    eml = os.path.join(dst, f'Music for {sunday["date"][5:7]}-{sunday["date"][8:10]}.eml')
+    eml = os.path.join(dst, (re.sub(r'[\\/:*?"<>|]+', '-', e['subject']).strip() or 'email') + '.eml')
     open(eml, 'wb').write(bytes(m))
     e.update(files=files, eml=eml, folder=dst, name=name)
     return e

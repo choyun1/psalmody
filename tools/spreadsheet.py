@@ -1,17 +1,28 @@
 #!/usr/bin/env python3
-"""Write a Sunday's music into the music schedule spreadsheet (the .xlsx kept since 2022).
+"""Write a Sunday's music into the music schedule spreadsheet.
 
     python tools/spreadsheet.py parish/sundays/2026-11-08.txt          # show what would change
     python tools/spreadsheet.py parish/sundays/2026-11-08.txt --write  # write it
 
-The spreadsheet has one sheet per year, one column per service (the date in row 1) and one row per
-piece (Prelude, Opening, Gloria, Psalm, …). Which row each piece of a service goes in comes from the
-[brackets] in parish/services.txt. Only cells the Sunday file has something for are touched, and
-before writing, a copy of the spreadsheet is kept in schedule/backups/.
+The spreadsheet has a column per service (its date in the first row) and a row per piece (Prelude,
+Opening, Gloria, Psalm, …, named in the first column). Which row each piece of a service goes in comes
+from the [brackets] in services.txt. Only cells the Sunday file has something for are touched, and
+before writing an .xlsx, a copy of it is kept in schedule/backups/.
+
+How your spreadsheet is laid out is set in parish.txt (all optional):
+
+    spreadsheet_tabs:    {year}           # a tab per year (made when a new year starts), or one tab's name
+    spreadsheet_columns: 2                # columns each service takes, when the sheet can't tell
+    spreadsheet_rows:    Opening hymn = Opening, Anthem = Offertory    # your row names = the [bracket] names
+    spreadsheet_hymns:   {number} ({book})                # how a hymn is written in a cell
+    spreadsheet_books:   LEVAS = LEVAS2   # a hymnal written under another name
+    spreadsheet_links:   hymnary          # hymn cells link to hymnary.org; "none" for no links
+
+Besides the [bracket] names, the rows the planner looks for are Psalm, Organist and Proper (the day).
 
 Where the spreadsheet is: `spreadsheet:` in parish.txt. `google` means a Google Sheet, reached through
 the small script in tools/google_sheet.gs (connect it once from the planner); anything else is the path
-of an .xlsx file (default: schedule/SP_Music_Schedule.xlsx in the parish folder; close it in Excel first).
+of an .xlsx file (default: the .xlsx in the parish folder's schedule/; close it in Excel first).
 """
 import copy, datetime as dt, glob, os, re, shutil, sys
 
@@ -19,26 +30,67 @@ TOOLS = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, TOOLS)
 import paths, service   # noqa: E402
 
-# old row labels -> the slot names used in services.txt's [brackets] (same as tools/import_schedule.py)
-ROW_ALIASES = {'opening hymn': 'Opening', 'gradual hymn': 'Gradual', 'communion hymn': 'Communion',
-               'closing hymn': 'Closing', 'anthem': 'Offertory'}
-BOOK_IN_SHEET = {'LEVAS': 'LEVAS2'}          # how the spreadsheet writes the hymnals
-HYMNARY = {'EH1982': 'EH1982', 'LEVAS': 'LEVS1993', 'WLP': 'WLP1997'}    # its hymn cells link to hymnary.org
+HYMNARY = {'EH1982': 'EH1982', 'LEVAS': 'LEVS1993', 'WLP': 'WLP1997'}    # each hymnal's code on hymnary.org
+NUMBER = r'S?\d{1,3}[a-z]?'
 
 
-def link_for(value):
-    """The hymnary.org page of the first hymn in a cell, as the spreadsheet's hymn cells have."""
-    m = re.search(r'\b(S?\d{1,3}[a-z]?) \((EH1982|LEVAS2?|WLP)\)', value or '')
+def _pairs(v):
+    """'A = B, C = D' -> {'A': 'B', 'C': 'D'}"""
+    out = {}
+    for part in (v or '').split(','):
+        a, eq, b = part.partition('=')
+        if eq and a.strip() and b.strip():
+            out[a.strip()] = b.strip()
+    return out
+
+
+def layout():
+    """How this parish's spreadsheet is laid out and written (parish.txt), with the defaults."""
+    import lectionary
+    P = lectionary.PARISH
+    try:
+        width = max(1, int(P.get('spreadsheet_columns', '1')))
+    except ValueError:
+        width = 1
+    books = {b.upper(): n for b, n in _pairs(P.get('spreadsheet_books')).items()}
+    return {'tabs': P.get('spreadsheet_tabs', '').strip() or '{year}',
+            'width': width,
+            'rows': {a.lower(): b for a, b in _pairs(P.get('spreadsheet_rows')).items()},
+            'hymns': P.get('spreadsheet_hymns', '').strip() or '{number} ({book})',
+            'books': books,
+            'links': P.get('spreadsheet_links', 'hymnary').strip().lower() not in ('none', 'no', 'off')}
+
+
+def _hymn_pattern(L, js=False):
+    """A regular expression for a hymn as the spreadsheet writes it, groups n (number) and b (book)."""
+    names = {}
+    for b, code in HYMNARY.items():
+        names[b] = code
+        names[L['books'].get(b, b)] = code
+    alt = '|'.join(re.escape(n) for n in sorted(names, key=len, reverse=True))
+    g = (lambda k: f'(?<{k}>') if js else (lambda k: f'(?P<{k}>')
+    pat = re.escape(L['hymns']).replace(re.escape('{number}'), g('n') + NUMBER + ')') \
+                               .replace(re.escape('{book}'), g('b') + alt + ')')
+    return (r'\b' if L['hymns'].startswith('{number}') else '') + pat, names
+
+
+def link_for(value, L=None):
+    """The hymnary.org page of the first hymn in a cell (none if the parish doesn't want links)."""
+    L = L or layout()
+    if not L['links']:
+        return None
+    pat, names = _hymn_pattern(L)
+    m = re.search(pat, value or '')
     if not m:
         return None
-    book = HYMNARY['LEVAS' if m.group(2).startswith('LEVAS') else m.group(2)]
-    return f'https://hymnary.org/hymn/{book}/{m.group(1).lower()}'
+    book = names.get(m.groupdict().get('b') or 'EH1982', 'EH1982')
+    return f'https://hymnary.org/hymn/{book}/{m.group("n").lower()}'
 
 
-def set_cell(cell, value, fonts):
+def set_cell(cell, value, fonts, L=None):
     """Write a value; hymn cells link to hymnary.org and look like links, the rest look plain."""
     cell.hyperlink = None
-    link = link_for(value)
+    link = link_for(value, L)
     if link:
         cell.hyperlink = link
     cell.value = value
@@ -65,22 +117,30 @@ KEEP_BACKUPS = 20
 
 def path():
     import lectionary
-    p = lectionary.PARISH.get('spreadsheet', '').strip() or os.path.join('schedule', 'SP_Music_Schedule.xlsx')
+    p = lectionary.PARISH.get('spreadsheet', '').strip()
+    if not p or p.lower() == 'google':            # the .xlsx kept in schedule/, if any
+        found = sorted(glob.glob(os.path.join(paths.HOME, 'schedule', '*.xlsx')))
+        p = found[0] if found else os.path.join('schedule', 'Music_Schedule.xlsx')
     p = os.path.expanduser(p)
     return p if os.path.isabs(p) else os.path.join(paths.HOME, p)
 
 
 def sheet_hymns(hs):
-    return ', '.join(f"{h['number']} ({BOOK_IN_SHEET.get(h['book'], h['book'])})" for h in hs)
+    L = layout()
+    return ', '.join(L['hymns'].format(number=h['number'], book=L['books'].get(h['book'], h['book'])) for h in hs)
 
 
-def cell_value(s, v):
-    """A piece as the spreadsheet writes it: '390 (EH1982)', 'S278 (EH1982)', or the text as typed."""
+def cell_value(s, v, col=None, shared=False):
+    """A piece as the spreadsheet writes it: '390 (EH1982)', 'S278 (EH1982)', or the text as typed. Service
+    music in a row it shares with another piece says what it is: 'Kyrie S86 (EH1982)' in the Gloria row."""
     hs = service.hymns(v) if s['kind'] in ('hymn', 'anthem', 'service') else []
     if not hs:
         return v
     out = sheet_hymns(hs)
-    return ('Kyrie ' + out) if s['key'] == 'kyrie' else out
+    word = s['label'].split()[0] if s['label'].split() else ''
+    if s['kind'] == 'service' and shared and col and word and not col.lower().startswith(word.lower()):
+        return f'{word} {out}'
+    return out
 
 
 def psalm_value(spec, chants):
@@ -103,7 +163,7 @@ def wanted(sunday, current):
     out = {}
     for col, pieces in cells.items():
         if len(pieces) == 1:
-            out[col] = cell_value(*pieces[0])
+            out[col] = cell_value(*pieces[0], col, sum(col in x['columns'] for x in sl) > 1)
             continue
         vals = [cell_value(s, v) for s, v in pieces]
         m = [re.match(r'^(Magnificat|Nunc dimittis)\b(.*)$', v) for v in vals]
@@ -116,8 +176,9 @@ def wanted(sunday, current):
         if k != 'also' or ':' not in v:
             continue
         lab, val = (x.strip() for x in v.split(':', 1))
-        col = next((c for c in set(ROW_ALIASES.values()) | {'Prelude', 'Postlude', 'Gloria', 'Psalm'}
-                    if lab.lower().split()[0] == c.lower().split()[0]), None)
+        rows = sorted({c for o in service.ORDERS.values() for s in o for c in s['columns']}
+                      | set(layout()['rows'].values()) | {'Psalm'})
+        col = next((c for c in rows if lab.split() and lab.lower().split()[0] == c.lower().split()[0]), None)
         if col:
             hs = service.hymns(val)
             item = f"{lab}: {sheet_hymns(hs) if hs else val}"
@@ -144,7 +205,7 @@ def rows_of(ws):
     for r in range(1, ws.max_row + 1):
         lab = ws.cell(row=r, column=1).value
         if isinstance(lab, str) and lab.strip():
-            out.setdefault(ROW_ALIASES.get(lab.strip().lower(), lab.strip()), r)
+            out.setdefault(canon(lab), r)
     return out
 
 
@@ -162,7 +223,7 @@ def insert_column(ws, date):
     if not cols:                                     # a new year's sheet: the first service
         ws.cell(row=1, column=2).value = stamp
         return 2
-    width = (cols[1] - cols[0]) if len(cols) > 1 else 2
+    width = (cols[1] - cols[0]) if len(cols) > 1 else layout()['width']
     later = [c for c in cols if ws.cell(row=1, column=c).value.date() > date]
     if not later and merged_at(cols[-1] + width) and ws.cell(row=1, column=cols[-1] + width).value is None:
         ws.cell(row=1, column=cols[-1] + width).value = stamp     # an empty column laid out already
@@ -210,11 +271,29 @@ def insert_column(ws, date):
     return at
 
 
-def new_year_sheet(wb, year):
-    """A sheet for a new year, with the row labels and look of the latest one and no services yet."""
-    last = max((ws for ws in wb.worksheets if ws.title.isdigit()), key=lambda w: int(w.title))
+def tab_name(date):
+    return layout()['tabs'].replace('{year}', str(date.year))
+
+
+def latest_tab(wb):
+    """The tab a new one is modelled on: the latest year's (or the one tab, without {year})."""
+    t = layout()['tabs']
+    if '{year}' not in t:
+        if t not in wb.sheetnames:
+            raise RuntimeError(f'the spreadsheet has no tab named "{t}" (spreadsheet_tabs: in parish.txt)')
+        return wb[t]
+    pat = re.compile('^' + re.escape(t).replace(re.escape('{year}'), r'(\d{4})') + '$')
+    tabs = [(int(m.group(1)), ws) for ws in wb.worksheets for m in [pat.match(ws.title)] if m]
+    if not tabs:
+        raise RuntimeError(f'the spreadsheet has no tab named like "{t}" (spreadsheet_tabs: in parish.txt)')
+    return max(tabs, key=lambda x: x[0])[1]
+
+
+def new_year_sheet(wb, date):
+    """A tab for a new year, with the row labels and look of the latest one and no services yet."""
+    last = latest_tab(wb)
     ws = wb.copy_worksheet(last)
-    ws.title = str(year)
+    ws.title = tab_name(date)
     for c in range(2, ws.max_column + 1):                  # keep the layout, empty every service
         for r in range(1, ws.max_row + 1):
             cell = ws.cell(row=r, column=c)
@@ -230,7 +309,8 @@ SHEET_SECRET = 'psalter-sheet'
 
 
 def canon(label):
-    return ROW_ALIASES.get(label.strip().lower(), label.strip())
+    """A row name in the sheet -> the name services.txt's [brackets] use for it."""
+    return layout()['rows'].get(label.strip().lower(), label.strip())
 
 
 class XlsxSheet:
@@ -243,8 +323,8 @@ class XlsxSheet:
     def read(self, date):
         import openpyxl
         wb = openpyxl.load_workbook(self.path)
-        ws = wb[str(date.year)] if str(date.year) in wb.sheetnames else None
-        model = ws or max((w for w in wb.worksheets if w.title.isdigit()), key=lambda w: int(w.title))
+        ws = wb[tab_name(date)] if tab_name(date) in wb.sheetnames else None
+        model = ws or latest_tab(wb)
         rows = rows_of(model)
         col = find_column(ws, date) if ws else None
         cells = {}
@@ -266,12 +346,13 @@ class XlsxSheet:
         for old in sorted(glob.glob(os.path.join(bdir, '*.xlsx')))[:-KEEP_BACKUPS]:
             os.remove(old)
         wb = openpyxl.load_workbook(p)
-        ws = wb[str(date.year)] if str(date.year) in wb.sheetnames else new_year_sheet(wb, date.year)
+        ws = wb[tab_name(date)] if tab_name(date) in wb.sheetnames else new_year_sheet(wb, date)
         col = find_column(ws, date) or insert_column(ws, date)
         rows = rows_of(ws)
         fonts = fonts_of(ws, rows)
+        L = layout()
         for k, v in cells.items():
-            set_cell(ws.cell(row=rows[canon(k)], column=col), v, fonts)
+            set_cell(ws.cell(row=rows[canon(k)], column=col), v, fonts, L)
         try:
             wb.save(p)
         except PermissionError:
@@ -289,7 +370,7 @@ class GoogleSheet:
         self.name = 'the Google Sheet'
 
     def call(self, **q):
-        return call(self.url, self.secret, **q)
+        return call(self.url, self.secret, layout=script_layout(), **q)
 
     def read(self, date):
         r = self.call(action='read', date=date.isoformat())
@@ -343,8 +424,18 @@ def new_secret():
     return secrets.token_urlsafe(24)
 
 
+def script_layout():
+    """The layout settings as the sheet's script takes them."""
+    L = layout()
+    pat, names = _hymn_pattern(L, js=True)
+    return {'tabs': L['tabs'], 'width': L['width'], 'rows': L['rows'], 'hymnRe': pat if L['links'] else '',
+            'hymnary': names}
+
+
 def script_text(secret):
-    return open(os.path.join(TOOLS, 'google_sheet.gs'), encoding='utf-8').read().replace('__SECRET__', secret)
+    import json
+    return open(os.path.join(TOOLS, 'google_sheet.gs'), encoding='utf-8').read().replace('__SECRET__', secret) \
+        .replace('__LAYOUT__', json.dumps(script_layout(), ensure_ascii=False))
 
 
 def connect_google(url, secret):
@@ -372,7 +463,7 @@ def plan_changes(sunday_path):
     notes = []
     new = wanted(sunday, current)
     if not got['sheet']:
-        notes.append(f'a new sheet {date.year} will be added')
+        notes.append(f'a new tab {tab_name(date)} will be added')
     elif not got['column']:
         notes.append(f'a new column for {date.isoformat()} will be added in date order')
     order = service.order_of(sunday)
@@ -385,7 +476,7 @@ def plan_changes(sunday_path):
     rank = list(labels)
     changes = [(k, current.get(k, ''), v) for k, v in new.items() if (current.get(k, '') or '').strip() != v.strip()]
     changes.sort(key=lambda c: rank.index(c[0]) if c[0] in rank else 999)
-    return {'date': date, 'order': order, 'name': b.name, 'sheet': str(date.year), 'changes': changes, 'notes': notes,
+    return {'date': date, 'order': order, 'name': b.name, 'sheet': tab_name(date), 'changes': changes, 'notes': notes,
             'labels': labels, 'backend': b}
 
 
@@ -401,7 +492,8 @@ def paste_blob(sunday_path):
         raise RuntimeError(f"{order} isn't kept in the music schedule (services.txt says so); its Sunday file is the record")
     cells = wanted(sunday, {})
     proper = order if order != next(iter(service.ORDERS)) else service.day_label(sunday['date'])
-    return json.dumps({'psalter': 1, 'date': sunday['date'][:10], 'proper': proper, 'cells': cells}, ensure_ascii=False)
+    return json.dumps({'psalter': 1, 'date': sunday['date'][:10], 'proper': proper, 'cells': cells,
+                       'layout': script_layout()}, ensure_ascii=False)
 
 
 def write(sunday_path):

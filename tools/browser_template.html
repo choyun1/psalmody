@@ -1403,10 +1403,9 @@ function mailCard() {
   const m = B.mail;
   const title = `<h3 style="font-weight:normal;margin:0 0 6px">Email to the parish office</h3>`;
   if (!SERVER) return `<div class="card" id="mailcard">${title}<p class="hint">Open the browser with the Psalter launcher to write the weekly email from here.</p></div>`;
-  const subj = "Music for " + B.date.slice(5, 7) + "/" + B.date.slice(8, 10);
   if (!m) return `<div class="card" id="mailcard">${title}
     <p style="margin:0"><button class="small primary" onclick="writeMail()">Save, build &amp; ${GMAIL.connected ? "draft" : "write"} the email</button>
-    <span class="hint">builds the psalm images if needed, then ${GMAIL.connected ? "puts “" + esc(subj) + "” in your Gmail Drafts" : "writes “" + esc(subj) + "”"} with them attached</span></p>
+    <span class="hint">builds the psalm images if needed, then ${GMAIL.connected ? "puts the email in your Gmail Drafts" : "writes the email"} with them attached</span></p>
     ${GMAIL.checked && !GMAIL.connected ? connectBox() : ""}
     <div id="sheetbox" style="margin-top:10px">${sheetBox()}</div></div>`;
   return `<div class="card" id="mailcard">${title}
@@ -1505,7 +1504,7 @@ function sheetBox() {
     ${/Google/.test(t.error) ? ` · <button class="small" onclick="copyForSheet(this)">Copy for the sheet</button> <span class="hint">then in the sheet: Psalter › Record a service from the planner…</span>` : ""}
     ${/not connected|refused|reach/.test(t.error) ? sheetConnectBox() : ""}`;
   const rows = t.changes.map(([k, o, n]) => `<tr><td>${esc(k)}</td><td class="hint">${esc(o || "(empty)")}</td><td>${esc(n)}</td></tr>`).join("");
-  return `<div class="hint" style="margin-bottom:4px">${esc(t.file)}, sheet ${esc(t.sheet)}${t.notes.length ? " · " + t.notes.map(esc).join(" · ") : ""}</div>
+  return `<div class="hint" style="margin-bottom:4px">${esc(t.file)}, tab ${esc(t.sheet)}${t.notes.length ? " · " + t.notes.map(esc).join(" · ") : ""}</div>
     ${t.written ? `<b style="font-weight:normal">✓ Written to the music schedule (${t.changes.length} cell${t.changes.length === 1 ? "" : "s"}).</b>${t.url ? ` <a href="${esc(t.url)}" target="_blank">Open it in the sheet</a>` : " The old copy is in schedule/backups."}`
       : t.changes.length ? `<table class="sheetdiff"><tr><th>Row</th><th>Now</th><th>Will be</th></tr>${rows}</table>
         <p style="margin:6px 0 0"><button class="small primary" onclick="sheetCheck(true)">Write ${t.changes.length} change${t.changes.length === 1 ? "" : "s"}</button> <span class="link" onclick="B.sheet=null; refreshSheet()">cancel</span></p>`
