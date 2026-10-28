@@ -508,11 +508,11 @@ def verse_score(pv, t):
     return music, lyr
 
 
-def formula_score(t):
-    """The tone itself: intonation, reciting note, mediant || reciting note, termination."""
+def formula_score(t, parts=('mediant', 'termination')):
+    """The tone itself: intonation, reciting note, mediant || reciting note, termination (or just some parts)."""
     clef = t['clef']
     out = []
-    for part in ('mediant', 'termination'):
+    for part in parts:
         f = formula(t[part])
         toks = (f['intonation'] if part == 'mediant' else []) + [f['tenor']] + f['cadence']
         for tk in toks:

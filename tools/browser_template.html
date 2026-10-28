@@ -43,6 +43,9 @@ button.chip { cursor: pointer; font-family: inherit; }
 .chip.on { background: var(--c, var(--other)); color: var(--panel); }
 .chip.off { opacity: .45; }
 button.pin { padding: 2px 8px; }
+.endings { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+.ending { border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; }
+.ending img { display: block; height: 46px; width: auto; max-width: 100%; margin: 4px 0; }
 button.pin.on { color: var(--accent); border-color: var(--accent); }
 .g-bright { --c: var(--bright); } .g-calm { --c: var(--calm); } .g-shadowed { --c: var(--shadowed); } .g-dark { --c: var(--dark); }
 .count { color: var(--muted); font-size: 15px; margin: 0 0 10px; }
@@ -479,20 +482,23 @@ function renderChantsShell() {
 }
 const CV = {tones: false, mode: 0};
 function renderTones() {
-  const all = D.tones || [];
-  const list = all.filter(t => !CV.mode || t.mode === CV.mode);
-  const modes = [...new Set(all.map(t => t.mode))];
-  $("#ccount").innerHTML = `${list.length} tones and endings, from the Liber usualis · mode: ` +
+  const groups = D.toneGroups || [], ends = {}; (D.tones || []).forEach(t => ends[t.name] = t);
+  const shown = groups.filter(g => !CV.mode || (CV.mode === -1 ? g.mode === 0 : g.mode === CV.mode));
+  const modes = [...new Set(groups.map(g => g.mode))];
+  $("#ccount").innerHTML = `${groups.filter(g => g.mode).length} tones with ${(D.tones || []).length - 1} endings, and the tonus peregrinus, from the Liber usualis · mode: ` +
     [0].concat(modes.filter(m => m)).map(m => `<span class="link" style="${CV.mode === m ? "font-weight:bold" : ""}" onclick="CV.mode=${m}; renderChants()">${m ? ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII"][m] : "all"}</span>`).join(" · ") +
-    (modes.includes(0) ? ` · <span class="link" onclick="CV.mode=-1; renderChants()">peregrinus</span>` : "");
-  const shown = CV.mode === -1 ? all.filter(t => t.mode === 0) : list;
-  $("#clist").innerHTML = `<p class="hint" style="margin:0 0 10px">Each tone is printed as sung: the intonation (first verse only), the reciting note, the mediant cadence ‖ the reciting note, the ending. Notes in brackets are added or left out as the words need; ´ marks the notes that take an accented syllable. In the psalm builder, type <i>tone 7a</i> in a chant box, or use the button on a tone here; the psalm is pointed for it automatically.</p>` +
-    shown.map(t => `<div class="card">
-      <button class="small play" onclick="playTone('${esc(t.name)}', this)">▶ Play</button>
-      <h3 style="font-weight:normal;margin:0">${esc(t.label)} <span class="hint">· typed as “tone ${esc(t.name)}”</span></h3>
-      <div class="hint" style="margin:2px 0 6px">${esc(t.character)}${t.mode ? " · the spirit of the mode" : ""}</div>
-      ${t.img ? `<img src="notation/${encodeURIComponent(t.img)}" alt="${esc(t.label)}" style="max-width:100%;max-height:90px">` : ""}
-      <p style="margin:6px 0 0"><span class="link" onclick="useInBuilder('tone ${esc(t.name)}')">Use in the psalm builder</span>${toneUses(t)}</p></div>`).join("");
+    (modes.includes(0) ? ` · <span class="link" style="${CV.mode === -1 ? "font-weight:bold" : ""}" onclick="CV.mode=-1; renderChants()">peregrinus</span>` : "");
+  $("#clist").innerHTML = `<p class="hint" style="margin:0 0 10px">Each tone is printed as sung: the intonation (first verse only), the reciting note and the mediant cadence; then the reciting note and an ending. A tone's endings all share its first half, so pick whichever ending you like: the Liber chooses one to lead back into an antiphon, and without an antiphon the choice is yours. Notes in brackets are added or left out as the words need; ´ marks the notes that take an accented syllable. In the psalm builder, type <i>tone 1g2</i> in a chant box, or choose a tone and then its ending.</p>` +
+    shown.map(g => `<div class="card">
+      <h3 style="font-weight:normal;margin:0">${esc(g.label)}</h3>
+      <div class="hint" style="margin:2px 0 6px">${esc(g.character)}${g.mode ? " · the spirit of the mode" : ""}</div>
+      ${g.img ? `<div class="hint">First half (intonation, reciting note, mediant):</div><img src="notation/${encodeURIComponent(g.img)}" alt="${esc(g.label)}" style="max-width:100%;max-height:80px">` : ""}
+      ${g.mode ? `<div class="hint" style="margin-top:6px">${g.endings.length > 1 ? g.endings.length + " endings" : "Its ending"}:</div>` : ""}
+      <div class="endings">${g.endings.map(n => ends[n]).map(t => `<div class="ending">
+        <div><b style="font-weight:normal">${t.ending && g.mode ? "Ending " + esc(t.ending) : esc(g.label)}</b> <span class="hint">· tone ${esc(t.name)}</span></div>
+        ${t.img ? `<img src="notation/${encodeURIComponent(t.img)}" alt="${esc(t.label)}">` : ""}
+        <div><button class="small play" onclick="playTone('${esc(t.name)}', this)">▶ Play</button>
+          <span class="link" onclick="useInBuilder('tone ${esc(t.name)}')">Use</span>${toneUses(t)}</div></div>`).join("")}</div></div>`).join("");
 }
 function toneUses(t) {
   const want = t.name.toLowerCase().replace(/\W/g, "");
@@ -917,7 +923,16 @@ async function setDate(date) {
   }
   renderBuilder();
 }
-const TONE_NAMES = ["1D", "1D2", "1f", "1g", "1g2", "1g3", "1a", "1a2", "1a3", "2D", "3b", "3a", "3a2", "3g", "3g2", "4g", "4E", "4c", "4A", "4A*", "4d", "5a", "6F", "6alt", "7a", "7b", "7c", "7c2", "7d", "8G", "8G*", "8c", "per"];
+const TONE_NAMES = (D.tones || []).map(t => t.name);
+const TONE_OF = {}; (D.toneGroups || []).forEach(g => g.endings.forEach(n => TONE_OF[n.toLowerCase()] = g));
+// a tone and then one of its endings, for a chant box (onpick gets e.g. "tone 1g2")
+function toneMenus(current, onpick) {
+  const cur = (current || "").replace(/^tone[:\s]*/i, "").toLowerCase(), g = TONE_OF[cur];
+  const ends = {}; (D.tones || []).forEach(t => ends[t.name] = t);
+  return `<select onchange="const g = (D.toneGroups || [])[this.value]; if (g) (${onpick})('tone ' + g.endings[0])">
+      <option value="">${g ? "" : "tone…"}</option>${(D.toneGroups || []).map((x, i) => `<option value="${i}" ${x === g ? "selected" : ""}>${esc(x.label)}</option>`).join("")}</select>
+    ${g && g.endings.length > 1 ? `<select onchange="(${onpick})('tone ' + this.value)">${g.endings.map(n => `<option value="${esc(n)}" ${n.toLowerCase() === cur ? "selected" : ""}>ending ${esc(ends[n].ending)}</option>`).join("")}</select>` : ""}`;
+}
 function chantOptions() { return TONE_NAMES.map(t => `<option value="tone ${t}">plainchant psalm tone</option>`).join("") + D.chants.map(c => `<option value="${esc(c.id)}">${esc(keyName(c))}${val(c, "mood").length ? " · " + esc(val(c, "mood").join(", ")) : ""}</option>`).join(""); }
 function renderBuilder() {
   if (!B.date && !B.started) { B.started = true; setDate(nextSunday()); return; }
@@ -1078,7 +1093,7 @@ async function pdfPreview() {
 }
 
 // chant picker
-const P = {pi: 0, ci: 0, q: "", moods: new Set(), mode: "", key: "", sd: "", minRating: 0, pin: ""};
+const P = {pi: 0, ci: 0, q: "", moods: new Set(), mode: "", key: "", sd: "", minRating: 0, pin: "", tone: ""};
 SORTS.picker = {levels: sortLevels("picker", [{f: "match", d: -1}, {f: "rating", d: -1}, {f: "stale", d: 1}]), render: () => renderPicker()};
 function openPicker(pi, ci) {
   P.pi = pi; P.ci = ci;
@@ -1112,7 +1127,8 @@ function renderPicker() {
       <h3 class="hint" style="margin:10px 0 4px">Pinned</h3><select id="ppin">${[["", "all chants"], ["favourite", "★ favourites"], ["to try", "📌 to try"]].map(([v, l]) => `<option value="${v}" ${P.pin === v ? "selected" : ""}>${l}</option>`).join("")}</select>
       <h3 class="hint" style="margin:10px 0 4px">Rating at least</h3><select id="prt"><option value="0">any</option>${[1, 2, 3, 4, 5].map(n => `<option ${P.minRating === n ? "selected" : ""}>${n}</option>`).join("")}</select>
       <h3 class="hint" style="margin:10px 0 4px">Sort</h3>${sortControl("picker", true)}
-      <h3 class="hint" style="margin:14px 0 4px">Or a plainchant tone</h3><select id="ptone"><option value="">choose…</option>${TONE_NAMES.map(t => `<option>${t}</option>`).join("")}</select>
+      <h3 class="hint" style="margin:14px 0 4px">Or a plainchant tone</h3><div id="ptone">${toneMenus(P.tone, "t => { P.tone = t; renderPicker(); }")}</div>
+      ${P.tone ? `<p style="margin:6px 0 0"><button class="small primary" onclick="pickChant(P.tone)">Use ${esc(P.tone)}</button> <button class="small play" onclick="playTone(P.tone.replace(/^tone /, ''), this)">▶ Play</button></p>` : ""}
     </div><div>
       <p class="count">${list.length} chants</p>
       ${list.slice(0, 80).map(({c, hits}) => `<div class="item">
@@ -1133,7 +1149,6 @@ function renderPicker() {
   $("#psd").onchange = e => { P.sd = e.target.value; renderPicker(); };
   $("#prt").onchange = e => { P.minRating = +e.target.value; renderPicker(); };
   $("#ppin").onchange = e => { P.pin = e.target.value; renderPicker(); };
-  $("#ptone").onchange = e => { if (e.target.value) pickChant("tone " + e.target.value); };
 }
 function pickChant(id) {
   stopPlay();
@@ -1169,7 +1184,7 @@ function psalmBlock(p, pi, recent) {
         onchange="B.psalms[${pi}].chants[${ci}].name=this.value.trim(); renderBuilder()">
         <button class="small" onclick="openPicker(${pi}, ${ci})">Choose…</button>
         ${ci > 0 ? `from verse <input type="text" value="${esc(c.from)}" style="width:50px" onchange="B.psalms[${pi}].chants[${ci}].from=this.value.trim(); renderBuilder()">` : ""}
-        ${/^tone[:\s]/i.test(c.name) ? '<span class="hint">plainchant psalm tone (Liber Usualis)</span>' : ""}
+        ${/^tone[:\s]/i.test(c.name) ? toneMenus(c.name, `t => { B.psalms[${pi}].chants[${ci}].name = t; renderBuilder(); }`) : ""}
         ${ch ? `<span class="hint">${esc(keyName(ch))}, ${ch.double ? "double" : "single"} · last used ${esc(lastUsed(ch.id) || "never")}</span>
           <span class="link" onclick="showChant('${esc(ch.id)}')">see</span>` : (c.name && !/^tone[:\s]/i.test(c.name)) ? '<span class="hint">not in the catalog</span>' : ""}
         ${ci > 0 ? `<span class="link" onclick="B.psalms[${pi}].chants.splice(${ci},1); renderBuilder()">remove</span>` : ""}</div>`;

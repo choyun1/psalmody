@@ -134,7 +134,7 @@ Hymn titles come from hymnal indexes (`<BOOK>.csv`, columns `number,title`, in `
 
 ## Plainchant psalm tones
 
-Put `tone: VIIa` (or any tone and ending of the Liber usualis: `1D`, `8G`, `4E`, `per`…) in place of `chant:`, or type `tone 7a` in the planner's chant box. The Chants tab's *Plainchant psalm tones* view shows every tone and ending in notation, with playback and the mode's traditional character.
+Put `tone: VIIa` (or any tone and ending of the Liber usualis: `1D`, `8G`, `4E`, `per`…) in place of `chant:`, or choose a tone and then one of its endings in the planner. The Chants tab's *Plainchant psalm tones* view shows each tone once, with its endings side by side, in notation, with playback and the mode's traditional character. A tone's endings all share its first half; the Liber picks one to lead back into an antiphon, and without one the choice is yours. (Endings belong to their own tone: one tone's ending with another's mediant isn't a traditional tone.)
 
 The page prints the tone on a four-line staff with square notes, then every verse pointed for it in words: a short stroke where the cadence begins, **bold** for the accented syllables, a small slur under a syllable sung to more than one note, † for a flex, and the intonation in brackets and italic, *(My God),* my God, why have you forsaken me? The intonation is sung on the first verse only, unless you tick *sing the tone's intonation on every verse* (`intonation: every verse`). When the last accent falls on the final syllable, the cadence stops on it. The accents follow the natural stress of the words, from a pronouncing dictionary, so no pointing is needed. The tone formulas (`reference/psalm_tones.json`) are from the public-domain jgabc project, checked against the Liber usualis.
 

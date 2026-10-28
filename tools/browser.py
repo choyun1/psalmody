@@ -257,8 +257,6 @@ def service_data():
 
 
 # ------------------------------------------------------------- plainchant psalm tones
-TONE_LIST = ["1D", "1D2", "1f", "1g", "1g2", "1g3", "1a", "1a2", "1a3", "2D", "3b", "3a", "3a2", "3g", "3g2",
-             "4g", "4E", "4c", "4A", "4A*", "4d", "5a", "6F", "6alt", "7a", "7b", "7c", "7c2", "7d", "8G", "8G*", "8c", "per"]
 # the spirit of each mode ("Spirit of the Gregorian modes", from Singing the Gregorian Modes)
 TONE_CHARACTER = {1: 'Gravis: peace, tranquility, equilibrium',
                   2: 'Tristis: gravity, somber (transposed up a fifth it may express a certain joy, as in Haec dies)',
@@ -288,13 +286,13 @@ def tone_voices(t):
     return {'chant': evs}
 
 
-def draw_tone(exe, t, out_png):
+def draw_tone(exe, t, out_png, parts=('mediant', 'termination')):
     import tones
     tmp = tempfile.mkdtemp()
     ly = os.path.join(tmp, 't.ly')
     open(ly, 'w', encoding='utf-8').write('\n'.join([
         '\\version "2.24.0"', '\\paper { indent = 0 paper-width = 320\\mm line-width = 300\\mm ragged-right = ##t }',
-        '\\header { tagline = ##f }', tones.score_ly(tones.formula_score(t), clef=t['clef'])]) + '\n')
+        '\\header { tagline = ##f }', tones.score_ly(tones.formula_score(t, parts), clef=t['clef'])]) + '\n')
     r = subprocess.run([exe, '--png', '-dcrop', '-dresolution=220', '-dno-point-and-click', '-o', os.path.join(tmp, 't'), ly],
                        capture_output=True, text=True)
     src = os.path.join(tmp, 't.cropped.png')
@@ -307,29 +305,69 @@ def draw_tone(exe, t, out_png):
     return ok
 
 
+ROMAN_NUM = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII']
+SINGLE_ENDING = {'2': 'D', '5': 'a', '6': 'F'}           # the Liber's letter for tones with one ending
+
+
+def tone_groups():
+    """Each tone of the psalm-tone table with its endings: [(key, label, mode, [(name, ending), ...])].
+    name is what's typed in a chant box ("tone 1g2"); every ending of a tone shares its mediant."""
+    import tones
+    out = []
+    for key, t in tones.TONES.items():
+        n = key.split('.')[0]
+        if n == 'per':
+            out.append((key, 'Tonus peregrinus', 0, [('per', '')]))
+            continue
+        alt = 'alt' in key
+        terms = t.get('terminations') or {SINGLE_ENDING.get(n, ''): t['termination']}
+        label = f'Tone {ROMAN_NUM[int(n)]}' + (' (alternative mediant)' if alt else '')
+        names = []
+        for e in terms:
+            name = '6alt' if alt and n == '6' else f'{n}{e}'          # 4c, 4A* find Tone IV's alternative by themselves
+            names.append((name, e))
+        out.append((key, label, int(n), names))
+    return out
+
+
 def tones_data(redraw=False):
+    """-> (endings, groups): every tone-and-ending as typed, with its notes for playback and a picture of the
+    ending; and every tone with a picture of its intonation and mediant, which its endings share."""
     import tones
     src = max(os.path.getmtime(os.path.join(ROOT, 'reference', 'psalm_tones.json')), os.path.getmtime(tones.__file__))
-    out, exe = [], None
-    for name in TONE_LIST:
-        try:
-            t = tones.tone(name)
-        except SystemExit:
-            continue
-        file = 'tone_' + re.sub(r'[^A-Za-z0-9]', '_', name) + '.png'
+    endings, groups, exe = [], [], None
+
+    def picture(file, t, parts):
+        nonlocal exe
         img = os.path.join(SITE, 'notation', file)
         if redraw or not os.path.exists(img) or os.path.getmtime(img) < src:
             try:
                 exe = exe or build.lilypond_exe()
-                draw_tone(exe, t, img)
+                draw_tone(exe, t, img, parts)
             except SystemExit:
                 pass
-        mode = 0 if name == 'per' else int(name[0])
-        out.append({'name': name, 'label': t['label'], 'mode': mode, 'clef': t['clef'],
-                    'character': TONE_CHARACTER.get(mode, 'the pilgrim tone: a different reciting note in each half; '
-                                                          'traditionally for Psalm 114, In exitu Israel'),
-                    'img': file if os.path.exists(img) else '', 'voices': tone_voices(t)})
-    return out
+        return file if os.path.exists(img) else ''
+
+    for key, label, mode, names in tone_groups():
+        good = []
+        for name, e in names:
+            try:
+                t = tones.tone(name)
+            except SystemExit:
+                continue
+            safe = re.sub(r'[^A-Za-z0-9]', '_', name)
+            endings.append({'name': name, 'ending': e or ('' if mode else 'peregrinus'), 'group': key, 'label': t['label'],
+                            'mode': mode, 'clef': t['clef'], 'voices': tone_voices(t),
+                            'img': picture(f'tone_end_{safe}.png', t, ('termination',) if mode else ('mediant', 'termination'))})
+            good.append(name)
+        if not good:
+            continue
+        first = tones.tone(good[0])
+        groups.append({'key': key, 'label': label, 'mode': mode, 'endings': good,
+                       'character': TONE_CHARACTER.get(mode, 'the pilgrim tone: a different reciting note in each half; '
+                                                             'traditionally for Psalm 114, In exitu Israel'),
+                       'img': picture('tone_med_' + re.sub(r'[^A-Za-z0-9]', '_', key) + '.png', first, ('mediant',)) if mode else ''})
+    return endings, groups
 
 
 def main():
@@ -367,7 +405,8 @@ def main():
             'img': os.path.exists(img), 'voices': info['voices'],
             'private': row['private'],
         })
-    data = {'vocabulary': vocabulary(), 'chants': chants, 'tones': tones_data(args.redraw), 'texts': texts(), 'history': history(), 'calendar': calendar(),
+    tone_endings, tone_groups_data = tones_data(args.redraw)
+    data = {'vocabulary': vocabulary(), 'chants': chants, 'tones': tone_endings, 'toneGroups': tone_groups_data, 'texts': texts(), 'history': history(), 'calendar': calendar(),
             'unconfirmed': unconfirmed(), 'gloria': gloria_body(), 'service': service_data(),
             'parish': {'name': lectionary.PARISH.get('name', ''), 'track': lectionary.PARISH.get('track', '2'),
                        'optional': build.optional_default()},
