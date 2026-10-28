@@ -78,6 +78,9 @@ button.pin.on { color: var(--accent); border-color: var(--accent); }
 .sugg th { font-weight: normal; color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: .06em; }
 a, .link { color: var(--accent); cursor: pointer; text-decoration: none; }
 .hint { color: var(--muted); font-size: 15px; font-style: italic; }
+.muted { color: var(--muted); }
+#changes td { padding: 3px 10px 3px 0; vertical-align: top; }
+#gitbar button { margin-left: 6px; }
 table.hist { border-collapse: collapse; width: 100%; font-size: 15px; }
 table.hist td, table.hist th { padding: 4px 8px; border-bottom: 1px solid var(--line); text-align: left; }
 code { font-size: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
@@ -203,21 +206,49 @@ function idb(mode, fn) {
 }
 let SERVER = false;
 if (location.protocol.startsWith("http")) fetch("/api/ping").then(r => r.ok && r.json()).then(j => { if (j && j.ok) { SERVER = true; renderSavebar(); renderHistory(); refreshGit(); if (!$("#tab-builder").hidden) renderBuilder(); } }).catch(() => {});
+let CHANGES = [];
 async function refreshGit() {
   if (!SERVER) return;
   try {
-    const j = await (await fetch("/api/git")).json();
-    const n = j.repos.reduce((a, r) => a + r.changes, 0);
-    $("#gitbar").innerHTML = n ? ` <button class="small" title="${esc(j.repos.flatMap(r => r.files.map(f => r.name + ": " + f)).join("\n"))}" onclick="commitAll()">Save ${n} change${n > 1 ? "s" : ""} to GitHub</button>` : "";
+    const [g, h] = await Promise.all([fetch("/api/git").then(r => r.json()), fetch("/api/history").then(r => r.json())]);
+    CHANGES = h.changes || [];
+    const n = g.repos.reduce((a, r) => a + r.unpushed + r.files.length, 0);
+    const last = CHANGES[0];
+    $("#gitbar").innerHTML = (last ? ` <button class="small" title="Undo: ${esc(last.message)}" onclick="undoChange(0)">↶ Undo</button>
+      <button class="small" onclick="showChanges()">Changes</button>` : "")
+      + (n ? ` <button class="small" title="${esc(g.repos.flatMap(r => r.files.map(f => r.repo + ": " + f)).join("\n") || "Changes recorded here, not yet on GitHub")}" onclick="commitAll()">Save to GitHub (${n})</button>` : "");
+    if (dlg.open && $("#changes")) showChanges();
   } catch (e) {}
 }
+function whenText(t) {
+  const d = new Date(t * 1000), now = new Date();
+  const time = d.toLocaleTimeString([], {hour: "numeric", minute: "2-digit"});
+  if (d.toDateString() === now.toDateString()) return "today " + time;
+  const y = new Date(now); y.setDate(now.getDate() - 1);
+  if (d.toDateString() === y.toDateString()) return "yesterday " + time;
+  return d.toLocaleDateString([], {month: "short", day: "numeric", year: d.getFullYear() === now.getFullYear() ? undefined : "numeric"}) + " " + time;
+}
+function showChanges() {
+  $("#dlgbody").innerHTML = `<h3>Changes</h3>
+    <p class="muted">Every save here is kept, newest first. Undo puts back what a change changed, as a new change, so an undo can itself be undone. Save to GitHub only makes a copy of them online.</p>
+    <table id="changes">${CHANGES.map((c, i) => `<tr><td class="muted" style="white-space:nowrap">${whenText(c.time)}</td>
+      <td>${esc(c.message)}${c.pushed ? "" : ' <span class="muted" title="Recorded on this computer, not yet saved to GitHub">•</span>'}</td>
+      <td><button class="small" onclick="undoChange(${i})">Undo</button></td></tr>`).join("") || '<tr><td class="muted">Nothing yet.</td></tr>'}</table>`;
+  if (!dlg.open) dlg.showModal();
+}
+async function undoChange(i) {
+  const c = CHANGES[i];
+  if (!c || !window.confirm(`Undo this change?\n\n${c.message} (${whenText(c.time)})`)) return;
+  $("#gitbar").textContent = " Undoing…";
+  const j = await post("/api/undo", {repo: c.repo, sha: c.sha});
+  if (!j.ok) { window.alert("Could not undo: " + (j.error || "something went wrong")); return refreshGit(); }
+  location.reload();                    // the page was rebuilt without that change
+}
 async function commitAll() {
-  const msg = window.prompt("A few words describing the changes (for the GitHub history):", "Updates from the chant browser");
-  if (msg === null) return;
   $("#gitbar").textContent = " Saving to GitHub…";
-  const j = await post("/api/commit", {message: msg});
-  window.alert(j.log || (j.ok ? "Saved." : "Something went wrong."));
-  refreshGit();
+  const j = await post("/api/commit", {});
+  window.alert(j.log || j.error || (j.ok ? "Saved." : "Something went wrong."));
+  if (j.ok && /brought in/.test(j.log || "")) location.reload(); else refreshGit();
 }
 setInterval(refreshGit, 30000);
 async function post(url, obj) {

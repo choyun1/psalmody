@@ -14,7 +14,7 @@ ROOT = os.path.dirname(TOOLS)
 PORT = int(os.environ.get('PSALTER_PORT', '8765'))
 PY = sys.executable
 sys.path.insert(0, TOOLS)
-import paths   # noqa: E402
+import paths, history   # noqa: E402
 SITE_URL = '/' + os.path.relpath(paths.SITE, ROOT).replace(os.sep, '/') + '/index.html'
 
 
@@ -22,6 +22,21 @@ def run(args, timeout=900):
     r = subprocess.run([PY, os.path.join(TOOLS, args[0])] + args[1:], cwd=ROOT,
                        capture_output=True, text=True, timeout=timeout)
     return r.returncode, (r.stdout + ('\n' + r.stderr if r.stderr.strip() else '')).strip()
+
+
+REBUILD = threading.Lock()
+
+
+def rebuild(what='the chant browser'):
+    """Rebuild the chant browser's pages, then record them (out of the History list)."""
+    with REBUILD:
+        code, out = run(['browser.py'])
+    history.record_generated(what)
+    return code, out
+
+
+def rebuild_later(what='the chant browser'):
+    threading.Thread(target=lambda: rebuild(what), daemon=True).start()
 
 
 def save_verse(data):
@@ -52,23 +67,9 @@ def save_verse(data):
     finally:
         shutil.rmtree(tmp)
     v = new[0]
-    threading.Thread(target=lambda: run(['browser.py']), daemon=True).start()
+    history.record([path], f"Pointing: {name.replace('_', ' ')} v. {data['n']}")
+    rebuild_later()
     return {'ok': True, 'verse': [v['n'], int(v['dagger']), [[l['text'], l['half'], int(l['wrap'])] for l in v['lines']]]}
-
-
-def git_repos():
-    out = []
-    for d in (ROOT, paths.PARISH):
-        if d and os.path.isdir(os.path.join(d, '.git')):
-            out.append(d)
-    return out
-
-
-def git_status(d):
-    r = subprocess.run(['git', 'status', '--porcelain'], cwd=d, capture_output=True, text=True)
-    lines = [l for l in r.stdout.splitlines() if l.strip()]
-    return {'name': 'parish' if d == paths.PARISH else 'psalter', 'changes': len(lines),
-            'files': [l[3:] for l in lines[:12]]}
 
 
 def safe_name(name):
@@ -103,7 +104,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if u.path == '/api/ping':
             return self.reply({'ok': True})
         if u.path == '/api/git':
-            return self.reply({'repos': [git_status(d) for d in git_repos()]})
+            return self.reply({'repos': history.pending()})
+        if u.path == '/api/history':
+            return self.reply({'changes': history.changes()})
         if u.path == '/api/sunday':
             q = urllib.parse.parse_qs(u.query)
             try:
@@ -126,14 +129,20 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         path = urllib.parse.urlparse(self.path).path
         try:
             if path == '/api/notes':
-                paths.write_notes(list(csv.DictReader(io.StringIO(data['csv']))))
-                code, out = run(['browser.py'])          # the notes are saved; this only refreshes the page
+                before = paths._read(paths.NOTES)
+                rows = list(csv.DictReader(io.StringIO(data['csv'])))
+                paths.write_notes(rows)
+                history.record([paths.NOTES], history.describe_notes(before, paths._read(paths.NOTES)))
+                code, out = rebuild()          # the notes are saved; this only refreshes the page
                 return self.reply({'ok': True, 'rebuilt': code == 0, 'log': out})
             if path == '/api/sunday':
                 name = safe_name(data['name'])
                 os.makedirs(paths.SUNDAYS, exist_ok=True)
-                with open(os.path.join(paths.SUNDAYS, name + '.txt'), 'w', encoding='utf-8') as fh:
+                fp = os.path.join(paths.SUNDAYS, name + '.txt')
+                new = not os.path.exists(fp)
+                with open(fp, 'w', encoding='utf-8') as fh:
                     fh.write(data['text'])
+                history.record([fp], ('New service: ' if new else 'Service: ') + name)
                 return self.reply({'ok': True, 'path': os.path.relpath(os.path.join(paths.SUNDAYS, name + '.txt'), ROOT).replace(os.sep, '/')})
             if path == '/api/sung':
                 name = safe_name(data['name'])
@@ -144,28 +153,28 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 if yes:
                     lines.append('sung:    yes')
                 open(fp, 'w', encoding='utf-8').write('\n'.join(lines) + '\n')
-                code, out = run(['browser.py'])
+                history.record([fp], ('Marked as sung: ' if yes else 'Marked as not sung: ') + name)
+                code, out = rebuild()
                 return self.reply({'ok': True})
             if path == '/api/commit':
-                msg = (data.get('message') or 'Updates from the chant browser').strip()
-                out = []
-                for d in git_repos():
-                    st = git_status(d)
-                    if not st['changes']:
-                        continue
-                    for args in (['add', '-A'], ['commit', '-q', '-m', msg], ['push', '-q']):
-                        r = subprocess.run(['git'] + args, cwd=d, capture_output=True, text=True)
-                        if r.returncode != 0:
-                            return self.reply({'ok': False, 'log': f"{st['name']}: git {args[0]} failed\n{r.stderr.strip()}"})
-                    out.append(f"{st['name']}: {st['changes']} change(s) saved to GitHub")
-                return self.reply({'ok': True, 'log': '\n'.join(out) or 'Nothing to save.'})
+                ok, log = history.sync((data.get('message') or 'Changes made outside the chant browser').strip())
+                if ok and history.STALE.pop('site', None):      # pages built on both sides: build them afresh
+                    rebuild('after bringing in changes')
+                return self.reply({'ok': ok, 'log': log})
+            if path == '/api/undo':
+                ok, msg = history.undo(data['repo'], data['sha'])
+                if not ok:
+                    return self.reply({'ok': False, 'error': msg})
+                code, out = rebuild('after an undo')
+                return self.reply({'ok': True, 'undid': msg, 'rebuilt': code == 0})
             if path == '/api/anthem':
                 import service
                 if not data.get('title', '').strip():
                     raise ValueError('the anthem needs a title')
                 f = service.write_anthem(data['title'].strip(), data.get('composer', '').strip(),
                                          data.get('source', '').strip(), data.get('text', ''))
-                threading.Thread(target=lambda: run(['browser.py']), daemon=True).start()
+                history.record([f], 'Anthem words: ' + data['title'].strip())
+                rebuild_later()
                 return self.reply({'ok': True, 'file': os.path.relpath(f, ROOT).replace(os.sep, '/')})
             if path == '/api/open':
                 name = safe_name(data['name'])
@@ -195,12 +204,13 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                             if f.endswith(('.pdf', '.jpg')):
                                 files.append(os.path.relpath(os.path.join(dp, f), ROOT).replace(os.sep, '/'))
                 if code == 0:
-                    run(['browser.py'])          # refresh history and "coming up"
+                    rebuild('built ' + name)          # refresh history and "coming up"
                 return self.reply({'ok': code == 0, 'log': out, 'files': sorted(files)})
             import plugins                      # a parish plugin's own requests (parish/plugins/)
             handler = plugins.routes().get(path)
             if handler:
-                return self.reply(handler(data, {'safe_name': safe_name, 'root': ROOT}))
+                return self.reply(handler(data, {'safe_name': safe_name, 'root': ROOT, 'record': history.record,
+                                                 'rebuild': rebuild}))
         except (KeyError, ValueError) as e:
             return self.reply({'error': str(e)}, 400)
         except subprocess.TimeoutExpired:
@@ -209,15 +219,16 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
 
 def main():
+    history.ensure()
     if not os.path.exists(os.path.join(paths.SITE, 'data.js')):
         print('building the browser first…')
-        run(['browser.py'])
+        rebuild()
     import lectionary
     if len(lectionary.links()) < 100:               # first run: find the lectionary site's pages, in the background
         threading.Thread(target=lambda: run(['lectionary_links.py']), daemon=True).start()
     elif f'"linksSignature":"{lectionary.links_signature()}"' not in open(os.path.join(paths.SITE, 'data.js'), encoding='utf-8').read():
         print('updating the links to the lectionary…')        # the table changed since the page was built
-        run(['browser.py'])
+        rebuild()
     srv = http.server.ThreadingHTTPServer(('127.0.0.1', PORT), Handler)
     url = f'http://localhost:{PORT}{SITE_URL}'
     print(f'Chant browser with the Service planner: {url}\n(Ctrl+C to stop)')
