@@ -218,7 +218,7 @@ async function refreshGit() {
     const last = CHANGES[0];
     $("#gitbar").innerHTML = (last ? ` <button class="small" title="Undo: ${esc(last.message)}" onclick="undoChange(0)">↶ Undo</button>
       <button class="small" onclick="showChanges()">Changes</button>` : "")
-      + (n ? ` <button class="small" title="${esc(g.repos.flatMap(r => r.files.map(f => r.repo + ": " + f)).join("\n") || "Changes recorded here, not yet on GitHub")}" onclick="commitAll()">Save to GitHub (${n})</button>` : "");
+      + ` <button class="small" title="${esc((n ? "Not yet on GitHub:\n" + (g.repos.flatMap(r => r.files.map(f => r.repo + ": " + f)).join("\n") || n + " change(s) recorded here") + "\n\n" : "") + "Brings in what's new on GitHub, then sends what's new here")}" onclick="commitAll()">⇅ Sync with GitHub${n ? " (" + n + ")" : ""}</button>`;
     if (dlg.open && $("#changes")) showChanges();
   } catch (e) {}
 }
@@ -232,7 +232,7 @@ function whenText(t) {
 }
 function showChanges() {
   $("#dlgbody").innerHTML = `<h3>Changes</h3>
-    <p class="muted">Every save here is kept, newest first. Undo puts back what a change changed, as a new change, so an undo can itself be undone. Save to GitHub only makes a copy of them online.</p>
+    <p class="muted">Every save here is kept, newest first. Undo puts back what a change changed, as a new change, so an undo can itself be undone. Sync with GitHub brings in what's new there and sends a copy of these.</p>
     <table id="changes">${CHANGES.map((c, i) => `<tr><td class="muted" style="white-space:nowrap">${whenText(c.time)}</td>
       <td>${esc(c.message)}${c.pushed ? "" : ' <span class="muted" title="Recorded on this computer, not yet saved to GitHub">•</span>'}</td>
       <td><button class="small" onclick="undoChange(${i})">Undo</button></td></tr>`).join("") || '<tr><td class="muted">Nothing yet.</td></tr>'}</table>`;
@@ -247,7 +247,7 @@ async function undoChange(i) {
   location.reload();                    // the page was rebuilt without that change
 }
 async function commitAll() {
-  $("#gitbar").textContent = " Saving to GitHub…";
+  $("#gitbar").textContent = " Syncing with GitHub…";
   const j = await post("/api/commit", {});
   window.alert(j.log || j.error || (j.ok ? "Saved." : "Something went wrong."));
   if (j.ok && /brought in/.test(j.log || "")) location.reload(); else refreshGit();

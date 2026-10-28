@@ -3,7 +3,7 @@
 Every save the chant browser makes (a Sunday, chant notes, a verse's pointing, an anthem's words, marking a
 service as sung) is recorded at once as a git commit on this computer, with a one-line description. The
 browser's Undo button reverts the latest one, and History lists the recent ones, each with its own Undo
-(a revert: a new commit that puts things back, so nothing is ever lost). "Save to GitHub" then only has
+(a revert: a new commit that puts things back, so nothing is ever lost). "Sync with GitHub" then only has
 to bring in changes from GitHub and send these up.
 
 What the tools make from those files (the parish's site/ and output/) is recorded too, as "generated"
@@ -159,7 +159,7 @@ def pending():
 
 
 def sync(message):
-    """Save to GitHub: record anything changed by hand, bring in GitHub's changes, send ours. -> (ok, log)"""
+    """Sync with GitHub: record anything changed by hand, bring in GitHub's changes, send ours. -> (ok, log)"""
     log = []
     with LOCK:
         return _sync(message, log)
@@ -195,6 +195,9 @@ def _sync(message, log):
         came = int(before.strip() or 0) if before.strip().isdigit() else 0
         if came:
             log.append(f'{name}: brought in {came} change(s) from GitHub')
+            STALE['site'] = True                       # build the pages again with what came in
+            if d == paths.CORE:
+                log.append('(the tools were updated: stop the launcher and start it again to use them)')
         code, ahead = git(d, 'rev-list', '--count', '@{u}..HEAD')
         n = int(ahead.strip() or 0) if code == 0 else 0
         if n:
@@ -202,7 +205,7 @@ def _sync(message, log):
             if code != 0:
                 return False, f'{name}: could not send to GitHub:\n{out.strip()}'
             log.append(f'{name}: {n} change(s) saved to GitHub')
-    return True, '\n'.join(log) or 'Everything was already on GitHub.'
+    return True, '\n'.join(log) or 'Already in sync with GitHub.'
 
 
 def describe_notes(before, after):

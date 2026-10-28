@@ -71,7 +71,7 @@ Double-click **Psalter.bat** and open the **Service planner** tab.
 3. **Check it.** *Preview* shows the page straight away; **Exact PDF preview** runs LilyPond and shows the real thing. *Before on Proper 27* shows what was sung the last time these readings came round, three or six years ago, and the same day in the other years of the cycle.
 4. **The rest of the service.** Fill in the prelude, hymns, anthems and postlude. Type a hymn number (`390`, `LEVAS 114`) and its title appears with when it was last sung; the voluntary and anthem boxes suggest everything done before; service music carries on from the last service of the same kind. Paste an anthem's words once and they're kept in `parish/anthems/`.
 5. **Save & build.** The PDF and the images for the leaflet appear as links. Any cards your parish's plugins add (a weekly email, a music schedule) come below.
-6. **Save to GitHub.** When there are changes, a button at the top brings in any changes from GitHub and sends yours up. It's only a backup: nothing needs it.
+6. **Sync with GitHub.** The button at the top brings in what's new on GitHub (updates to the tools, changes made on another computer) and sends yours up; the number on it is how many of yours aren't there yet. Nothing else needs it.
 
 **Undo.** Every save is kept on your computer as you go: a Sunday, chant notes or a pin, a verse's pointing, an anthem's words, marking a service as sung. **↶ Undo** at the top takes back the last one; **Changes** lists them all, newest first, each with its own Undo. An undo is a change too, so it can be undone. (This uses git in your `parish/` folder; if that folder isn't a git repository yet, the launcher starts one there, kept on your computer only.)
 
