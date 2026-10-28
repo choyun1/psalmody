@@ -190,6 +190,7 @@ def _sync(message, log):
             git(d, 'add', '-A')
             git(d, 'commit', '-q', '-m', message)
         if not upstream(d):                                          # a history kept only on this computer
+            log.append(f'{name}: kept on this computer only (no GitHub copy is set up for this folder)')
             continue
         code, out = git(d, 'fetch', '-q')
         if code != 0:

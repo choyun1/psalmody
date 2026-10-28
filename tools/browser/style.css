@@ -76,6 +76,10 @@ a, .link { color: var(--accent); cursor: pointer; text-decoration: none; }
 .muted { color: var(--muted); }
 #changes td { padding: 3px 10px 3px 0; vertical-align: top; }
 #gitbar button { margin-left: 6px; }
+.icon { width: 1.15em; height: 1.15em; vertical-align: -0.22em; }
+button.sync .icon { margin-right: 2px; }
+.badge { display: inline-block; min-width: 1.4em; padding: 0 5px; border-radius: 99px; background: var(--accent); color: #fff;
+  font-size: 12px; line-height: 1.5; text-align: center; margin-left: 3px; }
 table.hist { border-collapse: collapse; width: 100%; font-size: 15px; }
 table.hist td, table.hist th { padding: 4px 8px; border-bottom: 1px solid var(--line); text-align: left; }
 code { font-size: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
