@@ -65,6 +65,9 @@ def history():
                         rows.append({'date': s['date'], 'chant': name, 'text': item['spec']})
             except SystemExit:
                 pass
+    for r in rows:                    # 'Turle-2 down 2', and 'Turle-5' (a copy of it), are Turle-2
+        if r.get('chant') and not r['chant'].startswith('tone:'):
+            r['chant'] = paths.split_chant(r['chant'])[0]
     return rows
 
 

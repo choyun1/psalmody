@@ -14,7 +14,7 @@ tones. Everything belonging to one parish lives in its own folder, `parish/` ins
 
 Without a parish folder the tools still work, using the psalter folder for those things.
 """
-import csv, os
+import csv, functools, os, re
 
 CORE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _p = os.path.join(CORE, 'parish')
@@ -63,6 +63,54 @@ def chant_file(name):
     return None
 
 
+def alias_rows():
+    """The rows of each chants/aliases.csv: Alias, Chant, Shift, Source."""
+    out = []
+    for d in CHANT_DIRS:
+        p = os.path.join(d, 'aliases.csv')
+        if os.path.exists(p):
+            with open(p, encoding='utf-8', newline='') as fh:
+                out += list(csv.DictReader(l for l in fh if not l.startswith('#')))
+    return out
+
+
+@functools.lru_cache(maxsize=None)
+def aliases():
+    """{old name: (the chant it is, semitones)}: chants that were copies of others (chants/aliases.csv)."""
+    out = {}
+    for r in alias_rows():
+        try:
+            out[r['Alias'].strip()] = (r['Chant'].strip(), int(r.get('Shift') or 0))
+        except ValueError:
+            pass
+    return out
+
+
+SHIFT = re.compile(r'^(.*?)\s+(up|down)\s+(\d+)$', re.I)
+
+
+def split_chant(name):
+    """'Turle-2 down 2' -> ('Turle-2', -2); an old name stands for the chant it was a copy of:
+    'Turle-5' -> ('Turle-2', -2)."""
+    name = (name or '').strip()
+    shift = 0
+    m = SHIFT.match(name)
+    if m:
+        name, shift = m.group(1).strip(), int(m.group(3)) * (1 if m.group(2).lower() == 'up' else -1)
+    base, extra = aliases().get(name, (name, 0))
+    return base, shift + extra
+
+
+def chant_name(base, shift=0):
+    """('Turle-2', -2) -> 'Turle-2 down 2' (as a Sunday file writes it)."""
+    return base if not shift else f"{base} {'up' if shift > 0 else 'down'} {abs(shift)}"
+
+
+def canonical(name):
+    """Any way of naming a chant -> the one way: 'Turle-5' -> 'Turle-2 down 2'."""
+    return name if not name or name.startswith('tone:') or name in ('?', '???') else chant_name(*split_chant(name))
+
+
 def _read(path):
     if not os.path.exists(path):
         return []
@@ -83,6 +131,18 @@ def catalog():
                 seen[r['Chant']] = len(rows)
                 rows.append(r)
     notes = {r['Chant']: r for r in _read(NOTES)}
+    for old, (chant, _) in aliases().items():          # notes kept under a chant's old name join its own
+        if old in notes:
+            n, o = notes.setdefault(chant, {'Chant': chant}), notes.pop(old)
+            for k in ('Rating', 'Notes'):
+                if not (n.get(k) or '').strip():
+                    n[k] = o.get(k, '')
+                elif k == 'Notes' and (o.get(k) or '').strip() and o[k].strip() not in n[k]:
+                    n[k] = f"{n[k].strip()} ({old}: {o[k].strip()})"
+            for k in ('Mood', 'Pin'):
+                tags = [t.strip() for t in re.split(r'[;,]', n.get(k) or '') if t.strip()]
+                tags += [t.strip() for t in re.split(r'[;,]', o.get(k) or '') if t.strip() and t.strip() not in tags]
+                n[k] = '; '.join(tags)
     for r in rows:
         n = notes.get(r['Chant'], {})
         for k in NOTE_COLUMNS[1:]:

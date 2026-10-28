@@ -306,7 +306,10 @@ const lastUsed = id => (usedBy[id] || []).map(h => h.date).sort().pop() || "";
 // ---------- playback ----------
 let audio = null, playing = null, playId = 0;     // playId: which playback is current, so an old one's timer can't stop a new one
 function stopPlay() { playId++; if (playing) { playing.forEach(o => { try { o.stop(); } catch (e) {} }); playing = null; } document.querySelectorAll(".play").forEach(b => b.textContent = "▶ Play"); }
-function play(id, btn) { playVoices(C[id].voices, btn); }
+function play(id, btn, shift = 0) {
+  const v = shift ? Object.fromEntries(Object.entries(C[id].voices).map(([k, evs]) => [k, evs.map(([m, a, b]) => [m + shift, a, b])])) : C[id].voices;
+  playVoices(v, btn);
+}
 function playTone(name, btn) { playVoices((D.tones || []).find(t => t.name === name).voices, btn); }
 function playVoices(voices, btn) {
   if (playing) { const was = btn.textContent.startsWith("■"); stopPlay(); if (was) return; }
@@ -342,7 +345,7 @@ function chantCard(c, opts = {}) {
   const editing = opts.editing;
   return `<div class="card" id="card-${esc(c.id)}">
     <button class="small play" onclick="play('${esc(c.id)}', this)">▶ Play</button>${pinButtons(c)}
-    <h2>${esc(c.id)}</h2><span class="who">${esc(c.composer)}${c.years ? " (" + esc(c.years) + ")" : ""}</span>
+    <h2>${esc(CN(c.id))}</h2><span class="who">${esc(c.id)} · ${esc(c.composer)}${c.years ? " (" + esc(c.years) + ")" : ""}</span>
     <div class="facts"><b>${esc(keyName(c))}</b> · ${c.double ? "double" : "single"}
       ${c.range ? " · soprano " + esc(c.range.join("–")) : ""} ${c.acp ? " · ACP sets it to Ps " + esc(c.acp) : ""} ${stars(val(c, "rating"))}</div>
     <div class="moodrow">${mood.length ? mood.map(t => chip(t)).join("") : '<span class="hint">no mood tags yet</span>'}</div>
@@ -389,6 +392,27 @@ const PC = {C: 0, "C#": 1, Db: 1, D: 2, "D#": 3, Eb: 3, E: 4, Fb: 4, F: 5, "E#":
 const pretty = k => k.replace("#", "♯").replace(/([A-G])b/, "$1♭");
 function tonic(c) { return (c.key || "").split("/")[0].trim(); }
 const MODES = {mix: "mixolydian", dor: "dorian", phr: "phrygian", lyd: "lydian", aeo: "aeolian"};
+// transposing: a chant moved up or down so many semitones, and how chants are named on screen
+const PCS = {C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11};
+const SPELLD = {major: ["C", "D♭", "D", "E♭", "E", "F", "F♯", "G", "A♭", "A", "B♭", "B"],
+                minor: ["C", "C♯", "D", "E♭", "E", "F", "F♯", "G", "G♯", "A", "B♭", "B"]};
+function keyAt(c, shift) {
+  const m = (c.key || "").trim().match(/^([A-G])([#b♯♭]?)$/);
+  if (!shift || !m) return keyName(c);
+  const pc = (PCS[m[1]] + (/[#♯]/.test(m[2]) ? 1 : /[b♭]/.test(m[2]) ? -1 : 0) + shift + 120) % 12;
+  const mode = (c.mode || "").toLowerCase().startsWith("min") ? "minor" : "major";
+  return SPELLD[mode][pc] + " " + mode;
+}
+function shiftWords(s) { return s ? `${s > 0 ? "up" : "down"} ${Math.abs(s)}` : ""; }
+function CN(id) { return (C[id] && C[id].label) || id; }
+function chantRef(text) {           // 'Turle-2 down 2' -> {name: 'Turle-2', shift: -2}; an old name is the chant it copied
+  const t = String(text || "").trim(), m = t.match(/^(.*?)\s+(up|down)\s+(\d+)$/i);
+  let name = m ? m[1].trim() : t, shift = m ? +m[3] * (m[2].toLowerCase() === "up" ? 1 : -1) : 0;
+  const a = (D.aliases || {})[name];
+  if (a) { name = a[0]; shift += a[1]; }
+  return {name, shift};
+}
+function chantText(text) { const r = chantRef(text); return C[r.name] ? CN(r.name) + (r.shift ? ` (in ${keyAt(C[r.name], r.shift)})` : "") : text; }
 function keyName(c) {
   const k = c.key || "", m = (c.mode || "").toLowerCase();
   if (k.includes("/") && m === "m/m") { const [a, b] = k.split("/"); return `${pretty(a.trim())} major / ${pretty(b.trim())} minor`; }
@@ -543,7 +567,7 @@ function renderChants() {
   if (CV.tones) { renderTones(); return; }
   let list = D.chants.filter(c => {
     const mood = val(c, "mood"), r = val(c, "rating") || 0;
-    if (F.q && !(c.id + " " + c.composer).toLowerCase().includes(F.q)) return false;
+    if (F.q && !(c.id + " " + c.composer + " " + c.label).toLowerCase().includes(F.q)) return false;
     if (F.moods.size && ![...F.moods].some(t => mood.includes(t))) return false;
     if (F.untagged && mood.length) return false;
     if (!pinFilter(c, F.pin)) return false;
@@ -701,13 +725,13 @@ function renderText() {
       return `<div class="section"><div class="moodrow"><b style="font-weight:normal">${s.verses === "all" ? "Whole text" : "Verses " + esc(s.verses)}</b>
         ${s.mood.map(m => chip(m)).join("")} <span class="hint">${esc(s.type)}${s.note ? " · " + esc(s.note) : ""}</span></div>
         ${sg.length ? `<table class="sugg"><tr><th>Chant</th><th>Key</th><th>Shares</th><th>Rating</th><th>Last used</th></tr>${sg.map(x =>
-          `<tr><td><span class="link" onclick="showChant('${esc(x.c.id)}')">${esc(x.c.id)}</span></td><td>${esc(keyName(x.c))}, ${x.c.double ? "double" : "single"}</td>
+          `<tr><td><span class="link" onclick="showChant('${esc(x.c.id)}')">${esc(CN(x.c.id))}</span></td><td>${esc(keyName(x.c))}, ${x.c.double ? "double" : "single"}</td>
           <td>${x.hits.map(h => chip(h)).join(" ") || '<span class="hint">same family</span>'}</td><td>${stars(val(x.c, "rating"))}</td><td>${esc(lastUsed(x.c.id))}</td></tr>`).join("")}</table>`
           : `<p class="hint">No matching chants yet${tagged ? "" : ": none of the chants has mood tags so far. Tag them on the Chants tab"}.</p>`}
       </div>`;
     }).join("") || '<p class="hint">No mood tags for this text (texts/moods.csv).</p>'}
     <h3 style="font-weight:normal;margin-bottom:4px">${D.parish.name ? "Sung at " + esc(D.parish.name) : "Past use"}</h3>
-    ${hist.length ? `<table class="hist">${hist.map(h => `<tr><td>${esc(h.date)}</td><td>${esc(h.verses)}</td><td>${h.chant && h.chant !== "?" ? `<span class="link" onclick="showChant('${esc(h.chant)}')">${esc(h.chant)}</span>` : '<span class="hint">no chant</span>'}</td><td class="hint">${esc(h.note)}</td></tr>`).join("")}</table>` : '<p class="hint">Not yet.</p>'}
+    ${hist.length ? `<table class="hist">${hist.map(h => `<tr><td>${esc(h.date)}</td><td>${esc(h.verses)}</td><td>${h.chant && h.chant !== "?" ? `<span class="link" onclick="showChant('${esc(h.chant)}')">${esc(CN(h.chant))}</span>${h.shift ? ` <span class="hint">${shiftWords(h.shift)}</span>` : ""}` : '<span class="hint">no chant</span>'}</td><td class="hint">${esc(h.note)}</td></tr>`).join("")}</table>` : '<p class="hint">Not yet.</p>'}
   </div>`;
 }
 
@@ -779,7 +803,7 @@ function renderHistory() {
   const unc = D.unconfirmed || [];
   $("#tab-history").innerHTML = (unc.length ? `<div class="card"><h3 style="font-weight:normal;margin:0 0 6px">Past Sundays not yet confirmed</h3>
     <p class="hint" style="margin:0 0 6px">A Sunday counts in the history once it's marked as sung${SERVER ? "" : " (add the line <code>sung: yes</code> to its file, or open the browser with the launcher for a button)"}.</p>
-    <table class="hist">${unc.map(u => `<tr><td>${esc(u.date)}</td><td>${esc(u.psalms.join(", "))}</td><td>${esc(u.chants.join(", "))}</td>
+    <table class="hist">${unc.map(u => `<tr><td>${esc(u.date)}</td><td>${esc(u.psalms.join(", "))}</td><td>${esc(u.chants.map(chantText).join(", "))}</td>
       <td>${SERVER ? `<button class="small primary" onclick="markSung('${esc(u.name)}')">Mark as sung</button>` : `<span class="hint">${esc(u.name)}.txt</span>`}</td></tr>`).join("")}</table></div>` : "") +
     `<div class="seg" style="max-width:420px;margin-bottom:10px"><button class="${HV.mode !== "services" ? "on" : ""}" onclick="HV.mode='psalms'; renderHistory()">Psalms and chants</button><button class="${HV.mode === "services" ? "on" : ""}" onclick="HV.mode='services'; renderHistory()">Whole services</button></div>` +
     (HV.mode === "services" ? servicesRecord() :
@@ -792,7 +816,7 @@ function renderHistory() {
     $("#hcount").textContent = rows.length + " entries";
     $("#htab").innerHTML = `<tr><th>Date</th><th>Text</th><th>Verses</th><th>Chant</th><th></th></tr>` + rows.map(h =>
       `<tr><td>${swatch(h.date)}${lectLink(h.date, ((SV.lect || {})[h.date] || [])[3])}</td><td>${esc(textTitle[h.text] || h.text)}</td><td>${esc(h.verses)}</td>
-       <td>${C[h.chant] ? `<span class="link" onclick="showChant('${esc(h.chant)}')">${esc(h.chant)}</span>` : h.chant && h.chant !== "?" ? esc(h.chant) : '<span class="hint">no chant</span>'}</td><td class="hint">${esc(h.note)}</td></tr>`).join("");
+       <td>${C[h.chant] ? `<span class="link" onclick="showChant('${esc(h.chant)}')">${esc(CN(h.chant))}</span>${h.shift ? ` <span class="hint">${shiftWords(h.shift)}</span>` : ""}` : h.chant && h.chant !== "?" ? esc(h.chant) : '<span class="hint">no chant</span>'}</td><td class="hint">${esc(h.note)}</td></tr>`).join("");
   };
   $("#hq").oninput = draw; draw();
 }
@@ -829,7 +853,7 @@ function renderUpcoming() {
     const recent = recentChants(c.date);
     return `<div class="card"><h2>${swatch(c.date)}${esc(new Date(c.date + "T12:00").toLocaleDateString(undefined, {weekday: "short", month: "long", day: "numeric", year: "numeric"}))}</h2>
       <span class="who">${lectLink(c.label + " · Year " + c.year, c.link)}</span>
-      ${c.planned.map(pl => ` <span class="chip ${pl.sung ? "g-calm on" : "g-calm"}">${pl.sung ? "sung" : "planned"}: ${pl.choir === false ? "no choir" : esc(pl.chants.join(", ") || "chant not chosen")}</span>`).join("")}
+      ${c.planned.map(pl => ` <span class="chip ${pl.sung ? "g-calm on" : "g-calm"}">${pl.sung ? "sung" : "planned"}: ${pl.choir === false ? "no choir" : esc(pl.chants.map(chantText).join(", ") || "chant not chosen")}</span>`).join("")}
       ${c.options.length ? c.options.map(o => {
         const mood = overlapMoods(o.texts, o.verses);
         const sg = mood.length ? D.chants.map(ch => ({ch, ...score(mood, val(ch, "mood"))})).filter(x => x.s > 0 && !recent.has(x.ch.id))
@@ -837,7 +861,7 @@ function renderUpcoming() {
         return `<div class="section"><div class="moodrow"><b style="font-weight:normal">${o.track ? esc(o.track) + ": " : ""}${/^\d/.test(o.spec) ? "Psalm " : ""}${esc(o.spec)}</b>
           ${o.texts.map(id => `<span class="link" onclick="goText('${esc(id)}')">${esc(TX[id] ? TX[id].title : id)}</span>`).join(", ")}
           ${mood.map(m => chip(m)).join("")}${o.error ? ` <span class="hint">${/^\d/.test(o.spec) ? esc(o.error) : "not in the library yet"}</span>` : ""}</div>
-          ${sg.length ? `<div class="used">Try: ${sg.map(x => `<span class="link" onclick="showChant('${esc(x.ch.id)}')">${esc(x.ch.id)}</span>`).join(" · ")}</div>` : ""}</div>`;
+          ${sg.length ? `<div class="used">Try: ${sg.map(x => `<span class="link" onclick="showChant('${esc(x.ch.id)}')">${esc(CN(x.ch.id))}</span>`).join(" · ")}</div>` : ""}</div>`;
       }).join("") : '<p class="hint">No psalm in the table for this day.</p>'}</div>`;
   }).join("");
 }
@@ -889,7 +913,7 @@ function sundayText() {
     p.chants.forEach((c, i) => {
       const nm = c.name.trim(); if (!nm) return;
       const tm = nm.match(/^tone[:\s]+(.+)$/i);
-      L.push(`${tm ? "tone:    " + tm[1].replace(/\s+/g, "") : "chant:   " + nm}${i > 0 && c.from ? " from " + c.from : ""}`);
+      L.push(`${tm ? "tone:    " + tm[1].replace(/\s+/g, "") : "chant:   " + nm + (c.shift ? " " + shiftWords(c.shift) : "")}${i > 0 && c.from ? " from " + c.from : ""}`);
     });
     if (p.intonation && (p.intonation === "every") !== intoneDefault(p) && p.chants.some(c => /^tone[:\s]/i.test(c.name))) L.push(`intonation: ${p.intonation === "every" ? "every verse" : "first verse"}`);
     if (optionalVerses(p.spec).length && p.optional != null && p.optional !== !!D.parish.optional) L.push(`optional: ${p.optional ? "yes" : "no"}           # ${p.optional ? "sing" : "leave out"} the verses in brackets`);
@@ -923,7 +947,7 @@ function parseSunday(text) {
     else if (k === "also") { alsoL.push(v); seqL.push(["also", v]); }
     else if (k === "note") noteL.push(raw.slice(raw.indexOf(":") + 1).trim());
     else if (PLUGIN_KEYS.has(k)) B.extra[k] = (B.extra[k] ? B.extra[k] + "\n" : "") + raw.slice(raw.indexOf(":") + 1).trim();
-    else if ((k === "chant" || k === "tone") && B.psalms.length) { const m = v.match(/^(\S+)(?:\s+from\s+(\d+))?$/); if (m) B.psalms[B.psalms.length - 1].chants.push({name: m[1] === "???" ? "" : (k === "tone" ? "tone " + m[1] : m[1]), from: m[2] || ""}); }
+    else if ((k === "chant" || k === "tone") && B.psalms.length) { const m = v.match(/^(.+?)(?:\s+from\s+(\d+))?$/); if (m) { const r = k === "tone" ? {name: "tone " + m[1], shift: 0} : chantRef(m[1]); B.psalms[B.psalms.length - 1].chants.push({name: r.name === "???" ? "" : r.name, from: m[2] || "", shift: r.shift}); } }
   });
   B.also = alsoL.join("\n"); B.note = noteL.join("\n"); B.seq = seqL;
   B.psalms.forEach(p => { if (!p.chants.length) p.chants.push({name: "", from: ""}); });
@@ -973,7 +997,7 @@ function toneMenus(current, onpick) {
       <option value="">${g ? "" : "tone…"}</option>${(D.toneGroups || []).map((x, i) => `<option value="${i}" ${x === g ? "selected" : ""}>${esc(x.label)}</option>`).join("")}</select>
     ${g && g.endings.length > 1 ? `<select onchange="(${onpick})('tone ' + this.value)">${g.endings.map(n => `<option value="${esc(n)}" ${n.toLowerCase() === cur ? "selected" : ""}>ending ${esc(ends[n].ending)}</option>`).join("")}</select>` : ""}`;
 }
-function chantOptions() { return TONE_NAMES.map(t => `<option value="tone ${t}">plainchant psalm tone</option>`).join("") + D.chants.map(c => `<option value="${esc(c.id)}">${esc(keyName(c))}${val(c, "mood").length ? " · " + esc(val(c, "mood").join(", ")) : ""}</option>`).join(""); }
+function chantOptions() { return TONE_NAMES.map(t => `<option value="tone ${t}">plainchant psalm tone</option>`).join("") + D.chants.map(c => `<option value="${esc(c.id)}">${esc(CN(c.id))}${val(c, "mood").length ? " · " + esc(val(c, "mood").join(", ")) : ""}</option>`).join(""); }
 function renderBuilder() {
   if (!B.date && !B.started) { B.started = true; setDate(nextSunday()); return; }
   B.started = true;
@@ -1098,12 +1122,12 @@ function quickPreview() {
   const gl = B.gloria === "yes" || (B.gloria === "auto" && /office|evensong|morning prayer|evening prayer/i.test(B.service));
   B.psalms.forEach((p, pi) => {
     const res = resolveSpec(p.spec, optOf(p)); if (!res.length) return;
-    const chants = p.chants.filter(c => c.name).map((c, i) => ({name: c.name, from: i === 0 ? null : +c.from || null}));
-    if (!chants.length && lastMusic) chants.push({name: lastMusic, from: null});
+    const chants = p.chants.filter(c => c.name).map((c, i) => ({name: c.name, shift: c.shift || 0, from: i === 0 ? null : +c.from || null}));
+    if (!chants.length && lastMusic) chants.push({...lastMusic, from: null});
     textBody(res).map(seg => ({...seg, body: withDaggers(seg.body, p.daggers)})).forEach((seg, si) => {
       seg.body.forEach((v, vi) => {
         const starts = chants.filter((c, i) => (i === 0 && pi >= 0 && si === 0 && vi === 0) || (c.from === v[0]));
-        starts.forEach(c => { out.push(musicHTML(c.name)); lastMusic = c.name; });
+        starts.forEach(c => { out.push(musicHTML(c.name, c.shift)); lastMusic = c; });
         if (vi === 0) out.push(`<h2 style="font-weight:normal;margin:10px 0 0">${esc(seg.title)} <span class="latin">${esc(TX[seg.id].latin)}</span></h2>`);
         out.push(pointedHTML([v]));
       });
@@ -1113,13 +1137,14 @@ function quickPreview() {
   if (gl && D.gloria.length && !(lastText && lastText.noGloria)) out.push(pointedHTML(D.gloria));     // the Te Deum and others take none
   return out.join("") || '<p class="hint">Choose a psalm to see it here.</p>';
 }
-function musicHTML(name) {
+function musicHTML(name, shift = 0) {
   const tm = name.match(/^tone[:\s]+(.+)$/i);
   if (tm) return `<div class="pv-music"><div class="pv-credit">Tone ${esc(tm[1])}</div><p class="hint">(The tone and the first verse set to it appear in the PDF.)</p></div>`;
   const c = C[name];
   if (!c) return `<p class="hint">${esc(name)}: not in the catalog</p>`;
   return `<div class="pv-music"><div class="pv-credit">${esc(c.composer)}${c.years ? " (" + esc(c.years) + ")" : ""}</div>
-    ${c.img ? `<img src="notation/${encodeURIComponent(c.id)}.png" alt="${esc(c.id)}">` : esc(c.id)}</div>`;
+    ${c.img ? `<img src="notation/${encodeURIComponent(c.id)}.png" alt="${esc(c.id)}">` : esc(c.id)}
+    ${shift ? `<p class="hint">Shown as written; the PDF prints it in ${esc(keyAt(c, shift))} (${shiftWords(shift)}).</p>` : ""}</div>`;
 }
 async function pdfPreview() {
   if (!(await saveSunday())) return;
@@ -1147,7 +1172,7 @@ function renderPicker() {
   const recent = recentChants(B.date);
   let list = D.chants.map(c => ({c, ...score(mood, val(c, "mood"))})).filter(({c}) => {
     const m = val(c, "mood"), r = val(c, "rating") || 0;
-    if (P.q && !(c.id + " " + c.composer).toLowerCase().includes(P.q)) return false;
+    if (P.q && !(c.id + " " + c.composer + " " + c.label).toLowerCase().includes(P.q)) return false;
     if (P.moods.size && ![...P.moods].some(t => m.includes(t))) return false;
     if (P.mode === "other" ? ["Major", "Minor"].includes(c.mode) : P.mode && c.mode !== P.mode) return false;
     if (P.key && keyName(c) !== P.key) return false;
@@ -1174,7 +1199,7 @@ function renderPicker() {
       ${list.slice(0, 80).map(({c, hits}) => `<div class="item">
         <button class="small primary" style="float:right;margin-left:6px" onclick="pickChant('${esc(c.id)}')">Use</button>
         <button class="small play" onclick="play('${esc(c.id)}', this)">▶ Play</button>${pinButtons(c)}
-        <b style="font-weight:normal;font-size:19px">${esc(c.id)}</b> <span class="who">${esc(c.composer)}</span>
+        <b style="font-weight:normal;font-size:19px">${esc(CN(c.id))}</b> <span class="who">${esc(c.composer)} · ${esc(c.id)}</span>
         <div class="facts"><b>${esc(keyName(c))}</b> · ${c.double ? "double" : "single"} ${stars(val(c, "rating"))} · last used ${esc(lastUsed(c.id) || "never")}${recent.has(c.id) ? " <b>(recent)</b>" : ""}</div>
         <div class="moodrow">${val(c, "mood").map(t => chip(t, hits.includes(t) ? "on" : "")).join("")}</div>
         ${c.img ? `<img loading="lazy" src="notation/${encodeURIComponent(c.id)}.png" alt="">` : ""}
@@ -1192,7 +1217,7 @@ function renderPicker() {
 }
 function pickChant(id) {
   stopPlay();
-  B.psalms[P.pi].chants[P.ci].name = id;
+  B.psalms[P.pi].chants[P.ci].name = id; B.psalms[P.pi].chants[P.ci].shift = 0;
   dlg.close(); dlg.classList.remove("wide");
   renderBuilder();
 }
@@ -1221,24 +1246,26 @@ function psalmBlock(p, pi, recent) {
     ${B.choir === false ? '<p class="hint" style="margin:6px 0">No choir this week: the psalm is said, so no chant (untick <i>no choir</i> under Options to choose one).</p>' : p.chants.map((c, ci) => {
       const ch = C[c.name];
       return `<div class="moodrow">${ci === 0 ? "Chant" : "then"} <input type="text" list="chantlist" value="${esc(c.name)}" placeholder="chant, or e.g. tone 7a" style="width:170px"
-        onchange="B.psalms[${pi}].chants[${ci}].name=this.value.trim(); renderBuilder()">
+        onchange="{ const r = /^tone[:\\s]/i.test(this.value.trim()) ? {name: this.value.trim(), shift: 0} : chantRef(this.value); B.psalms[${pi}].chants[${ci}].name=r.name; B.psalms[${pi}].chants[${ci}].shift=r.shift; renderBuilder(); }">
         <button class="small" onclick="openPicker(${pi}, ${ci})">Choose…</button>
+        ${ch ? `<select title="Transpose: the PDF prints the chant in this key" onchange="B.psalms[${pi}].chants[${ci}].shift=+this.value; renderBuilder()">${
+          [...new Set([-4, -3, -2, -1, 0, 1, 2, 3, 4, c.shift || 0])].sort((a, b) => a - b).map(s => `<option value="${s}" ${s === (c.shift || 0) ? "selected" : ""}>${esc(keyAt(ch, s))}${s ? " (" + shiftWords(s) + ")" : " (as written)"}</option>`).join("")}</select>` : ""}
         ${ci > 0 ? `from verse <input type="text" value="${esc(c.from)}" style="width:50px" onchange="B.psalms[${pi}].chants[${ci}].from=this.value.trim(); renderBuilder()">` : ""}
         ${/^tone[:\s]/i.test(c.name) ? toneMenus(c.name, `t => { B.psalms[${pi}].chants[${ci}].name = t; renderBuilder(); }`) : ""}
-        ${ch ? `<span class="hint">${esc(keyName(ch))}, ${ch.double ? "double" : "single"} · last used ${esc(lastUsed(ch.id) || "never")}</span>
-          <span class="link" onclick="showChant('${esc(ch.id)}')">see</span>` : (c.name && !/^tone[:\s]/i.test(c.name)) ? '<span class="hint">not in the catalog</span>' : ""}
+        ${ch ? `<span class="hint">${esc(CN(ch.id))}, ${ch.double ? "double" : "single"} · last used ${esc(lastUsed(ch.id) || "never")}</span>
+          <span class="link" onclick="showChant('${esc(ch.id)}')">see</span> <button class="small play" onclick="play('${esc(ch.id)}', this, ${c.shift || 0})">▶ Play</button>` : (c.name && !/^tone[:\s]/i.test(c.name)) ? '<span class="hint">not in the catalog</span>' : ""}
         ${ci > 0 ? `<span class="link" onclick="B.psalms[${pi}].chants.splice(${ci},1); renderBuilder()">remove</span>` : ""}</div>`;
     }).join("")}
     ${B.choir === false ? "" : `<p style="margin:4px 0"><span class="link" onclick="B.psalms[${pi}].chants.push({name:'',from:''}); renderBuilder()">+ change chant partway</span></p>`}
     ${res.length && B.choir !== false ? `<div style="margin:2px 0 6px">${fitReport(p, pi)}${(() => { const d = p.daggers || textDaggers(res); return `<div class="hint">† ${d.length ? "on v. " + d.join(", ") : "on no verse"}${p.daggers ? " (moved for this Sunday)" : " (as marked in the text)"} · <span class="link" onclick="B.psalms[${pi}].open=true; renderBuilder()">change</span></div>`; })()}</div>` : ""}
     ${sg.length && B.choir !== false ? `<div class="used">Suggestions (moods match, not used in the last 12 weeks): ${sg.map(x =>
-      `<span class="link" onclick="useChant(${pi}, '${esc(x.ch.id)}')">${esc(x.ch.id)}</span>`).join(" · ")}</div>`
+      `<span class="link" onclick="useChant(${pi}, '${esc(x.ch.id)}')">${esc(CN(x.ch.id))}</span>`).join(" · ")}</div>`
       : mood.length ? '<p class="hint">No chant shares these moods yet. Tag chants on the Chants tab.</p>' : ""}
   </div>`;
 }
 function usePsalm(spec) { B.psalms[0].spec = spec; renderBuilder(); }
 function addPsalm() { B.psalms.push({spec: "", chants: [{name: "", from: ""}]}); renderBuilder(); }
-function useChant(pi, id) { const cs = B.psalms[pi].chants; const slot = cs.find(c => !c.name) || cs[0]; slot.name = id; renderBuilder(); }
+function useChant(pi, id) { const cs = B.psalms[pi].chants; const slot = cs.find(c => !c.name) || cs[0]; slot.name = id; slot.shift = 0; renderBuilder(); }
 function loadExisting() { parseSunday(B.existing); B.existing = null; renderBuilder(); }
 async function saveSunday() {
   const text = sundayText();

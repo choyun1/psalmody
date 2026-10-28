@@ -88,6 +88,13 @@ def history():
         except SystemExit as e:
             sys.stderr.write(f'  skipped {os.path.basename(path)}: {e}\n')
     rows += schedule_history({r['date'][:10] for r in rows})
+    for r in rows:                            # one name per chant: 'Turle-5' was Turle-2 a tone down
+        c = r.get('chant') or ''
+        if c and not c.startswith('tone:') and c not in ('?', '???'):
+            base, shift = paths.split_chant(c)
+            if shift:
+                r['shift'] = shift
+            r['chant'] = base
     rows.sort(key=lambda r: r['date'])
     return rows
 
@@ -96,10 +103,9 @@ def schedule_history(have):
     """Psalms from the imported record (parish/schedule/schedule.csv) on dates the history doesn't cover."""
     path = os.path.join(paths.HOME, 'schedule', 'schedule.csv')
     acp = {}
-    for r in paths.catalog():
-        m = re.match(r'ACP\s*0*(\d+)', r.get('Source', ''))
-        if m:
-            acp[int(m.group(1))] = r
+    for r in paths.catalog() + [dict(r, Chant=r['Alias'], **{'ACP Psalm': ''}) for r in paths.alias_rows()]:
+        for m in re.finditer(r'ACP\s*0*(\d+)', r.get('Source', '')):
+            acp.setdefault(int(m.group(1)), r)
     out, today = [], dt.date.today().isoformat()
     for r in read_csv(path):
         if r['slot'] != 'Psalm' or r['date'] in have or r['date'] > today:
@@ -372,6 +378,32 @@ def tones_data(redraw=False):
     return endings, groups
 
 
+def label_chants(chants):
+    """How a chant is named on screen, as service sheets name them: 'Turle in D minor'; a number in brackets
+    where one composer has two in the same key ('Goss in F (2)'), in the order of the file names."""
+    def nat(c):
+        m = re.match(r'^(.*?)-?(\d+)$', c['id'])
+        return (m.group(1), int(m.group(2))) if m else (c['id'], 0)
+    full = {}
+    for c in chants:
+        full.setdefault(c['composer'].split(',')[0].strip(), set()).add(c['composer'].strip())
+    for c in chants:
+        last, _, first = c['composer'].partition(',')
+        who = last.strip() or nat(c)[0]
+        if len(full.get(last.strip(), ())) > 1 and first.strip():       # G. Elvey and S. Elvey
+            who = ' '.join(w[0] + '.' for w in first.replace('.', ' ').split()) + ' ' + who
+        k = re.sub(r'([A-G])b', r'\1♭', c['key'] or '').replace('#', '♯')
+        mode = (c['mode'] or '').lower()
+        c['label'] = f"{who} in {k}" + (' minor' if mode.startswith('min') else '') if k else who
+    same = {}
+    for c in sorted(chants, key=nat):
+        same.setdefault(c['label'], []).append(c)
+    for group in same.values():
+        if len(group) > 1:
+            for i, c in enumerate(group, 1):
+                c['label'] += f' ({i})'
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--redraw', action='store_true')
@@ -407,8 +439,9 @@ def main():
             'img': os.path.exists(img), 'voices': info['voices'],
             'private': row['private'],
         })
+    label_chants(chants)
     tone_endings, tone_groups_data = tones_data(args.redraw)
-    data = {'vocabulary': vocabulary(), 'chants': chants, 'tones': tone_endings, 'toneGroups': tone_groups_data, 'texts': texts(), 'history': history(), 'calendar': calendar(),
+    data = {'aliases': paths.aliases(), 'vocabulary': vocabulary(), 'chants': chants, 'tones': tone_endings, 'toneGroups': tone_groups_data, 'texts': texts(), 'history': history(), 'calendar': calendar(),
             'unconfirmed': unconfirmed(), 'gloria': gloria_body(), 'service': service_data(),
             'parish': {'name': lectionary.PARISH.get('name', ''), 'track': lectionary.PARISH.get('track', '2'),
                        'optional': build.optional_default()},

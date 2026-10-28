@@ -2,9 +2,8 @@ Chant,Composer,Years,Key,Mode,Single/Double,Source,ACP Psalm
 Attwood-1,"Attwood, Thomas",1765-1838,Ab,Major,Double,ACP 074,35
 Attwood-2,"Attwood, Thomas",1765-1838,D,Major,Double,ACP 226,99
 Barnby-1,"Barnby, Joseph",1838-1896,A,Minor,Double,"ACP 066, 142","31, 64"
-Barnby-2,"Barnby, Joseph",1838-1896,D,Minor,Double,ACP 106,49
+Barnby-2,"Barnby, Joseph",1838-1896,D,Minor,Double,ACP 106,"49, 94"
 Barnby-3,"Barnby, Joseph",1838-1896,F#,Minor,Double,ACP 163,73
-Barnby-4,"Barnby, Joseph",1838-1896,C,Minor,Double,ACP 214,94
 Battishill-1,"Battishill, Jonathan",1738-1801,F,Major,Double,"ACP 001, 107, 181","1, 50, 80"
 Battishill-2,"Battishill, Jonathan",1738-1801,A,Minor,Double,"ACP 137, 154","61, 69"
 Beale-1,"Beale, William",1784-1854,A,Minor,Double,ACP 129,59
@@ -36,20 +35,17 @@ Goss-1,"Goss, John",1800-1880,F,Minor,Single,"ACP 011, 027","6, 14"
 Goss-10,"Goss, John",1800-1880,C,Minor,Double,ACP 116,53
 Goss-11,"Goss, John",1800-1880,G,Major,Single,ACP 117,54
 Goss-12,"Goss, John",1800-1880,A,Major,Double,"ACP 133, 210","60, 92"
-Goss-13,"Goss, John",1800-1880,D,Major,Double,ACP 197,87
-Goss-14,"Goss, John",1800-1880,C,Major,Double,ACP 203,89-2
+Goss-13,"Goss, John",1800-1880,D,Major,Double,ACP 197,"87, 89-2"
 Goss-2,"Goss, John",1800-1880,Eb,Major,Double,ACP 012,6
-Goss-3,"Goss, John",1800-1880,F,Major,Double,"ACP 036, ACP 208","18-2, 91"
+Goss-3,"Goss, John",1800-1880,F,Major,Double,"ACP 036, ACP 208","18-2, 91, 36, 78-1, 78-2"
 Goss-4,"Goss, John",1800-1880,E,Major,Single,ACP 049,23
 Goss-5,"Goss, John",1800-1880,A,Minor,Double,"ACP 077, 177","36, 78-1, 78-2"
-Goss-6,"Goss, John",1800-1880,A,Major,Double,"ACP 078, 176","36, 78-1, 78-2"
 Goss-7,"Goss, John",1800-1880,F,Minor,Double,ACP 079,37-1
 Goss-8,"Goss, John",1800-1880,Db,Major,Double,ACP 080,37-2
 Goss-9,"Goss, John",1800-1880,G,Major,Double,"ACP 094, 158, 200","44, 71, 89-1"
 HarrisJ-1,"Harris, Joseph",1743-1814,Eb,Major,Double,"ACP 164, 189","74, 83"
-Hopkins-1,"Hopkins, Edward John",1818-1901,F,Minor,Double,"ACP 045, 204","22, 89-2"
+Hopkins-1,"Hopkins, Edward John",1818-1901,F,Minor,Double,"ACP 045, 204","22, 89-2, 55"
 Hopkins-2,"Hopkins, Edward John",1818-1901,F,Major,Double,"ACP 046, 202","22, 89-1"
-Hopkins-3,"Hopkins, Edward John",1818-1901,G,Minor,Double,ACP 119,55
 Hopkins-4,"Hopkins, Edward John",1818-1901,Ab,Major,Double,ACP 190,84
 Hopkins-5,"Hopkins, Edward John",1818-1901,F,Major,Double,ACP 209,91
 JacksonT-1,"Jackson, Thomas",1715-1781,G,Major,Double,"ACP 140, 174","63, 78-1, 78-2"
@@ -91,14 +87,12 @@ StewartR-1,"Stewart, Robert Prescott",1825-1894,C,Major,Single,"ACP 184, 216",81
 Stonex-1,"Stonex, Henry",1823-1897,F#,Minor,Double,ACP 054,25
 Tallis-1,"Tallis, Thomas",1505-1585,Bb,Major,Single,ACP 225,99
 Turle-1,"Turle, James",1802-1882,D,Major,Double,"ACP 013, 162","7, 73"
-Turle-2,"Turle, James",1802-1882,D,Minor,Double,"ACP 028, 165","14, 74"
+Turle-2,"Turle, James",1802-1882,D,Minor,Double,"ACP 028, 165","14, 74, 31"
 Turle-3,"Turle, James",1802-1882,F,Major,Double,"ACP 035, 201","18-1, 89-2"
 Turle-4,"Turle, James",1802-1882,F,Major,Double,ACP 057,27
-Turle-5,"Turle, James",1802-1882,C,Minor,Double,ACP 065,31
 Turle-6,"Turle, James",1802-1882,D,Major,Double,ACP 166,74
 Walmisley-1,"Walmisley, Thomas Attwood",1814-1856,F,Major,Double,ACP 010,5
 Wesley-1,"Wesley, Samuel Sebastian",1810-1876,D,Major,Double,"ACP 039, 056, 192","19, 26, 85"
-Wesley-2,"Wesley, Samuel Sebastian",1810-1876,G,Minor,Double,ACP 068,32
-Wesley-3,"Wesley, Samuel Sebastian",1810-1876,F#,Minor,Double,ACP 109,50
+Wesley-2,"Wesley, Samuel Sebastian",1810-1876,G,Minor,Double,ACP 068,"32, 50"
 WoodwardJr-1,"Woodward, Jr., Richard",1743-1777,Ab,Major,Double,ACP 070,33
 WoodwardJr-2,"Woodward, Jr., Richard",1743-1777,D,Major,Double,ACP 168,75

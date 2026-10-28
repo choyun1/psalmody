@@ -10,9 +10,10 @@ A Sunday file looks like this (one item per line; # starts a comment):
     date:    2024-03-03
     service: Eucharist                # Eucharist (default) | Office | Evensong
     psalm:   19                       # or 19:1-6, 72:1-7,18-19, 89 Part 1, 89:20-37, 119 Aleph, Canticle 16
-    chant:   Wesley-3                 # the chant the psalm starts with
+    chant:   Wesley-2                 # the chant the psalm starts with
     chant:   Smart-1 from 7           # change chant at verse 7
-    chant:   Wesley-3 from 13
+    chant:   Wesley-2 from 13
+    chant:   Turle-2 down 2           # transposed: up or down so many semitones (here D minor to C minor)
     tone:    VIIa                     # instead of chant: a Gregorian psalm tone (Liber Usualis), e.g. VIIa, 1D2, 8G, per
     gloria:  no                       # default: yes for Office/Evensong, no otherwise
     reprint: yes                      # reprint the chant at the top of a page (default yes)
@@ -91,6 +92,8 @@ def parse_sunday(path):
             name = m.group(1).strip()
             if key == 'tone':
                 name = 'tone:' + name.replace(' ', '')
+            else:
+                name = paths.canonical(name)            # 'Turle-5' (a copy of Turle-2) -> 'Turle-2 down 2'
             s['items'][-1]['chants'].append((name, int(m.group(2)) if m.group(2) else None))
         elif key in service.KEYS:
             s['music'].append((key, val))         # the rest of the service
@@ -257,6 +260,7 @@ def read_chant(name):
     info['after'] = [src[x:y].strip() for x, y in blocks if x > a]
     km = re.search(r'\\key\s+([a-g])((?:is|es|s)*)\s*\\(major|minor)', src)
     if km:
+        info['tonic'] = km.group(1) + km.group(2)
         pc = NOTE[km.group(1)] + km.group(2).count('is') - km.group(2).count('es') - (1 if km.group(2) in ('s',) else 0)
         info['key'] = (pc % 12, km.group(3), km.group(1).upper() + km.group(2).replace('is', '♯').replace('es', '♭').replace('s', '♭'))
     sm = re.search(r'S_notes\s*=.*?\{(.*?)\n\}', src, re.S) or re.search(r'Unison_notes\s*=.*?\{(.*?)\n\}', src, re.S)
@@ -270,11 +274,45 @@ def is_tone(name):
 
 
 def load_music(name):
-    """A chant file, or a psalm tone given as tone:VIIa."""
+    """A chant file (perhaps transposed: 'Turle-2 down 2'), or a psalm tone given as tone:VIIa."""
     if is_tone(name):
         t = tones.tone(name[5:])
         return {'name': name, 'tone': t, 'double': False, 'credit': [t['label']], 'key': None}
-    return read_chant(name)
+    base, shift = paths.split_chant(name)
+    info = read_chant(base)
+    if shift:
+        transpose(info, shift)
+    info['name'] = name
+    return info
+
+
+# the usual spelling of each key's tonic, by semitone above C (Dutch names, as LilyPond writes them)
+SPELL = {'major': ['c', 'des', 'd', 'ees', 'e', 'f', 'fis', 'g', 'aes', 'a', 'bes', 'b'],
+         'minor': ['c', 'cis', 'd', 'ees', 'e', 'f', 'fis', 'g', 'gis', 'a', 'bes', 'b']}
+
+
+def lily_midi(p):
+    """'aes' -> 56, 'c\'' -> 60 (LilyPond's absolute pitch)."""
+    m = re.match(r"([a-g])((?:is|es|s)*)([',]*)$", p)
+    acc = m.group(2).count('is') - m.group(2).count('es') - (1 if m.group(2) == 's' else 0)
+    return 48 + NOTE[m.group(1)] + acc + 12 * (m.group(3).count("'") - m.group(3).count(','))
+
+
+def transpose(info, shift):
+    """Move a chant up (+) or down (-) so many semitones: the score is wrapped in \\transpose, from its tonic
+    to the new key's tonic spelled the usual way (D minor down 2 is C minor, not B♯ minor)."""
+    if 'tonic' not in info or 'key' not in info:
+        raise SystemExit(f"chant {info['name']}: no \\key in its file, so it can't be transposed")
+    src = info['tonic']
+    mode = info['key'][1]
+    want = lily_midi(src) + shift
+    t = SPELL[mode][want % 12]
+    octave = (want - lily_midi(t)) // 12
+    t += ("'" * octave) if octave > 0 else ("," * -octave)
+    info['score'] = re.sub(r'\\score\s*\{', lambda m: m.group(0) + f' \\transpose {src} {t}', info['score'], count=1)
+    letter = t.rstrip("',")
+    info['key'] = (want % 12, mode, letter[0].upper() + letter[1:].replace('is', '♯').replace('es', '♭'))
+    info['shift'] = shift
 
 
 def prefixed(info, tag):
