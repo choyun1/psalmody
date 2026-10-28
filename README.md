@@ -58,7 +58,7 @@ It was built for the weekly use of one parish, St. Peter's Episcopal Church in C
 
 <img src="docs/images/plainchant-page.png" alt="Psalm 22 set to Tone VIIa" width="640">
 
-**The Chants tab.** Every chant with its key, range, the psalm the Anglican Chant Psalter sets it to, your rating and notes, and when you last used it.
+**The Chants tab.** Every chant in a list, with its key, your rating, when you last used it and its moods; click one to open it: the music, Play, the psalm the Anglican Chant Psalter sets it to, and your notes.
 
 ![The Chants tab](docs/images/chants.png)
 
@@ -171,7 +171,7 @@ LORD, GOD and YAHWEH are set in small capitals automatically, and straight quote
 
 ## The chant browser
 
-- **Coming up**: the next Sundays and feasts with their psalms, moods and chant ideas.
+- **Coming up**: the next Sundays and feasts, one line each; click one for its psalms, moods and chant ideas.
 - **Service planner**: [above](#planning-a-service).
 - **Chants**: every chant in notation with playback, filtered by mood, mode, key and rating; and the plainchant tones.
 - **Psalms**: every text with its mood tags, the chants that match them best, and what it was sung to before.
