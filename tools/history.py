@@ -172,7 +172,8 @@ def pending():
         code, st = git(d, 'status', '--porcelain', '-z')
         files = [e[3:] for e in names(st) if len(e) > 3 and e[2] == ' '] if code == 0 else []
         code, ahead = git(d, 'rev-list', '--count', '@{u}..HEAD')
-        out.append({'repo': name, 'files': files, 'unpushed': int(ahead.strip() or 0) if code == 0 else 0})
+        out.append({'repo': name, 'files': files, 'unpushed': int(ahead.strip() or 0) if code == 0 else 0,
+                    'online': upstream(d)})
     return out
 
 

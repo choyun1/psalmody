@@ -10,10 +10,12 @@ async function refreshGit() {
     const [g, h] = await Promise.all([fetch("/api/git").then(r => r.json()), fetch("/api/history").then(r => r.json())]);
     CHANGES = h.changes || [];
     const n = g.repos.reduce((a, r) => a + r.unpushed + r.files.length, 0);
+    const synced = !n && g.repos.length && g.repos.every(r => r.online !== false);   // all of it on GitHub
     const last = CHANGES[0];
     $("#gitbar").innerHTML = (last ? ` <button class="small" title="Undo: ${esc(last.message)}" onclick="undoChange(0)">↶ Undo</button>
       <button class="small" onclick="showChanges()">Changes</button>` : "")
-      + ` <button class="small sync" title="Back up to GitHub, and bring in what's new there (click for more)" onclick="showSync()">${SYNC_ICON} Sync with GitHub${n ? ` <span class="badge">${n}</span>` : ""}</button>`;
+      + ` <button class="small sync" title="${n ? n + " change(s) not on GitHub yet" : synced ? "Everything here is on GitHub" : "No GitHub copy is set up for this folder"}: click for more" onclick="showSync()">${SYNC_ICON} Sync with GitHub${
+        n ? ` <span class="badge">${n}</span>` : synced ? ' <span class="ok">✓</span>' : ""}</button>`;
     PENDING = {n, files: g.repos.flatMap(r => r.files.map(f => r.repo + ": " + f))};
     if (dlg.open && $("#changes")) showChanges();
   } catch (e) {}
@@ -52,9 +54,9 @@ function showSync(result) {
       <li><b>Your other computers.</b> What you saved on another computer comes here, and what you saved here goes there. Sync before you start on another computer, and when you finish.</li>
       <li><b>Updates.</b> Fixes and improvements to the tools come in (then restart the launcher).</li>
     </ul>
-    ${result ? `<div class="card" style="margin:10px 0">${esc(result).replace(/\n/g, "<br>")}</div>` :
+    ${result ? `<div class="card" style="margin:10px 0">${/^(Already in sync|[^:]+: \d+ change)/.test(result) ? '<span class="ok">✓</span> ' : ""}${esc(result).replace(/\n/g, "<br>")}</div>` :
       PENDING.n ? `<p class="hint">Not on GitHub yet (${PENDING.n}):</p><ul class="hint" style="margin-top:0">${waiting.slice(0, 8).map(c => `<li>${esc(c.message)} <span class="muted">· ${whenText(c.time)}</span></li>`).join("")}${PENDING.files.length ? `<li>files changed outside the browser: ${esc(PENDING.files.slice(0, 5).join(", "))}${PENDING.files.length > 5 ? "…" : ""}</li>` : ""}${waiting.length > 8 ? `<li>and ${waiting.length - 8} more</li>` : ""}</ul>`
-      : '<p class="hint">Nothing waiting to go up; syncing still brings in anything new.</p>'}
+      : '<p class="hint"><span class="ok">✓</span> Nothing waiting to go up. Syncing still brings in anything new from your other computers and the tools.</p>'}
     ${result ? "" : `<p><button class="small primary" onclick="commitAll()">${SYNC_ICON} Sync now</button></p>`}`;
   if (!dlg.open) dlg.showModal();
 }

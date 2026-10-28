@@ -78,6 +78,8 @@ a, .link { color: var(--accent); cursor: pointer; text-decoration: none; }
 #gitbar button { margin-left: 6px; }
 .icon { width: 1.15em; height: 1.15em; vertical-align: -0.22em; }
 button.sync .icon { margin-right: 2px; }
+.ok { color: #2e8b57; font-weight: bold; }
+@media (prefers-color-scheme: dark) { .ok { color: #5fcf8f; } }
 .badge { display: inline-block; min-width: 1.4em; padding: 0 5px; border-radius: 99px; background: var(--accent); color: #fff;
   font-size: 12px; line-height: 1.5; text-align: center; margin-left: 3px; }
 table.hist { border-collapse: collapse; width: 100%; font-size: 15px; }
