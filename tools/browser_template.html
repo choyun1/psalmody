@@ -1343,7 +1343,7 @@ function serviceCard() {
   const row = s => {
     const list = s.kind === "hymn" || s.kind === "service" ? "" : "rep-" + sid(family(s));
     const ph = {hymn: "hymn number(s), e.g. 390 or LEVAS 114", anthem: "hymn number, or Title - Composer (dates)", music: "Title - Composer (dates)", service: "e.g. S278"}[s.kind];
-    return `<div class="svrow"><label>${esc(s.label)}</label>
+    return `<div class="svrow"><label>${esc(s.label.replace("{hymn|anthem}", "hymn or anthem"))}</label>
       <div><input type="text" value="${esc(B.svc[s.key] || "")}" ${list ? `list="${list}"` : ""} placeholder="${ph}" onchange="setSvc('${s.key}', this.value)" style="width:100%">
       <div id="sh-${sid(s.key)}" class="svhint">${slotHint(s)}</div>
       <div id="ab-${sid(s.key)}">${s.kind === "anthem" ? anthemBox(s.key) : ""}${s.words ? wordsHint(s) : ""}</div></div></div>`;
@@ -1353,7 +1353,7 @@ function serviceCard() {
     <div class="svrow"><label>Organist</label><div><input type="text" value="${esc(B.svc.organist || "")}" onchange="setSvc('organist', this.value)" style="width:120px"></div></div>
     ${shown.map(row).join("")}
     ${others.map(k => row({key: k, label: k + " (not in this order)", kind: (anySlot(k) || {}).kind || "music"})).join("")}
-    ${hidden.length ? `<div class="svrow"><label></label><div class="hint">add: ${hidden.map(s => `<span class="link" onclick="B.showOpt.add('${s.key}'); renderBuilder()">${esc(s.label)}</span>`).join(" · ")}</div></div>` : ""}
+    ${hidden.length ? `<div class="svrow"><label></label><div class="hint">add: ${hidden.map(s => `<span class="link" onclick="B.showOpt.add('${s.key}'); renderBuilder()">${esc(s.label.replace(/\s*\{hymn\|anthem\}/, ""))}</span>`).join(" · ")}</div></div>` : ""}
     <div class="svrow"><label>Added to the opening line</label><div><input type="text" value="${esc(B.lead || "")}" style="width:100%" placeholder="e.g. Most of the music is by Charles Villiers Stanford." onchange="B.lead=this.value; refreshFile()"></div></div>
     <div class="svrow"><label>Other items</label><div><textarea rows="2" style="width:100%" placeholder="One per line, listed in the email as written, e.g. Te Deum: Collegium Regale - Herbert Howells (1892-1983)" onchange="B.also=this.value; refreshFile()">${esc(B.also)}</textarea></div></div>
     <div class="svrow"><label>Note for the email</label><div><textarea rows="2" style="width:100%" placeholder="Anything else to tell the office this week" onchange="B.note=this.value; refreshFile()">${esc(B.note)}</textarea></div></div>
