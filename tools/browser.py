@@ -251,7 +251,8 @@ def service_data():
     return {'lect': lect, 'orders': service.ORDERS, 'hymnals': service.hymnals(), 'repertoire': service.repertoire(),
             'hymnHistory': service.hymn_history(), 'anthems': service.anthems(), 'byDate': by_date,
             'lessons': service.lessons(), 'meta': service.META,
-            'plugins': plugins.data(), 'pluginKeys': sorted(plugins.sunday_keys())}
+            'plugins': plugins.data(), 'pluginKeys': sorted(plugins.sunday_keys()),
+            'linksSignature': lectionary.links_signature()}
 
 
 # ------------------------------------------------------------- plainchant psalm tones

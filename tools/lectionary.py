@@ -163,6 +163,13 @@ def links():
     return _links
 
 
+def links_signature():
+    """Which version of the link table the chant browser was built with (so the launcher can tell)."""
+    import hashlib
+    p = os.path.join(ROOT, 'reference', 'lectionary_links.csv')
+    return hashlib.md5(open(p, 'rb').read()).hexdigest()[:12] if os.path.exists(p) else ''
+
+
 def office_year(d):
     """The Daily Office year, I or II: Year One begins at Advent before an odd-numbered year."""
     y = d.year + 1 if d >= advent1(d.year) else d.year
@@ -174,6 +181,7 @@ def link(d, key=None):
     known, else that month's calendar."""
     if key is None:
         key = day_of(d)[0]
+    key = {'christmas_eve': 'christmas_day'}.get(key, key)        # the site keeps Christmas Eve under Christmas Day I
     post = links().get((key, lect_year(d))) if key else None
     if post:
         from urllib.parse import quote

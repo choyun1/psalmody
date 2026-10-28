@@ -214,10 +214,10 @@ def main():
         run(['browser.py'])
     import lectionary
     if len(lectionary.links()) < 100:               # first run: find the lectionary site's pages, in the background
-        def find_links():
-            if run(['lectionary_links.py'])[0] == 0:
-                run(['browser.py'])
-        threading.Thread(target=find_links, daemon=True).start()
+        threading.Thread(target=lambda: run(['lectionary_links.py']), daemon=True).start()
+    elif f'"linksSignature":"{lectionary.links_signature()}"' not in open(os.path.join(paths.SITE, 'data.js'), encoding='utf-8').read():
+        print('updating the links to the lectionary…')        # the table changed since the page was built
+        run(['browser.py'])
     srv = http.server.ThreadingHTTPServer(('127.0.0.1', PORT), Handler)
     url = f'http://localhost:{PORT}{SITE_URL}'
     print(f'Chant browser with the Service planner: {url}\n(Ctrl+C to stop)')
