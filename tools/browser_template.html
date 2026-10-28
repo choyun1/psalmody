@@ -229,7 +229,11 @@ async function saveCatalog() {
     const j = await post("/api/notes", {csv: text});
     savedNote = !j.ok ? "Could not save: " + (j.error || j.log)
       : j.rebuilt === false ? "Saved to chant_notes.csv, but the page couldn't be refreshed: " + (j.log || "").trim().split("\n").pop()
-      : "Saved. Reload the page to see it everywhere.";
+      : "Saved.";
+    if (j.ok) {                                   // what was saved is now the chant's own value: nothing left pending
+      Object.entries(edits).forEach(([id, e]) => { if (C[id]) Object.assign(C[id], e); });
+      edits = {}; saveEdits();
+    }
     renderSavebar(); return;
   }
   if (!("showSaveFilePicker" in window)) {
