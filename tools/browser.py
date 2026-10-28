@@ -241,15 +241,17 @@ def service_data():
     lect, rows = {}, lectionary.table()
     days = set(by_date) | {h['date'][:10] for h in history() if h.get('date')} | \
         {(dt.date.today() + dt.timedelta(days=i)).isoformat() for i in range(-14, 800)}
+    colors = {}
     for d in sorted(days):
         try:
             a = lectionary.appointed(dt.date.fromisoformat(d), rows)
+            colors[d] = lectionary.color(dt.date.fromisoformat(d), a.get('key'))
         except Exception:
             continue
         if a.get('key'):
             lect[d] = [a['key'], a['year'], a['label'], lectionary.link(dt.date.fromisoformat(d), a['key'])]
     import plugins
-    return {'lect': lect, 'orders': service.ORDERS, 'hymnals': service.hymnals(), 'repertoire': service.repertoire(),
+    return {'lect': lect, 'colors': colors, 'shades': lectionary.shades(), 'orders': service.ORDERS, 'hymnals': service.hymnals(), 'repertoire': service.repertoire(),
             'hymnHistory': service.hymn_history(), 'anthems': service.anthems(), 'byDate': by_date,
             'lessons': service.lessons(), 'meta': service.META,
             'plugins': plugins.data(), 'pluginKeys': sorted(plugins.sunday_keys()),

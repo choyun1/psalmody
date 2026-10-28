@@ -53,6 +53,8 @@ button.pin.on { color: var(--accent); border-color: var(--accent); }
 .card.flash { outline: 2px solid var(--accent); }
 .card h2 { font-size: 22px; font-weight: normal; margin: 0; display: inline; }
 .card .who { color: var(--muted); margin-left: 8px; }
+.swatch { display: inline-block; width: .7em; height: .7em; border-radius: 50%; margin-right: .4em; vertical-align: .05em;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.25); }
 .facts { color: var(--muted); font-size: 15px; margin: 2px 0 6px; }
 .facts b { color: var(--ink); font-weight: normal; }
 .stars { color: var(--bright); letter-spacing: 1px; }
@@ -732,6 +734,13 @@ function itemText(order, k, v) {
 }
 function csvCell(v) { v = String(v ?? ""); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
 // a day's name, linked to its readings on the Episcopal Church's lectionary site (tools/lectionary_links.py)
+// the liturgical color of a date (lectionary.py, with the parish's choices in parish.txt)
+function litColor(date) { return ((SV.colors || {})[String(date || "").slice(0, 10)]) || ""; }
+function litShade(name) { return (SV.shades || {})[name] || name; }
+function swatch(date) {
+  const c = litColor(date);
+  return c ? `<span class="swatch" style="background:${esc(litShade(c))}" title="${esc(c[0].toUpperCase() + c.slice(1))}"></span>` : "";
+}
 function lectLink(text, url) { return url ? `<a href="${esc(url)}" target="_blank" title="The readings, on lectionary.episcopalchurch.org">${esc(text)}</a>` : esc(text); }
 function downloadRecord() {
   // every service on record, one row per piece, with hymn titles spelled out
@@ -762,7 +771,7 @@ function drawServices() {
   $("#slist").innerHTML = dates.slice(0, 200).map(d => {
     const e = SV.byDate[d];
     const items = e.items.filter(([k]) => !["organist", "note"].includes(k) && !PLUGIN_KEYS.has(k));
-    return `<details class="card" style="padding:8px 14px;margin-bottom:6px"><summary>${esc(d)} · ${(SV.lect || {})[d] ? lectLink(SV.lect[d][2] + ", Year " + SV.lect[d][1], SV.lect[d][3]) + " · " : ""}${esc(e.order)} <span class="hint">· ${items.length} items${e.source === "file" ? " · from its file here" : " · from the imported record"}</span></summary>
+    return `<details class="card" style="padding:8px 14px;margin-bottom:6px"><summary>${swatch(d)}${esc(d)} · ${(SV.lect || {})[d] ? lectLink(SV.lect[d][2] + ", Year " + SV.lect[d][1], SV.lect[d][3]) + " · " : ""}${esc(e.order)} <span class="hint">· ${items.length} items${e.source === "file" ? " · from its file here" : " · from the imported record"}</span></summary>
       <ul style="margin:6px 0 2px 1.1em;padding:0">${items.map(([k, v]) => `<li>${itemText(e.order, k, v)}</li>`).join("")}</ul></details>`;
   }).join("") + (dates.length > 200 ? '<p class="hint">Showing the 200 most recent: filter to find older ones.</p>' : "");
 }
@@ -782,7 +791,7 @@ function renderHistory() {
     const rows = D.history.slice().reverse().filter(h => !q || [h.date, h.text, textTitle[h.text], h.chant, h.note].join(" ").toLowerCase().includes(q));
     $("#hcount").textContent = rows.length + " entries";
     $("#htab").innerHTML = `<tr><th>Date</th><th>Text</th><th>Verses</th><th>Chant</th><th></th></tr>` + rows.map(h =>
-      `<tr><td>${lectLink(h.date, ((SV.lect || {})[h.date] || [])[3])}</td><td>${esc(textTitle[h.text] || h.text)}</td><td>${esc(h.verses)}</td>
+      `<tr><td>${swatch(h.date)}${lectLink(h.date, ((SV.lect || {})[h.date] || [])[3])}</td><td>${esc(textTitle[h.text] || h.text)}</td><td>${esc(h.verses)}</td>
        <td>${C[h.chant] ? `<span class="link" onclick="showChant('${esc(h.chant)}')">${esc(h.chant)}</span>` : h.chant && h.chant !== "?" ? esc(h.chant) : '<span class="hint">no chant</span>'}</td><td class="hint">${esc(h.note)}</td></tr>`).join("");
   };
   $("#hq").oninput = draw; draw();
@@ -818,7 +827,7 @@ function renderUpcoming() {
   $("#tab-upcoming").innerHTML = `<p class="count">The psalm appointed by the Revised Common Lectionary (Episcopal edition). In the season after Pentecost, Track 1 is the semicontinuous psalm and Track 2 the one related to the Old Testament reading.
     To start a Sunday: <code>python tools/new_sunday.py DATE</code></p>` + rows.map(c => {
     const recent = recentChants(c.date);
-    return `<div class="card"><h2>${esc(new Date(c.date + "T12:00").toLocaleDateString(undefined, {weekday: "short", month: "long", day: "numeric", year: "numeric"}))}</h2>
+    return `<div class="card"><h2>${swatch(c.date)}${esc(new Date(c.date + "T12:00").toLocaleDateString(undefined, {weekday: "short", month: "long", day: "numeric", year: "numeric"}))}</h2>
       <span class="who">${lectLink(c.label + " · Year " + c.year, c.link)}</span>
       ${c.planned.map(pl => ` <span class="chip ${pl.sung ? "g-calm on" : "g-calm"}">${pl.sung ? "sung" : "planned"}: ${pl.choir === false ? "no choir" : esc(pl.chants.join(", ") || "chant not chosen")}</span>`).join("")}
       ${c.options.length ? c.options.map(o => {
@@ -975,7 +984,7 @@ function renderBuilder() {
   $("#tab-builder").innerHTML = `<div class="layout"><aside>
       <h3>Planning</h3><div class="seg"><button class="${B.mode !== "psalm" ? "on" : ""}" onclick="setMode('service')">Whole service</button><button class="${B.mode === "psalm" ? "on" : ""}" onclick="setMode('psalm')">Psalm only</button></div>
       <h3>Day</h3><input type="date" id="bdate" value="${esc(B.date)}" style="width:100%">
-      <p class="hint" style="margin:6px 0">${c ? lectLink(c.label + " · Year " + c.year, ((SV.lect || {})[B.date] || [])[3]) : B.date ? "Not in the calendar: type the psalm yourself." : "No date: a psalm on its own (a rehearsal, a one-off). Name the file below."}${B.mode === "psalm" && B.date ? ` <span class="link" onclick="setDate('')">no date</span>` : ""}</p>
+      <p class="hint" style="margin:6px 0">${swatch(B.date)}${c ? lectLink(c.label + " · Year " + c.year, ((SV.lect || {})[B.date] || [])[3]) : B.date ? "Not in the calendar: type the psalm yourself." : "No date: a psalm on its own (a rehearsal, a one-off). Name the file below."}${B.mode === "psalm" && B.date ? ` <span class="link" onclick="setDate('')">no date</span>` : ""}</p>
       <h3>File name</h3><input type="text" id="bname" value="${esc(B.name)}" style="width:100%">
       <p class="hint" style="margin:4px 0">Use e.g. ${esc(B.date)}-midnight for a second service that day.</p>
       <h3>Service</h3><select id="bservice">${[...new Set(SERVICES.concat([B.service]))].map(sv => `<option ${sv === B.service ? "selected" : ""}>${esc(sv)}</option>`).join("")}</select>

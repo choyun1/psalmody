@@ -5,6 +5,11 @@ name:          St. Example's, Anytown
 track:         2
 # Patronal feast (optional): month-day, the psalm-table key, and its name. Kept even when it falls on a Sunday.
 # patronal:    06-29 st_peter_and_st_paul Saint Peter and Saint Paul
+# Liturgical colors, shown beside each date: the Episcopal customary ones (Advent blue, Lent purple,
+# feasts their own). Change a season's, a day's, or how a color is drawn:
+# season_colors: advent = purple, easter = gold
+# day_colors:    good_friday = red
+# color_shades:  blue = #3d5a9e
 # Christmas: which of the three Christmas psalms (christmas1 = 96, christmas2 = 97, christmas3 = 98) comes first.
 christmas_eve: christmas1 christmas2 christmas3
 christmas_day: christmas2 christmas1 christmas3

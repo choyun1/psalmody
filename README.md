@@ -75,6 +75,8 @@ Double-click **Psalter.bat** and open the **Service planner** tab.
 
 **Undo.** Every save is kept on your computer as you go: a Sunday, chant notes or a pin, a verse's pointing, an anthem's words, marking a service as sung. **↶ Undo** at the top takes back the last one; **Changes** lists them all, newest first, each with its own Undo. An undo is a change too, so it can be undone. (This uses git in your `parish/` folder; if that folder isn't a git repository yet, the launcher starts one there, kept on your computer only.)
 
+**Liturgical colors.** A dot beside each date in Coming up, the planner and History shows the day's color: the Episcopal Church's customary ones, by season, with the feasts that take their own. A parish changes any of them in `parish.txt` (`season_colors:`, `day_colors:`, `color_shades:`).
+
 **No choir this week** (under Options) is for the Sundays the psalm is said: the chant boxes give way, there's nothing to build, and the history and Coming up show "no choir" (`choir: no` in the Sunday file).
 
 **Psalm only**, at the top, hides the rest of the service: for a rehearsal or a one-off, with or without a date. A service in a free order (Lessons and Carols: lessons, hymns and carols in any order) shows as a list to add to and rearrange, starting from last year's if you like; lessons are numbered for you.
@@ -183,7 +185,7 @@ LORD, GOD and YAHWEH are set in small capitals automatically, and straight quote
 
 | In `parish/` | |
 |---|---|
-| `parish.txt` | Name, lectionary track, patronal feast, Christmas psalms, optional verses, and any plugin's settings. |
+| `parish.txt` | Name, lectionary track, patronal feast, Christmas psalms, optional verses, liturgical colors, and any plugin's settings. |
 | `sundays/` | One file per Sunday or service. |
 | `texts/` | Your pointed texts, in place of the unpointed ones; pointing done in the browser is saved here. |
 | `services.txt` | Your own orders of service, if they differ. |

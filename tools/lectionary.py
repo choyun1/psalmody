@@ -6,7 +6,7 @@
 
 The psalm table is reference/rcl_psalms.csv (Episcopal edition, 1979 BCP numbering).
 """
-import csv, datetime as dt, os, sys
+import csv, datetime as dt, os, re, sys
 
 TOOLS = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(TOOLS)
@@ -123,7 +123,7 @@ def load_parish():
     path = paths.PARISH_TXT
     if os.path.exists(path):
         for line in open(path, encoding='utf-8'):
-            line = line.split('#', 1)[0].strip()
+            line = re.sub(r'#(?![0-9a-fA-F]{6}\b).*', '', line).strip()     # a comment (but not a color, #6aa84f)
             if ':' in line:
                 k, v = line.split(':', 1)
                 out[k.strip().lower()] = v.strip()
@@ -187,6 +187,71 @@ def link(d, key=None):
         from urllib.parse import quote
         return f'{SITE}/lectionary-post/{post}?date={d.isoformat()}&year=' + quote(f'Year {lect_year(d)} / {office_year(d)}', safe='')
     return f'{SITE}/{d.year}/{d.month}'
+
+
+# ------------------------------------------------------------- liturgical colors
+# The customary colors of the Episcopal Church, by season, with the feasts that take their own.
+# A parish changes any of them in parish.txt:
+#     season_colors: advent = purple, easter = gold      # advent christmas epiphany lent holy_week easter pentecost
+#     day_colors:    good_friday = red, all_saints = green   # by the day's key (as in reference/rcl_psalms.csv)
+#     color_shades:  blue = #3c5aa6                       # how each color is drawn
+SEASON_COLORS = {'advent': 'blue', 'christmas': 'white', 'epiphany': 'green', 'lent': 'purple',
+                 'holy_week': 'red', 'easter': 'white', 'pentecost': 'green'}
+_WHITE = ('christmas_eve christmas_day holy_name epiphany epiphany1 epiphany_last presentation annunciation '
+          'easter_vigil easter ascension trinity transfiguration all_saints proper29 visitation st_mary_the_virgin '
+          'nativity_of_st_john_baptist st_john confession_of_st_peter conversion_of_st_paul st_joseph '
+          'st_mary_magdalene st_michael_and_all_angels thanksgiving')
+_RED = ('palm_sunday palm_sunday_palms monday_holy_week tuesday_holy_week wednesday_holy_week maundy_thursday '
+        'pentecost pentecost_vigil holy_innocents st_stephen st_andrew st_thomas st_matthias st_mark '
+        'st_philip_and_st_james st_barnabas st_peter_and_st_paul st_james st_bartholomew holy_cross st_matthew '
+        'st_luke st_simon_and_st_jude st_james_of_jerusalem')
+DAY_COLORS = dict([(k, 'white') for k in _WHITE.split()] + [(k, 'red') for k in _RED.split()] +
+                  [('ash_wednesday', 'purple'), ('good_friday', 'black'), ('holy_saturday', 'black')])
+SHADES = {'blue': '#3d5a9e', 'purple': '#674ea7', 'white': '#ffffff', 'gold': '#f1c232', 'green': '#6aa84f',
+          'red': '#cc0000', 'black': '#000000', 'rose': '#e6a5b8'}
+
+
+def _pairs(v):
+    return {k.strip().lower(): x.strip() for k, x in (p.split('=', 1) for p in v.split(',') if '=' in p)}
+
+
+def season(d):
+    """advent, christmas, epiphany, lent, holy_week, easter or pentecost (the season after Pentecost)."""
+    y, E = d.year, easter(d.year)
+    if d >= advent1(y):
+        return 'advent' if d < D(y, 12, 24) else 'christmas'
+    if d < D(y, 1, 6):
+        return 'christmas'
+    if d < E - dt.timedelta(days=46):
+        return 'epiphany'
+    if d < E - dt.timedelta(days=7):
+        return 'lent'
+    if d < E - ONE:
+        return 'holy_week'
+    if d < E + dt.timedelta(days=49):
+        return 'easter'
+    return 'pentecost' if d > E + dt.timedelta(days=49) else 'easter'
+
+
+def color(d, key=None):
+    """The liturgical color of a date: its feast's, else its season's (parish.txt can change either)."""
+    if key is None:
+        key = day_of(d)[0]
+    days = dict(DAY_COLORS, **_pairs(PARISH.get('day_colors', '')))
+    if key == 'christmas_eve' or (d.month, d.day) == (12, 24):
+        key = 'christmas_eve'
+    if key and key in days:
+        return days[key]
+    if key and key.startswith('proper') and key[6:].isdigit():
+        key = 'pentecost'                                          # an ordinary Sunday after Pentecost
+    seasons = dict(SEASON_COLORS, **_pairs(PARISH.get('season_colors', '')))
+    return seasons.get(season(d), 'green')
+
+
+def shades():
+    """{color: '#rrggbb'}"""
+    return dict(SHADES, **{k: v if v.startswith('#') else '#' + v
+                           for k, v in _pairs(PARISH.get('color_shades', '')).items()})
 
 
 def appointed(d, rows=None):
