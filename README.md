@@ -205,6 +205,10 @@ In this folder: `texts/` and `chants/` (with `catalog.csv`), `moods.txt`, `servi
 - **A demo** of the chant browser on GitHub Pages.
 - **The corpus.** The chants in LilyPond and MusicXML with their metadata, as a dataset, and the studies it allows: keys and ranges across composers and periods, whether mood tags follow from musical features, and automatic pointing.
 
+Maybe later:
+
+- **Performance marks on the choir copy**, as some printed leaflets have: who sings each verse (Full, Decani, Cantoris) and its dynamic in the margin, a boxed "2nd half" in place of the †, a "new chant" warning box where the chant changes, and ✓ breath marks within long lines.
+
 ## Credits and license
 
 Psalmody grew out of the LilyPond files Adrian Cho made to set the psalms each week at St Peter's, Cambridge, and was developed with Claude (Anthropic) in 2026.
