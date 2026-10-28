@@ -86,7 +86,7 @@ def history():
 
 
 def schedule_history(have):
-    """Psalms from the music schedule (parish/schedule/schedule.csv) on dates the history doesn't cover."""
+    """Psalms from the imported record (parish/schedule/schedule.csv) on dates the history doesn't cover."""
     path = os.path.join(paths.HOME, 'schedule', 'schedule.csv')
     acp = {}
     for r in paths.catalog():
@@ -99,7 +99,7 @@ def schedule_history(have):
             continue
         m = re.match(r'^(.*?)\s*\(([^)]*)\)\s*$', r['item'])
         spec, music = (m.group(1).strip(), m.group(2).strip()) if m else (r['item'].strip(), '')
-        chant, note = '', 'from the music schedule'
+        chant, note = '', 'from the imported record'
         if music.upper() == 'ACP' and spec.isdigit():           # an ACP number: chant and psalm from the catalog
             c = acp.get(int(spec))
             if not c:
@@ -241,7 +241,6 @@ def service_data():
     return {'lect': lect, 'orders': service.ORDERS, 'hymnals': service.hymnals(), 'repertoire': service.repertoire(),
             'hymnHistory': service.hymn_history(), 'anthems': service.anthems(), 'byDate': by_date,
             'lessons': service.lessons(), 'meta': service.META,
-            'spreadsheet': bool(lectionary.PARISH.get('spreadsheet', '').strip()),
             'plugins': plugins.data(), 'pluginKeys': sorted(plugins.sunday_keys())}
 
 

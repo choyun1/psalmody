@@ -33,7 +33,7 @@ import paths   # noqa: E402
 
 # ------------------------------------------------------------------ orders of service
 KINDS = ('hymn', 'anthem', 'service', 'music', 'lesson')
-# the old spreadsheet's columns, for keys that share their name
+# the names an imported record (schedule.csv) gives pieces, for keys that share their name
 DEFAULT_COLUMN = {'prelude': 'Prelude', 'opening': 'Opening', 'gloria in excelsis': 'Gloria', 'gradual': 'Gradual',
                   'offertory': 'Offertory', 'sanctus': 'Sanctus & Benedictus', 'agnus dei': 'Agnus dei',
                   'communion': 'Communion', 'closing': 'Closing', 'postlude': 'Postlude'}
@@ -48,7 +48,7 @@ def services_file():
     return own if paths.PARISH and os.path.exists(own) else os.path.join(ROOT, 'services.txt')
 
 
-META = {}            # order name -> its settings: "spreadsheet: no", and any a plugin adds (plugins.py)
+META = {}            # order name -> the settings plugins add (plugins.py), e.g. "spreadsheet: no"
 
 
 import plugins   # noqa: E402
@@ -77,9 +77,6 @@ def load_orders(path=None):
         key, _, rest = line.strip().partition(':')
         if key.strip().lower() in ORDER_SETTINGS:              # a setting a plugin adds (plugins.py)
             META[cur][key.strip().lower()] = rest.strip()
-            continue
-        if key.strip().lower() == 'spreadsheet':            # "spreadsheet: no": not kept in the music schedule
-            META[cur]['spreadsheet'] = rest.strip().lower() not in ('no', 'false', 'off')
             continue
         cols = []
         m = re.search(r'\[([^\]]*)\]\s*$', rest)
@@ -302,7 +299,7 @@ LABELLED = re.compile(r"^([A-Z][\w' &]+?):\s+(.+)$")
 
 
 def legacy_items(order, rows):
-    """One date of the old spreadsheet -> (key, value) lines of the given order of service."""
+    """One date of the imported record (schedule.csv) -> (key, value) lines of the given order of service."""
     sl = slots(order)
     first_word = lambda s: s.lower().split()[0] if s.split() else ''
     got, extra = {}, []
@@ -365,7 +362,7 @@ _services = None
 
 
 def all_services(refresh=False):
-    """Every service on record, oldest first: the old spreadsheet for dates without a Sunday file,
+    """Every service on record, oldest first: the imported record (schedule.csv) for dates without a Sunday file,
     then the Sunday files. Each is {date, name, order, items, source}."""
     global _services
     if _services is not None and not refresh:
@@ -401,7 +398,7 @@ def all_services(refresh=False):
 
 
 def planned(date):
-    """What the old spreadsheet had planned for a date (to fill in the planner)."""
+    """What the imported record had planned for a date (to fill in the planner)."""
     e = next((e for e in all_services() if e['date'] == date and e['source'] == 'schedule'), None)
     return (e['order'], e['items']) if e else (None, [])
 
@@ -441,7 +438,7 @@ def split_lesson(v, lib=None):
     return ref, summary
 
 
-# ------------------------------------------------------------------ the record (replaces the spreadsheet)
+# ------------------------------------------------------------------ the record
 def schedule_rows():
     """Every service, one row per piece: date, service, organist, slot, item."""
     rows = []

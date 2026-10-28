@@ -1,14 +1,8 @@
-<h1><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/choyun1/psalmody/main/docs/logo/psalmody-banner-dark.svg"><img alt="psalmody" src="https://raw.githubusercontent.com/choyun1/psalmody/main/docs/logo/psalmody-banner-light.svg" height="56"></picture></h1>
+# Psalmody
 
-[![check](https://github.com/choyun1/psalmody/actions/workflows/check.yml/badge.svg?branch=main)](https://github.com/choyun1/psalmody/actions/workflows/check.yml) [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/) [![LilyPond 2.26](https://img.shields.io/badge/LilyPond-2.26-blue)](https://lilypond.org/) [![License: MIT](https://img.shields.io/badge/code-MIT-blue)](LICENSE) [![Data: CC BY 4.0](https://img.shields.io/badge/data-CC%20BY%204.0-blue)](LICENSE-DATA.md)
-
-**The psalms of the 1979 Book of Common Prayer, set to Anglican chant or plainchant for a parish choir.**
-
-psalmody typesets the psalms with LilyPond, either to Anglican chant or to the Gregorian psalm tones. Texts and chants are kept apart, so any text can be sung to any chant. One short text file per Sunday becomes the choir's copy (a PDF) and cropped images for the service leaflet. A planner that runs in your web browser opens on the psalm the lectionary appoints, helps choose a chant by mood, key and when it was last sung, and keeps the rest of the service (hymns, anthems, voluntaries, service music) as the parish's record of what was sung.
+Psalmody sets the psalms of the 1979 Book of Common Prayer for a parish choir, typeset with LilyPond, either to Anglican chant or to the Gregorian psalm tones. Texts and chants are kept apart, so any text can be sung to any chant. One short text file per Sunday becomes the choir's copy (a PDF) and cropped images for the service leaflet. A planner that runs in your web browser opens on the psalm the lectionary appoints, helps choose a chant by mood, key and when it was last sung, and keeps the rest of the service (hymns, anthems, voluntaries, service music) as the parish's record of what was sung.
 
 It was built for the weekly use of one parish, St Peter's Episcopal Church in Cambridge, Massachusetts, and is shared in case it helps others. Anything particular to a parish lives in its own folder, apart from the tools, and a parish can add to the planner with plugins of its own.
-
-**[▶ See a choir copy](docs/examples/psalm-22-tone-VIIa.pdf)**: Psalm 22 set to Tone VIIa, pointed automatically.
 
 <!-- Contents: one entry per ## section, in order (tools/check_readme.py checks it). -->
 <table><tr><td>
@@ -26,12 +20,10 @@ It was built for the weekly use of one parish, St Peter's Episcopal Church in Ca
 &emsp;3.2&ensp;[Plainchant psalm tones](#plainchant-psalm-tones)<br>
 &emsp;3.3&ensp;[The text format](#the-text-format)<br>
 &emsp;3.4&ensp;[The chant browser](#the-chant-browser)<br>
-&emsp;3.5&ensp;[The music schedule spreadsheet](#the-music-schedule-spreadsheet)<br>
-&emsp;3.6&ensp;[Your parish folder](#your-parish-folder)<br>
+&emsp;3.5&ensp;[Your parish folder](#your-parish-folder)<br>
 4&ensp;The project<br>
 &emsp;4.1&ensp;[Roadmap](#roadmap)<br>
-&emsp;4.2&ensp;[How psalmody was developed](#how-psalmody-was-developed)<br>
-&emsp;4.3&ensp;[License](#license)</small>
+&emsp;4.2&ensp;[Credits and license](#credits-and-license)</small>
 
 </td></tr></table>
 
@@ -50,7 +42,7 @@ It was built for the weekly use of one parish, St Peter's Episcopal Church in Ca
 
 1. Install Python 3.9 or later and [LilyPond](https://lilypond.org) (2.26 is what the spacing is tuned for; another version works, with a note). If `lilypond` isn't on the PATH, set the `LILYPOND` environment variable to it.
 2. Download this repository and double-click **Psalter.bat** (Windows) or run `psalter.sh` (Linux, macOS). It installs the Python packages it needs (`requirements.txt`) and opens the chant browser in your web browser. Everything stays on your computer; close the launcher's window to stop.
-3. Copy `parish.example/` to `parish/` and edit `parish/parish.txt`: your parish's name, the lectionary track, and the music schedule spreadsheet if you keep one. Keep `parish/` as its own private git repository if you like. It holds your Sunday files, pointing, ratings and history, and this repository ignores it. Without it, the tools still work, keeping those things here.
+3. Copy `parish.example/` to `parish/` and edit `parish/parish.txt`: your parish's name, and the lectionary track. Keep `parish/` as its own private git repository if you like. It holds your Sunday files, pointing, ratings and history, and this repository ignores it. Without it, the tools still work, keeping those things here.
 
 ## Gallery
 
@@ -62,7 +54,7 @@ It was built for the weekly use of one parish, St Peter's Episcopal Church in Ca
 
 ![The chant picker](docs/images/chant-picker.png)
 
-**A plainchant page.** The tone on a four-line staff, then every verse pointed for it in words: a stroke where the cadence begins, the accented syllables in bold, the intonation in brackets. [▶ the whole PDF](docs/examples/psalm-22-tone-VIIa.pdf)
+**A plainchant page.** The tone on a four-line staff, then every verse pointed for it in words: a stroke where the cadence begins, the accented syllables in bold, the intonation in brackets. ([the whole PDF](docs/examples/psalm-22-tone-VIIa.pdf))
 
 <img src="docs/images/plainchant-page.png" alt="Psalm 22 set to Tone VIIa" width="640">
 
@@ -78,7 +70,7 @@ Double-click **Psalter.bat** and open the **Service planner** tab.
 2. **Choose a chant.** **Choose…** opens the picker; click **Use**. Add a change of chant partway, or another psalm, the same way. Verses the lectionary prints in brackets (`90:1-8,(9-11),12`) are left out unless you tick *sing the optional verses* (the default is `optional_verses:` in `parish.txt`). In *The text*, click a verse number to put the † on it or take it off, for this Sunday only; the planner says at once whether each double chant comes out even.
 3. **Check it.** *Preview* shows the page straight away; **Exact PDF preview** runs LilyPond and shows the real thing. *Before on Proper 27* shows what was sung the last time these readings came round, three or six years ago, and the same day in the other years of the cycle.
 4. **The rest of the service.** Fill in the prelude, hymns, anthems and postlude. Type a hymn number (`390`, `LEVAS 114`) and its title appears with when it was last sung; the voluntary and anthem boxes suggest everything done before; service music carries on from the last service of the same kind. Paste an anthem's words once and they're kept in `parish/anthems/`.
-5. **Save & build.** The PDF and the images for the leaflet appear as links. **Record in the music schedule…** writes the service into your spreadsheet, if you keep one ([below](#the-music-schedule-spreadsheet)).
+5. **Save & build.** The PDF and the images for the leaflet appear as links. Any cards your parish's plugins add (a weekly email, a music schedule) come below.
 6. **Save to GitHub.** When there are changes, a button at the top commits and pushes your folders.
 
 **Psalm only**, at the top, hides the rest of the service: for a rehearsal or a one-off, with or without a date. A service in a free order (Lessons and Carols: lessons, hymns and carols in any order) shows as a list to add to and rearrange, starting from last year's if you like; lessons are numbered for you.
@@ -181,29 +173,22 @@ LORD, GOD and YAHWEH are set in small capitals automatically, and straight quote
 
 `python tools/browser.py` rebuilds the page after you change the catalog, moods, texts or Sunday files (drawing notation only for new chants). The page also opens straight from the folder, offline; building and saving need the launcher.
 
-## The music schedule spreadsheet
-
-If you keep a music schedule spreadsheet, **Record in the music schedule…** shows what the Sunday would change in it, cell by cell, then writes it (or `python tools/spreadsheet.py parish/sundays/2026-11-08.txt`, `--write` to write). `spreadsheet:` in `parish.txt` says where it is: `google` for a Google Sheet, or the path of an `.xlsx` file (a copy goes to `schedule/backups/` before each write).
-
-It expects a column per service, with the date in the first row, and a row per piece named in the first column: the names in [brackets] in `services.txt`, plus Psalm, Organist and Proper. Within that, `parish.txt` describes yours: a tab per year or one tab, how many columns a service takes, your own row names, how a hymn is written (`390 (EH1982)`), and whether hymn cells link to hymnary.org (`parish.example/parish.txt` has them all). Only cells the Sunday has something for are touched; a service with no column gets one, in date order.
-
-A Google Sheet is reached through a small script that lives in the sheet (`tools/google_sheet.gs`), so no Google Cloud setup is needed: the planner shows the steps the first time. The script's address and secret are kept on your computer (`tools/keystore.py`), never in a repository. `tools/import_schedule.py` reads an existing spreadsheet's past years into the record.
-
 ## Your parish folder
 
 | In `parish/` | |
 |---|---|
-| `parish.txt` | Name, lectionary track, patronal feast, Christmas psalms, optional verses, the music schedule. |
+| `parish.txt` | Name, lectionary track, patronal feast, Christmas psalms, optional verses, and any plugin's settings. |
 | `sundays/` | One file per Sunday or service. |
 | `texts/` | Your pointed texts, in place of the unpointed ones; pointing done in the browser is saved here. |
 | `services.txt` | Your own orders of service, if they differ. |
 | `chant_notes.csv` | Your ratings, mood tags and notes on every chant. |
 | `chants/` | Chants you may not publish (still under copyright), with their own `catalog.csv`. |
 | `anthems/`, `hymnals/`, `hymn_titles.csv`, `lessons.csv` | Anthem words, hymnal indexes, your hymn titles, readings for Lessons and Carols. |
+| `schedule/schedule.csv` | Past services brought in from elsewhere (date, occasion, organist, slot, item), read with the Sunday files. |
 | `plugins/` | Your own additions to the planner (below). |
 | `output/`, `site/` | What the build makes, and the chant browser built for your parish. |
 
-**Plugins.** A parish's own ways of doing things (a weekly email to the office, a newsletter, a rota) belong in its folder, not here. A plugin is a folder in `parish/plugins/` with up to three files: `plugin.txt` (lines it adds to Sunday files and orders of service), `plugin.py` (requests it answers for the planner) and `plugin.js` (a card or rows it adds to the planner). `tools/plugins.py` describes them. St Peter's weekly email to the parish office, drafted in Gmail with the psalm images attached, is one.
+**Plugins.** A parish's own ways of doing things (a weekly email to the office, a music schedule spreadsheet, a rota) belong in its folder, not here. A plugin is a folder in `parish/plugins/` with up to three files: `plugin.txt` (lines it adds to Sunday files and orders of service), `plugin.py` (requests it answers for the planner) and `plugin.js` (a card or rows it adds to the planner). `tools/plugins.py` describes them. St Peter's has two: its weekly email to the parish office, drafted in Gmail with the psalm images attached, and its music schedule, a Google Sheet each service is written into.
 
 In this folder: `texts/` and `chants/` (with `catalog.csv`), `moods.txt`, `services.txt`, `examples/`, `style/` (the LilyPond settings and EB Garamond), `reference/` (the 1979 psalter, the lectionary's psalm table, the psalm tones), `tools/` and `parish.example/`. To add a chant, copy it into `chants/` in the layout of the others and add a row to `chants/catalog.csv` (or to `parish/chants/` if it's still under copyright).
 
@@ -212,20 +197,12 @@ In this folder: `texts/` and `chants/` (with `catalog.csv`), `moods.txt`, `servi
 - **Pointing that can be shared.** Automatic Anglican-chant pointing from word stress, as the plainchant tones already have, checked against printed psalters, so that every psalm comes pointed.
 - **The plainchant tones.** An audit of the tone pointing against printed English plainsong psalters, and a way to move an accent by hand.
 - **Canticles.** All the BCP canticles (1–21) and the Gloria Patri.
-- **More parishes.** A first-run setup that writes `parish.txt`; spreadsheets laid out a row per service; more hymnals; other psalters (Coverdale, Common Worship) and lectionaries.
+- **More parishes.** A first-run setup that writes `parish.txt`; more hymnals; other psalters (Coverdale, Common Worship) and lectionaries.
 - **A demo** of the chant browser on GitHub Pages.
 - **The corpus.** The chants in LilyPond and MusicXML with their metadata, as a dataset, and the studies it allows: keys and ranges across composers and periods, whether mood tags follow from musical features, and automatic pointing.
 
-## How psalmody was developed
+## Credits and license
 
-psalmody began as my (Adrian Cho's) LilyPond files for setting the psalms to Anglican chant each week at St Peter's, and a spreadsheet of the chants I had copied by hand. The tools, the planner and everything here since were developed together with Claude, Anthropic's AI assistant, in chat sessions during 2026.
-
-**What Claude did.** Wrote most of the code, the browser page and the documentation; set up the psalm tones from the jgabc formulas; and drafted the psalms' mood tags.
-
-**What I did.** Decided what psalmody is for and how a week's work should go; chose the chants, the look of the page and the conventions of the pointing; supplied the services, bulletins and records it was built around; and tested every change in the parish's weekly use.
-
-**How it is checked.** The texts are compared word for word against the 1979 BCP (`tools/check_texts.py`); every example builds on each change (`.github/workflows/check.yml`); the tone formulas were checked against the Liber usualis; and a choir sings from what it makes every week. If something is wrong, please open an issue.
-
-## License
+Psalmody grew out of the LilyPond files Adrian Cho made to set the psalms each week at St Peter's, Cambridge, and was developed with Claude (Anthropic) in 2026.
 
 The code is under the MIT License ([LICENSE](LICENSE)). The mood tags, the chant catalog and the other data are under Creative Commons Attribution 4.0 ([LICENSE-DATA.md](LICENSE-DATA.md)). The psalm texts are from the 1979 Book of Common Prayer, which is in the public domain, as are the chants included here. The psalm tones come from the jgabc project (public domain). The EB Garamond fonts are under the SIL Open Font License (`style/fonts/OFL.txt`).

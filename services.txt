@@ -14,7 +14,6 @@
 #                        without "Label:" in front
 #         words=NAME     the words that go with it are always the same, from parish/anthems/NAME.txt
 #                        (the Magnificat), whatever setting is sung
-# A line that isn't music, "spreadsheet: no", keeps this kind of service out of the music schedule spreadsheet.
 # A label can say "{hymn|anthem}": it becomes "hymn" or "anthem" by what's sung ("Offertory hymn").
 # "lesson" is a kind too: a reading, written  Genesis 3:1-22 | Adam and Eve rebel against God …,
 # listed as "The First Lesson: …" (the summary comes from parish/lessons.csv if left out).
@@ -24,8 +23,8 @@
 # The planner picks the order named on the Sunday file's service: line, else the one named
 # like the day (Palm Sunday, Easter Vigil, Christmas Eve…), else the first one in this file.
 # A parish can keep its own copy as parish/services.txt, which then replaces this one.
-# There, a column name in [brackets] at the end of a line says which column of an old
-# music-schedule spreadsheet that piece was written in, so old plans can be read back.
+# There, a name in [brackets] at the end of a line says what that piece was called in an imported
+# record of past services (schedule/schedule.csv), so old plans can be read back.
 
 Eucharist
   prelude:            Prelude
@@ -105,7 +104,6 @@ Easter Vigil
   postlude:           Postlude
 
 Lessons and Carols
-  spreadsheet:        no
   prelude:            Prelude               (music, optional)
   introit:            Introit               (anthem)
   opening:            Opening hymn          (hymn)

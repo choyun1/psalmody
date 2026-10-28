@@ -108,7 +108,7 @@ def suggest(spec, date, n=8):
 
 
 def service_lines(date, service_name=None):
-    """The rest of the service, in its order of service: what the old music schedule already has for
+    """The rest of the service, in its order of service: what the imported record already has for
     the date, the service music carried on from last time, and blanks for the rest."""
     import service
     order = service.order_name(service_name, service.day_label(date))

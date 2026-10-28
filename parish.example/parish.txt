@@ -10,21 +10,3 @@ christmas_eve: christmas1 christmas2 christmas3
 christmas_day: christmas2 christmas1 christmas3
 # Psalm verses the lectionary prints in brackets: "sing" or "leave out" by default.
 optional_verses: sing
-
-# The music schedule spreadsheet (optional): google (a Google Sheet, connected once from the planner),
-# or the path of an .xlsx file.
-# spreadsheet:    schedule/Music_Schedule.xlsx
-# It's expected to have a column per service, with the date in the first row, and a row per piece, named
-# in the first column: the names in services.txt's [brackets], plus Psalm, Organist and Proper (the day).
-# The rest is up to you (these are the defaults):
-# A tab per year, made when a new year starts ({year}), or one tab for everything (its name).
-# spreadsheet_tabs:    {year}
-# How many columns each service takes, when the sheet has too few services yet to tell.
-# spreadsheet_columns: 1
-# Your own row names for the ones the planner uses: Your name = planner's name, separated by commas.
-# spreadsheet_rows:    Opening hymn = Opening, Anthem = Offertory, Day = Proper
-# How a hymn is written in a cell, and hymnals written under another name.
-# spreadsheet_hymns:   {number} ({book})
-# spreadsheet_books:   LEVAS = LEVAS2
-# Hymn cells link to the hymn on hymnary.org; "none" for no links.
-# spreadsheet_links:   hymnary

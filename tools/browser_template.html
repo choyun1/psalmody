@@ -79,9 +79,6 @@ code { font-size: 14px; background: var(--panel); border: 1px solid var(--line);
 
 .ptext { font-size: 16px; line-height: 1.55; margin: 8px 0 4px; }
 .ptext .v { margin: 0 0 7px; }
-.sheetdiff { border-collapse: collapse; font-size: 14px; width: 100%; }
-.sheetdiff td, .sheetdiff th { border-bottom: 1px solid var(--line); padding: 3px 8px 3px 0; text-align: left; vertical-align: top; font-weight: normal; }
-.sheetdiff th { color: var(--muted); }
 .seqrow { display: grid; grid-template-columns: 9.5em 1fr auto; gap: 4px 10px; align-items: start; margin: 6px 0; }
 .seqrow select { width: 100%; }
 .seqbtn { white-space: nowrap; padding-top: 5px; }
@@ -596,7 +593,7 @@ async function markSung(name) {
   if (j.ok) location.reload(); else window.alert("Could not mark it: " + (j.error || ""));
 }
 const HV = {mode: "psalms"};
-// every service on record (the old spreadsheet, then the Sunday files): what was sung, by date
+// every service on record (an imported record, then the Sunday files): what was sung, by date
 function servicesRecord() {
   const orders = [...new Set(Object.values(SV.byDate).map(e => e.order))];
   return `<input type="search" id="sq" placeholder="Filter: a date, hymn number, anthem, composer…" style="width:min(420px,100%)">
@@ -641,7 +638,7 @@ function drawServices() {
   $("#slist").innerHTML = dates.slice(0, 200).map(d => {
     const e = SV.byDate[d];
     const items = e.items.filter(([k]) => !["organist", "note"].includes(k) && !PLUGIN_KEYS.has(k));
-    return `<details class="card" style="padding:8px 14px;margin-bottom:6px"><summary>${esc(d)} · ${esc(e.order)} <span class="hint">· ${items.length} items${e.source === "file" ? " · from its file here" : " · from the spreadsheet"}</span></summary>
+    return `<details class="card" style="padding:8px 14px;margin-bottom:6px"><summary>${esc(d)} · ${esc(e.order)} <span class="hint">· ${items.length} items${e.source === "file" ? " · from its file here" : " · from the imported record"}</span></summary>
       <ul style="margin:6px 0 2px 1.1em;padding:0">${items.map(([k, v]) => `<li>${itemText(e.order, k, v)}</li>`).join("")}</ul></details>`;
   }).join("") + (dates.length > 200 ? '<p class="hint">Showing the 200 most recent: filter to find older ones.</p>' : "");
 }
@@ -817,7 +814,7 @@ async function setDate(date) {
     if (!B.name || /^\d{4}-/.test(B.name)) B.name = "psalm";
     renderBuilder(); return;
   }
-  B.date = date; B.sheet = null; B.name = date || (B.name && !/^\d{4}-/.test(B.name) ? B.name : "psalm"); B.status = ""; B.log = ""; B.files = []; B.existing = null; B.sung = false; B.pdf = "";
+  B.date = date; PLUGINS.reset.forEach(f => f()); B.name = date || (B.name && !/^\d{4}-/.test(B.name) ? B.name : "psalm"); B.status = ""; B.log = ""; B.files = []; B.existing = null; B.sung = false; B.pdf = "";
   const c = calEntry(date);
   B.label = c ? c.label : ""; B.year = c ? c.year : "";
   const opts = c ? c.options.filter(o => o.texts.length) : [];
@@ -877,7 +874,7 @@ function renderBuilder() {
       ${B.log ? `<pre style="font: 13px/1.45 ui-monospace, Menlo, Consolas, monospace; white-space: pre-wrap; background: var(--bg); padding: 8px; border-radius: 6px">${esc(B.log)}</pre>` : ""}
       ${B.files.length ? `<p>${B.files.map(f => `<a href="/${encodeURI(f)}" target="_blank">${esc(f.split("/").pop())}</a>`).join(" · ")}</p>` : ""}
     </div>
-    ${B.mode === "psalm" ? "" : sheetCard() + PLUGINS.cards.map(f => f()).join("")}
+    ${B.mode === "psalm" ? "" : PLUGINS.cards.map(f => f()).join("")}
     </div></div>
     <datalist id="chantlist">${chantOptions()}</datalist>
     ${repLists()}`;
@@ -1352,7 +1349,7 @@ function serviceCard() {
       <div id="ab-${sid(s.key)}">${s.kind === "anthem" ? anthemBox(s.key) : ""}${s.words ? wordsHint(s) : ""}</div></div></div>`;
   };
   return `${beforeCard()}<div class="card"><h3 style="font-weight:normal;margin:0 0 4px">The rest of the service <span class="hint">· order of service: ${esc(order)}</span></h3>
-    <p class="hint" style="margin:0 0 8px">${SV.byDate[B.date] ? "Already planned for this date (music schedule or this Sunday's file). " : ""}${sl.some(s => s.kind === "service") ? `Service music carries on from the last ${esc(order)}${prev.date ? " (" + esc(prev.date) + ")" : ""} unless you change it. ` : ""}The order of service comes from the Service box (or the day), and is set out in services.txt.</p>
+    <p class="hint" style="margin:0 0 8px">${SV.byDate[B.date] ? "Already planned for this date (the imported record or this Sunday's file). " : ""}${sl.some(s => s.kind === "service") ? `Service music carries on from the last ${esc(order)}${prev.date ? " (" + esc(prev.date) + ")" : ""} unless you change it. ` : ""}The order of service comes from the Service box (or the day), and is set out in services.txt.</p>
     <div class="svrow"><label>Organist</label><div><input type="text" value="${esc(B.svc.organist || "")}" onchange="setSvc('organist', this.value)" style="width:120px"></div></div>
     ${shown.map(row).join("")}
     ${others.map(k => row({key: k, label: k + " (not in this order)", kind: (anySlot(k) || {}).kind || "music"})).join("")}
@@ -1378,65 +1375,6 @@ function refreshSlot(k) {
 }
 function refreshFile() { const pre = $("#bfile"); if (pre) pre.textContent = sundayText(); PLUGINS.changed.forEach(f => f()); }
 
-// the music schedule spreadsheet
-async function sheetCheck(write) {
-  if (!write && !(await saveSunday())) return;
-  B.sheet = {busy: true}; refreshSheet();
-  const j = await post("/api/spreadsheet", {name: B.name, write: !!write});
-  B.sheet = j; refreshSheet();
-}
-function sheetConnectBox() {
-  return `<div style="margin:8px 0;padding:10px 12px;border:1px dashed var(--line);border-radius:8px">
-    <b style="font-weight:normal">Connect the Google Sheet (once)</b> <span class="hint">A small script in the sheet lets the planner read and write it; it only answers to a secret made here.</span>
-    <ol class="hint" style="margin:6px 0 6px 1.2em;padding:0">
-      <li>As the account that owns it, open the music schedule in Google Sheets: <b style="font-weight:normal">Extensions › Apps Script</b>.</li>
-      <li>Replace what's there with this, and save: <button class="small" onclick="copySheetScript(this)">Copy the script</button></li>
-      <li><b style="font-weight:normal">Deploy › New deployment</b>, type <i>Web app</i>, execute as <i>Me</i>, access <i>Anyone</i>. Deploy, allow it, and copy the web app URL.</li>
-      <li>To check it: open the web app URL in a <b style="font-weight:normal">private (incognito) window</b>, which sees it as the planner does; it should say <i>"ok": true</i>. (In a normal window signed in to several Google accounts, Google often says it is "unable to open the file": that's the accounts, not the script.) A Google sign-in or "access denied" page means it isn't open to <i>Anyone</i> (Deploy › Manage deployments › edit).</li>
-      <li>Paste it here: <input type="text" id="sheeturl" placeholder="https://script.google.com/macros/s/…/exec" style="width:340px"> <button class="small" onclick="connectSheet()">Connect</button> <span id="sheetmsg"></span></li>
-      <li>While you're in the script editor: choose <i>fixHymnLinks</i> in the toolbar and click Run, to fix the hymn links that point to the wrong hymn. Each change, with a link to its cell, shows in the Execution log.</li></ol>
-    <p class="hint" style="margin:4px 0 0">If your Workspace only allows sharing the web app within the organization, skip steps 3–5: reload the sheet, and use its new <b style="font-weight:normal">Psalter</b> menu with <i>Copy for the sheet</i> here.</p></div>`;
-}
-async function copyForSheet(btn) {
-  if (!(await saveSunday())) return;
-  const j = await post("/api/spreadsheet", {name: B.name, blob: true});
-  if (!j.ok) { alert(j.error); return; }
-  try { await navigator.clipboard.writeText(j.blob); btn.textContent = "Copied: now paste it in the sheet"; }
-  catch (e) { prompt("Copy this, then paste it in the sheet (Psalter › Record a service from the planner…):", j.blob); }
-}
-async function copySheetScript(btn) {
-  const j = await post("/api/sheet", {action: "script"});
-  try { await navigator.clipboard.writeText(j.script); btn.textContent = "Copied"; }
-  catch (e) { const w = window.open("", "_blank"); w.document.write("<pre>" + esc(j.script) + "</pre>"); }
-}
-async function connectSheet() {
-  const url = $("#sheeturl").value.trim(); if (!url) return;
-  $("#sheetmsg").textContent = "checking…";
-  const j = await post("/api/sheet", {action: "connect", url});
-  if (!j.ok) { $("#sheetmsg").innerHTML = `<span class="warn">${esc(j.error)}</span>`; return; }
-  $("#sheetmsg").textContent = "Connected to " + j.title + ".";
-  setTimeout(() => sheetCheck(false), 600);
-}
-function refreshSheet() { const el = $("#sheetbox"); if (el) el.innerHTML = sheetBox(); }
-function sheetCard() {
-  if (!SV.spreadsheet || !SERVER) return "";
-  return `<div class="card"><h3 style="font-weight:normal;margin:0 0 6px">The music schedule</h3><div id="sheetbox">${sheetBox()}</div></div>`;
-}
-function sheetBox() {
-  const t = B.sheet;
-  if (((SV.meta || {})[curOrder()] || {}).spreadsheet === false) return `<span class="hint">${esc(curOrder())} isn't kept in the music schedule spreadsheet; its file here (${esc(B.name)}.txt) is the record.</span>`;
-  if (!t) return `<button class="small" onclick="sheetCheck(false)">Record in the music schedule…</button> <span class="hint">shows what will change in the spreadsheet before writing</span>`;
-  if (t.busy) return '<span class="hint">Reading the spreadsheet…</span>';
-  if (!t.ok) return `<span class="warn">${esc(t.error)}</span> <span class="link" onclick="sheetCheck(false)">try again</span>
-    ${/Google/.test(t.error) ? ` · <button class="small" onclick="copyForSheet(this)">Copy for the sheet</button> <span class="hint">then in the sheet: Psalter › Record a service from the planner…</span>` : ""}
-    ${/not connected|refused|reach/.test(t.error) ? sheetConnectBox() : ""}`;
-  const rows = t.changes.map(([k, o, n]) => `<tr><td>${esc(k)}</td><td class="hint">${esc(o || "(empty)")}</td><td>${esc(n)}</td></tr>`).join("");
-  return `<div class="hint" style="margin-bottom:4px">${esc(t.file)}, tab ${esc(t.sheet)}${t.notes.length ? " · " + t.notes.map(esc).join(" · ") : ""}</div>
-    ${t.written ? `<b style="font-weight:normal">✓ Written to the music schedule (${t.changes.length} cell${t.changes.length === 1 ? "" : "s"}).</b>${t.url ? ` <a href="${esc(t.url)}" target="_blank">Open it in the sheet</a>` : " The old copy is in schedule/backups."}`
-      : t.changes.length ? `<table class="sheetdiff"><tr><th>Row</th><th>Now</th><th>Will be</th></tr>${rows}</table>
-        <p style="margin:6px 0 0"><button class="small primary" onclick="sheetCheck(true)">Write ${t.changes.length} change${t.changes.length === 1 ? "" : "s"}</button> <span class="link" onclick="B.sheet=null; refreshSheet()">cancel</span></p>`
-      : '<span class="hint">The music schedule already has all of this.</span>'}`;
-}
 // ---------- tabs ----------
 document.querySelectorAll("nav button").forEach(b => b.onclick = () => {
   document.querySelectorAll("nav button").forEach(x => x.classList.toggle("on", x === b));

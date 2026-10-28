@@ -1,5 +1,5 @@
 # The whole service. Everything after the psalm is optional: the build ignores it, and the
-# planner and the history read it (what was sung, when; the music schedule spreadsheet).
+# planner and the history read it (what was sung, and when).
 date:      2026-10-25
 psalm:     34:1-8,(19-22)
 chant:     Goss-1

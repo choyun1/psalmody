@@ -56,9 +56,6 @@ def save_verse(data):
     return {'ok': True, 'verse': [v['n'], int(v['dagger']), [[l['text'], l['half'], int(l['wrap'])] for l in v['lines']]]}
 
 
-PENDING = {}          # a secret made for the sheet's script, until the sheet is connected
-
-
 def git_repos():
     out = []
     for d in (ROOT, paths.PARISH):
@@ -170,44 +167,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                                          data.get('source', '').strip(), data.get('text', ''))
                 threading.Thread(target=lambda: run(['browser.py']), daemon=True).start()
                 return self.reply({'ok': True, 'file': os.path.relpath(f, ROOT).replace(os.sep, '/')})
-            if path == '/api/sheet':
-                import spreadsheet, keystore, lectionary
-                act = data.get('action', 'status')
-                google = lectionary.PARISH.get('spreadsheet', '').strip().lower() == 'google'
-                if act == 'status':
-                    return self.reply({'ok': True, 'google': google,
-                                       'connected': bool(keystore.get(spreadsheet.SHEET_SECRET, 'url'))})
-                if act == 'script':
-                    PENDING['sheet'] = PENDING.get('sheet') or spreadsheet.new_secret()
-                    return self.reply({'ok': True, 'script': spreadsheet.script_text(PENDING['sheet'])})
-                if act == 'connect':
-                    if not PENDING.get('sheet'):
-                        return self.reply({'ok': False, 'error': 'copy the script first'})
-                    try:
-                        title = spreadsheet.connect_google(data.get('url', ''), PENDING['sheet'])
-                    except RuntimeError as e:
-                        return self.reply({'ok': False, 'error': str(e)})
-                    PENDING.pop('sheet', None)
-                    return self.reply({'ok': True, 'title': title})
-                if act == 'forget':
-                    keystore.forget(spreadsheet.SHEET_SECRET, 'url')
-                    keystore.forget(spreadsheet.SHEET_SECRET, 'secret')
-                    return self.reply({'ok': True})
-            if path == '/api/spreadsheet':
-                import spreadsheet
-                name = safe_name(data['name'])
-                f = os.path.join(paths.SUNDAYS, name + '.txt')
-                if data.get('blob'):
-                    try:
-                        return self.reply({'ok': True, 'blob': spreadsheet.paste_blob(f)})
-                    except RuntimeError as e:
-                        return self.reply({'ok': False, 'error': str(e)})
-                try:
-                    plan = spreadsheet.write(f) if data.get('write') else spreadsheet.plan_changes(f)
-                except (RuntimeError, OSError, KeyError) as e:
-                    return self.reply({'ok': False, 'error': str(e)})
-                return self.reply({'ok': True, 'file': plan['name'], 'sheet': plan['sheet'], 'url': plan.get('url'),
-                                   'changes': plan['changes'], 'notes': plan['notes'], 'written': bool(plan.get('written'))})
             if path == '/api/open':
                 name = safe_name(data['name'])
                 folder = os.path.join(paths.OUTPUT, name, safe_name(data['sub']) if data.get('sub') else '')

@@ -1,4 +1,4 @@
-"""Small secrets (the Google Sheet link, or a plugin's password) kept on this computer, never in a repository.
+"""Small secrets (a plugin's password or web address) kept on this computer, never in a repository.
 
 In the computer's own password store (Windows Credential Manager, the macOS Keychain) when the `keyring`
 package is installed, otherwise in ~/.psalter/<name>.json, readable only by you.
