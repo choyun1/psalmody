@@ -489,11 +489,6 @@ def main():
             'private': row['private'],
         })
     label_chants(chants)
-    import moodsuggest                          # moods to suggest for chants not yet tagged (accepted in the page)
-    for c, sug in moodsuggest.all_suggestions().items():
-        for ch in chants:
-            if ch['id'] == c:
-                ch['suggest'] = sug
     tone_endings, tone_groups_data = tones_data(args.redraw)
     data = {'aliases': paths.aliases(), 'vocabulary': vocabulary(), 'chants': chants, 'tones': tone_endings, 'toneGroups': tone_groups_data, 'texts': texts(), 'history': history(), 'calendar': calendar(),
             'unconfirmed': unconfirmed(), 'gloria': gloria_body(), 'service': service_data(),

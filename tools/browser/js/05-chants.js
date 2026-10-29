@@ -12,7 +12,7 @@ function chantCard(c, opts = {}) {
     <h2>${esc(CN(c.id))}</h2><span class="who">${esc(c.id)} · ${esc(c.composer)}${c.years ? " (" + esc(c.years) + ")" : ""}</span>
     <div class="facts"><b>${esc(keyName(c))}</b> · ${c.double ? "double" : "single"}
       ${c.range ? " · soprano " + esc(c.range.join("–")) : ""} ${c.acp ? " · ACP sets it to Ps " + esc(c.acp) : ""} ${stars(val(c, "rating"))}</div>
-    <div class="moodrow">${mood.length ? mood.map(t => chip(t)).join("") + (c.suggest ? suggestedMoods(c, mood) : "") : suggestedMoods(c)}</div>
+    <div class="moodrow">${mood.length ? mood.map(t => chip(t)).join("") : '<span class="hint">no mood tags yet</span>'}</div>
     ${c.img ? `<div class="notation"><img loading="lazy" src="${esc(chantImg(c))}" alt="${esc(c.id)}"></div>` : ""}
     ${notesBox(val(c, "notes"))}
     <div class="used">${usedTxt} ${uses.length > 1 ? `<span class="link" onclick="showUses('${esc(c.id)}')">all</span>` : ""}</div>
@@ -27,14 +27,6 @@ function actionRow(c, editing, details) {
     ${SERVER ? panel(details, "Edit details", "toggleDetails") + `<button class="act" title="Opens the music editor" onclick="editMusic('${id}')">Edit music…</button>` : ""}
     <button class="act" onclick="dlg.close(); useInBuilder('${id}')">Use in the Service planner →</button></div>`;
 }
-// moods suggested for an untagged chant (tools/moodsuggest.py): click one to take it, or take them all
-function suggestedMoods(c, taken = []) {
-  const s = c.suggest, rest = s ? s.moods.filter(t => !taken.includes(t)) : [];
-  if (!rest.length) return taken.length ? "" : '<span class="hint">no mood tags yet</span>';
-  return `<span class="hint">${taken.length ? "also" : "Suggested:"}</span> ${rest.map(t => `<button class="chip maybe ${gclass(t)}" title="Take this mood" onclick="toggleMood('${esc(c.id)}','${esc(t)}')">${esc(t)}</button>`).join("")}
-    <span class="link hint" onclick="takeSuggested('${esc(c.id)}')">take all</span>${info("A guess, from " + s.why + ". It learns from the moods you give, so it gets better as you tag.")}`;
-}
-function takeSuggested(id) { setEdit(id, "mood", [...new Set(val(C[id], "mood").concat(C[id].suggest.moods))]); refreshCard(id); }
 function editBox(c) {
   const mood = val(c, "mood"), r = val(c, "rating");
   return `<div class="edit">
@@ -362,7 +354,7 @@ function renderChants() {
     const open = OPEN.has(c.id);
     return head + `<div class="crow ${open ? "open" : ""} ${JUST === "row:" + c.id ? "just" : ""}" data-id="${esc(c.id)}" onclick="toggleRow('${esc(c.id)}')" title="${open ? "Close" : "Open"} ${esc(CN(c.id))}"><span class="nm"><span class="caret">▸</span>${pinMarks(c) ? pinMarks(c) + " " : ""}${esc(CN(c.id))}</span>
       <span class="meta">${esc(keyName(c))}${c.double ? "" : ", single"}</span><span>${stars(val(c, "rating"))}</span>
-      <span class="meta">${esc(lastUsed(c.id) || "never")}</span><span class="mo">${val(c, "mood").length ? val(c, "mood").map(t => chip(t)).join(" ") : (c.suggest ? c.suggest.moods.map(t => chip(t, "maybe")).join(" ") : "")}</span></div>`
+      <span class="meta">${esc(lastUsed(c.id) || "never")}</span><span class="mo">${val(c, "mood").map(t => chip(t)).join(" ")}</span></div>`
       + (open ? chantCard(c, {editing: openEdits.has(c.id)}) : "");
   }).join("") + `</div>`;
 }

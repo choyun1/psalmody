@@ -1,4 +1,4 @@
-// Makes the PNGs here from icon.svg and banner.html (needs Playwright):  node docs/brand/make.mjs
+// Makes the PNGs here (the README heading, the social preview, the icon) from banner.html (needs Playwright):  node docs/brand/make.mjs
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -7,10 +7,10 @@ const here = dirname(fileURLToPath(import.meta.url));
 const b = await chromium.launch();
 for (const scheme of ["light", "dark"]) {
   const p = await b.newPage({colorScheme: scheme, deviceScaleFactor: 2});
-  for (const [file, w, h] of [["banner", 1280, 320], ["social", 1280, 640]]) {
+  for (const [file, w, h] of [["mark", 400, 100], ["social", 1280, 640]]) {
     await p.setViewportSize({width: w, height: h});
     await p.goto("file://" + join(here, "banner.html") + "?" + file); await p.waitForTimeout(400);
-    await p.screenshot({path: join(here, `${file}-${scheme}.png`), omitBackground: false});
+    await p.screenshot({path: join(here, `${file}-${scheme}.png`), omitBackground: file === "mark"});
   }
   await p.setViewportSize({width: 256, height: 256});
   await p.goto("file://" + join(here, "banner.html") + "?icon"); await p.waitForTimeout(400);

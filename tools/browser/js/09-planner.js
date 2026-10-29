@@ -454,7 +454,7 @@ function psalmBlock(p, pi, recent) {
         ${ch ? `<button class="small play" onclick="play('${esc(ch.id)}', this, ${c.shift || 0})">▶ Play</button>` : (c.name && !/^tone[:\s]/i.test(c.name)) ? '<span class="hint">not in the catalog</span>' : ""}
         ${ci > 0 ? `<span class="link" onclick="B.psalms[${pi}].chants.splice(${ci},1); renderBuilder()">remove</span>` : ""}</div>
         ${ch ? `<div class="moodrow chantfacts"><span class="hint"><span class="link" onclick="showChant('${esc(ch.id)}')">${esc(CN(ch.id))}</span>, ${ch.double ? "double" : "single"} · last used ${esc(lastUsed(ch.id) || "never")}</span>
-          ${val(ch, "mood").map(t => chip(t, mood.includes(t) ? "on" : "")).join("") || (ch.suggest ? ch.suggest.moods.map(t => chip(t, "maybe")).join("") : '<span class="hint">no moods yet</span>')}</div>` : ""}`;
+          ${val(ch, "mood").map(t => chip(t, mood.includes(t) ? "on" : "")).join("") || '<span class="hint">no moods yet</span>'}</div>` : ""}`;
     }).join("")}
     ${B.choir === false ? "" : `<p style="margin:4px 0"><span class="link" onclick="B.psalms[${pi}].chants.push({name:'',from:''}); renderBuilder()">+ change chant partway</span></p>`}
     ${res.length && B.choir !== false ? `<div style="margin:2px 0 6px">${fitReport(p, pi)}${(() => { const d = p.daggers || textDaggers(res); return `<div class="hint">† ${d.length ? "on v. " + d.join(", ") : "on no verse"}${p.daggers ? " (moved for this Sunday)" : " (as marked in the text)"} · <span class="link" onclick="B.psalms[${pi}].open=true; renderBuilder()">change</span></div>`; })()}</div>` : ""}

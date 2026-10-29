@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- The README banner (banner.html?banner, 1280×320), GitHub's social preview (?social, 1280×640) and the icon (?icon),
+<!-- The README's heading (banner.html?mark, 400×100), a banner (?banner, 1280×320), GitHub's social preview (?social, 1280×640) and the icon (?icon),
      light or dark as the system is. make.mjs takes the pictures. The chant is Turle in D minor (public domain),
      drawn by LilyPond; the verse is Psalm 23:1 of the 1979 BCP. -->
 <html><head><meta charset="utf-8"><style>
@@ -28,7 +28,10 @@ body.social .rule { display: none; }
 body.social .music { flex: none; width: 100%; }
 body.social h1 { font-size: 82px; } body.social .tag { font-size: 25px; } body.social .verse { font-size: 31px; } body.social .verse .n { font-size: 21px; } body.social .id svg { width: 140px; height: 140px; }
 body.icon .wrap { padding: 0; justify-content: center; } body.icon .id svg { width: 256px; height: 256px; } body.icon .music, body.icon .rule, body.icon h1, body.icon .tag { display: none; }
-body.icon { background: transparent; } body.icon html { background: transparent; }
+body.icon, body.mark { background: transparent; }
+/* the README's heading: the icon and the name, nothing else, on whatever GitHub's page is */
+body.mark .wrap { padding: 0 8px; } body.mark .id { gap: 20px; } body.mark .id svg { width: 84px; height: 84px; }
+body.mark h1 { font-size: 60px; } body.mark .tag, body.mark .rule, body.mark .music { display: none; }
 </style></head><body>
 <div class="wrap">
   <div class="id">
@@ -49,5 +52,6 @@ body.icon { background: transparent; } body.icon html { background: transparent;
       <span class="l2">I <span class="p">|</span> shall not <span class="p">|</span> be in <span class="p">|</span> want.</span></div>
   </div>
 </div>
-<script>document.body.className = location.search.slice(1) || "banner";</script>
+<script>document.body.className = location.search.slice(1) || "banner";
+  if (/^(mark|icon)$/.test(document.body.className)) document.documentElement.style.background = "transparent";</script>
 </body></html>

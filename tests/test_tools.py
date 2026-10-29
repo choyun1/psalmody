@@ -492,19 +492,6 @@ class MusicXMLScores(unittest.TestCase):
         self.assertTrue(any('key changes' in x for x in w) and any('time changes' in x for x in w), w)
 
 
-class Moods(unittest.TestCase):
-    def test_suggestions_follow_the_mode(self):
-        import moodsuggest
-        G, tm = moodsuggest.groups(), moodsuggest.text_moods()
-        major, _ = moodsuggest.suggest({'Mode': 'Major', 'ACP Psalm': ''}, {}, [], tm, G)
-        minor, _ = moodsuggest.suggest({'Mode': 'Minor', 'ACP Psalm': ''}, {}, [], tm, G)
-        self.assertTrue(major and all(G[t] in ('bright', 'calm') for t in major))
-        self.assertTrue(minor and all(G[t] in ('shadowed', 'dark') for t in minor))
-        leapy, why = moodsuggest.suggest({'Mode': 'Minor', 'ACP Psalm': '7'}, {'leaps': 2.0}, [], tm, G)
-        self.assertIn('dramatic', leapy)
-        self.assertIn('leaps in the tune', why)
-
-
 class Service(unittest.TestCase):
     def test_service_music_with_a_space(self):
         self.assertEqual(service.hymn('S 278')['number'], 'S278')

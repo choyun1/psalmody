@@ -1,9 +1,7 @@
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/brand/banner-dark.png">
-  <img alt="Psalmody: the psalms of the 1979 Prayer Book, set to Anglican chant and plainsong" src="docs/brand/banner-light.png">
-</picture>
-
-# Psalmody
+<h1><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/brand/mark-dark.png">
+  <img alt="Psalmody" src="docs/brand/mark-light.png" width="400">
+</picture></h1>
 
 Psalmody sets the psalms of the 1979 Book of Common Prayer for a parish choir, typeset with LilyPond, either to Anglican chant or to the Gregorian psalm tones. Texts and chants are kept apart, so any text can be sung to any chant. One short text file per Sunday becomes the choir's copy (a PDF) and cropped images for the service leaflet. A planner that runs in your web browser opens on the psalm the lectionary appoints, helps choose a chant by mood, key and when it was last sung, and keeps the rest of the service (hymns, anthems, voluntaries, service music) as the parish's record of what was sung.
 
@@ -65,7 +63,7 @@ It was built for the weekly use of one parish, St. Peter's Episcopal Church in C
 
 **The Psalms tab.** Every text, pointed. With the launcher, tick *edit the pointing* and click a verse to change it for good; the text as it was before its first change is kept (`parish/texts/originals/`), changed verses are marked ✱, and the original can always be put back.
 
-**The Chants tab.** Every chant in a list, with its key, your rating, when you last used it and its moods; click a column's heading to sort by it (again to reverse), and a chant to open it: the music, Play, the psalm the Anglican Chant Psalter sets it to, and your notes (where a chant they mention, Turle-2, shows by its name, Turle in D minor). A chant with no moods yet shows suggested ones (dashed): a guess from its mode, its tune, the psalms the ACP sets it to and the moods you've given others, to take with a click (`python tools/moodsuggest.py --check` says how often it agrees with yours).
+**The Chants tab.** Every chant in a list, with its key, your rating, when you last used it and its moods; click a column's heading to sort by it (again to reverse), and a chant to open it: the music, Play, the psalm the Anglican Chant Psalter sets it to, and your notes (where a chant they mention, Turle-2, shows by its name, Turle in D minor).
 
 ![The Chants tab](docs/images/chants.png)
 
