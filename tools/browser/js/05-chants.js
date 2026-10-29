@@ -196,6 +196,10 @@ function pinButtons(c) {
 }
 // where a chant comes from, short enough for a column: 'ACP 074', 'New Cathedral no. 12' (1909); the whole Source in the tooltip
 const srcShort = c => { const s = c.source || "", m = s.match(/New Cathedral Psalter.*?no\.\s*(\d+)/i); return m ? "New Cathedral no. " + m[1] : s; };
+// the book a chant comes from, for the Source filter and the headings when sorted by source
+const SOURCE_GROUPS = ["The Anglican Chant Psalter (1987)", "The New Cathedral Psalter Chants (1909)", "Other sources", "Source not given"];
+const srcGroup = c => SOURCE_GROUPS[/^ACP/.test(c.source || "") ? 0 : /New Cathedral/i.test(c.source || "") ? 1 : c.source ? 2 : 3];
+const SOURCES_PRESENT = SOURCE_GROUPS.filter(g => D.chants.some(c => srcGroup(c) === g));
 const pinFilter = (c, want) => !want || pinned(c, want);
 const ordinal = n => n + (n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th");
 const modeRank = c => /^maj/i.test(c.mode || "") ? 0 : /^min/i.test(c.mode || "") ? 1 : 2;
@@ -213,7 +217,7 @@ const SORT_FIELDS = {
   pinned:   {label: "pinned first (favorites, to try, to check)", dir: 1, val: c => pinned(c, "favorite") ? 0 : pinned(c, "to try") ? 1 : pinned(c, "to check") ? 2 : null,
              head: c => pinned(c, "favorite") ? "Favorites" : pinned(c, "to try") ? "To try" : pinned(c, "to check") ? "To check" : "The rest"},
   source:   {label: "source", dir: 1, val: c => srcShort(c).toLowerCase().replace(/\d+/g, n => n.padStart(4, "0")) || null,
-             head: c => /^ACP/.test(c.source || "") ? "The Anglican Chant Psalter (1987)" : /New Cathedral/i.test(c.source || "") ? "The New Cathedral Psalter Chants (1909)" : c.source ? "Other sources" : "Source not given"},
+             head: srcGroup},
   stale:    {label: "last used", dir: 1, val: c => lastUsed(c.id)},
   used:     {label: "times used", dir: -1, val: c => (usedBy[c.id] || []).length},
   range:    {label: "highest soprano note", dir: 1, val: topNote},
@@ -269,16 +273,17 @@ function sortAdd(view) {
 }
 
 // ---------- chants tab ----------
-const F = {moods: new Set(), mode: "", sd: "", key: "", minRating: 0, q: "", pin: ""};
+const F = {moods: new Set(), mode: "", sd: "", key: "", src: "", minRating: 0, q: "", pin: ""};
 SORTS.chants = {levels: sortLevels("chants", [{f: "composer", d: 1}]), render: () => { $("#sortbox").innerHTML = sortControl("chants", false); renderChants(); }};
 function renderChantsShell() {
-  $("#tab-chants").innerHTML = `<div class="layout"><aside>
-    <input type="search" id="q" placeholder="Composer or chant" style="width:100%">
+  $("#tab-chants").innerHTML = `${layoutOpen("chants")}
+    <input type="search" id="q" placeholder="Composer or chant" class="paneq">
     <h3>Mood</h3>${D.vocabulary.map(g => `<div class="row" style="margin-bottom:5px">${g.tags.map(t =>
       `<button class="chip g-${esc(g.group)}" data-mood="${esc(t)}">${esc(t)}</button>`).join("")}</div>`).join("")}
     <h3>Pinned</h3><select id="pinf"><option value="">all chants</option><option value="favorite">favorites</option><option value="to try">to try</option><option value="to check">to check</option></select>
     <h3>Mode</h3><select id="mode"><option value="">any</option><option>Major</option><option>Minor</option><option value="other">modal / other</option></select>
     <h3>Key</h3><select id="keyf"><option value="">any</option>${KEYS_PRESENT.map(k => `<option>${esc(k)}</option>`).join("")}</select>
+    <h3>Source</h3><select id="srcf"><option value="">any</option>${SOURCES_PRESENT.map(g => `<option value="${esc(g)}">${esc(g.replace(/^The /, "").replace(" Chants", "").replace(/^[OS]/, x => x.toLowerCase()))}</option>`).join("")}</select>
     <h3>Single or double</h3><select id="sd"><option value="">either</option><option value="s">single</option><option value="d">double</option></select>
     <h3>Rating at least</h3><select id="rating"><option value="0">any</option>${[1, 2, 3, 4, 5].map(n => `<option>${n}</option>`).join("")}</select>
     <h3>Sort</h3><div id="sortbox">${sortControl("chants", false)}</div>
@@ -289,7 +294,7 @@ function renderChantsShell() {
   if (CV.tones) { $("#tab-chants aside").style.display = "none"; $("#tab-chants .layout").style.gridTemplateColumns = "1fr"; }
   // the controls show the filters still in force (after the tones and back)
   $("#q").value = F.q; $("#pinf").value = F.pin || ""; $("#mode").value = F.mode || "";
-  $("#sd").value = F.sd || ""; $("#keyf").value = F.key || ""; $("#rating").value = String(F.minRating || 0);
+  $("#sd").value = F.sd || ""; $("#keyf").value = F.key || ""; $("#srcf").value = F.src || ""; $("#rating").value = String(F.minRating || 0);
   document.querySelectorAll("[data-mood]").forEach(b => b.classList.toggle("on", F.moods.has(b.dataset.mood)));
   $("#q").oninput = e => { F.q = e.target.value.toLowerCase(); renderChants(); };
   document.querySelectorAll("[data-mood]").forEach(b => b.onclick = () => {
@@ -298,6 +303,7 @@ function renderChantsShell() {
   $("#mode").onchange = e => { F.mode = e.target.value; renderChants(); };
   $("#sd").onchange = e => { F.sd = e.target.value; renderChants(); };
   $("#keyf").onchange = e => { F.key = e.target.value; renderChants(); };
+  $("#srcf").onchange = e => { F.src = e.target.value; renderChants(); };
   $("#rating").onchange = e => { F.minRating = +e.target.value; renderChants(); };
 }
 const CV = {tones: false, mode: 0};
@@ -336,6 +342,7 @@ function renderChants() {
     if (F.mode === "other" ? ["Major", "Minor"].includes(c.mode) : F.mode && c.mode !== F.mode) return false;
     if (F.sd && (F.sd === "d") !== c.double) return false;
     if (F.key && keyName(c) !== F.key) return false;
+    if (F.src && srcGroup(c) !== F.src) return false;
     if (r < F.minRating) return false;
     return true;
   });

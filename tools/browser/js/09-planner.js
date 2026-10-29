@@ -155,7 +155,7 @@ function renderBuilder() {
   const recent = recentChants(B.date);
   const text = sundayText();
   if (B.pdf && B.pdfText !== text) B.pdf = "";        // the PDF no longer matches: fall back to the quick preview
-  $("#tab-builder").innerHTML = `<div class="layout"><aside>
+  $("#tab-builder").innerHTML = `${layoutOpen("builder")}
       <h3>Planning</h3><div class="seg"><button class="${B.mode !== "psalm" ? "on" : ""}" onclick="setMode('service')">Whole service</button><button class="${B.mode === "psalm" ? "on" : ""}" onclick="setMode('psalm')">Psalm only</button></div>
       <h3>Day</h3><input type="date" id="bdate" value="${esc(B.date)}" style="width:100%">
       <p class="hint" style="margin:6px 0">${swatch(B.date)}${c ? lectLink(c.label + " · Year " + c.year, ((SV.lect || {})[B.date] || [])[3]) : B.date ? "Not in the calendar: type the psalm yourself." : "No date: a psalm on its own (a rehearsal, a one-off). Name the file below."}${B.mode === "psalm" && B.date ? ` <span class="link" onclick="setDate('')">no date</span>` : ""}</p>

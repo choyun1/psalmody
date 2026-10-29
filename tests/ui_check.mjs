@@ -54,6 +54,18 @@ try {
     await page.fill("#q", "goss"); await wait(200);
     await page.fill("#q", "");
   });
+  await step("Chants: filter by source; the side pane folds away and back", async () => {
+    const all = await page.textContent("#ccount");
+    await page.selectOption("#srcf", {index: 1}); await wait(200);
+    if (await page.textContent("#ccount") === all) throw new Error("the source filter changed nothing");
+    await page.selectOption("#srcf", ""); await wait(200);
+    await page.click("#tab-chants .fold"); await wait(100);
+    if (await page.isVisible("#q")) throw new Error("the pane didn't fold");
+    await page.click("nav button[data-tab=texts]"); await wait(200); await page.click("nav button[data-tab=chants]"); await wait(200);
+    if (await page.isVisible("#q")) throw new Error("the fold wasn't kept");
+    await page.click("#tab-chants .fold"); await wait(100);
+    if (!await page.isVisible("#q")) throw new Error("the pane didn't come back");
+  });
   await step("Chants: a panel opens and shuts in the card; the row shuts", async () => {
     await page.click("#clist .card .act:has-text('Edit mood')"); await wait(400);
     if (!await page.locator("#clist .card .edit").count()) throw new Error("the panel didn't open");
