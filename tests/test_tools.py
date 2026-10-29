@@ -271,7 +271,8 @@ class Setup(unittest.TestCase):
 
     def test_every_feast_has_its_psalm(self):
         import csv, setup
-        keys = {r['day'] for r in csv.DictReader(open(os.path.join(ROOT, 'reference', 'rcl_psalms.csv'), encoding='utf-8'))}
+        with open(os.path.join(ROOT, 'reference', 'rcl_psalms.csv'), encoding='utf-8') as fh:
+            keys = {r['day'] for r in csv.DictReader(fh)}
         self.assertEqual([k for _, k, _ in setup.FEASTS if k not in keys], [])
 
     def test_the_folder(self):

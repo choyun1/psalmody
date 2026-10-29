@@ -62,13 +62,13 @@ def make_parish(name, track='2', patronal='', optional_verses='sing', target=TAR
         raise ValueError('there is a parish folder already')
     text = settings_text(paths.read(os.path.join(TEMPLATE, 'parish.txt')), name, track, patronal, optional_verses)
     shutil.copytree(TEMPLATE, target, ignore=shutil.ignore_patterns('__pycache__', '.git'))
-    for f in os.listdir(os.path.join(target, 'sundays')):          # the template's example Sunday isn't yours
+    sundays = os.path.join(target, 'sundays')    # (not in a fresh download of the template: git ignores sundays/)
+    os.makedirs(sundays, exist_ok=True)
+    for f in os.listdir(sundays):                 # an example Sunday in the template isn't yours
         if f.endswith('.txt'):
-            os.remove(os.path.join(target, 'sundays', f))
+            os.remove(os.path.join(sundays, f))
     with open(os.path.join(target, 'parish.txt'), 'w', encoding='utf-8') as fh:
         fh.write(text)
-    with open(os.path.join(target, '.gitignore'), 'w', encoding='utf-8') as fh:
-        fh.write('__pycache__/\n*.pyc\n**/.img_*/\n')
     drawn = os.path.join(paths.CORE, 'site', 'notation')         # chants drawn already (without a parish folder)
     if os.path.isdir(drawn):
         shutil.copytree(drawn, os.path.join(target, 'site', 'notation'))    # (keeping their times: not redrawn)

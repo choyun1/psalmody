@@ -1,0 +1,5 @@
+# Proper 27, Year A (Track 2): an example. Start a real one from the planner, or with
+#   python tools/new_sunday.py 2026-11-08
+date:    2026-11-08
+psalm:   70
+chant:   Turle-2
