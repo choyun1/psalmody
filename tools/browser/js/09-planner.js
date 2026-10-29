@@ -163,7 +163,7 @@ function renderBuilder() {
     ${B.psalms.map((p, pi) => psalmBlock(p, pi, recent)).join("")}
     <p><span class="link" onclick="addPsalm()">+ another psalm</span></p>
     <div class="card"><details ${B.previewOpen ? "open" : ""} ontoggle="B.previewOpen=this.open"><summary>Preview</summary>
-      ${SERVER ? `<p style="margin:8px 0"><button class="small" onclick="pdfPreview()">Exact PDF preview</button> <span class="hint">LilyPond takes a few seconds</span></p>` : ""}
+      ${SERVER ? `<p style="margin:8px 0"><button class="small" ${B.busy ? "disabled" : ""} onclick="pdfPreview()">${B.busy && /PDF preview/.test(B.status) ? "Making the PDF…" : "Exact PDF preview"}</button> <span class="hint">LilyPond takes a few seconds</span></p>` : ""}
       ${B.pdf ? `<p style="margin:4px 0"><a href="/${encodeURI(B.pdf)}" target="_blank">Open the PDF in its own tab</a> · <span class="link" onclick="B.pdf=''; renderBuilder()">back to the quick preview</span></p>
         <iframe src="/${encodeURI(B.pdf)}?t=${Date.now()}" style="width:100%;height:80vh;border:1px solid var(--line);border-radius:6px;background:#fff"></iframe>` : quickPreview()}
     </details></div>
@@ -172,9 +172,9 @@ function renderBuilder() {
       <pre id="bfile" style="font: 14px/1.5 ui-monospace, Menlo, Consolas, monospace; white-space: pre-wrap; margin:0">${esc(text)}</pre>
       <p style="margin:10px 0 0">
         <button class="small primary" onclick="saveSunday()">${SERVER ? "Save" : "Save file…"}</button>
-        ${SERVER ? `<button class="small" onclick="checkSunday()">Save &amp; check</button>
-        <button class="small primary" onclick="buildSunday(false)">Save &amp; build PDF + images</button>
-        <button class="small" onclick="buildSunday(true)">PDF only</button>` : ""}
+        ${SERVER ? `<button class="small" ${B.busy ? "disabled" : ""} onclick="checkSunday()">Save &amp; check</button>
+        <button class="small primary" ${B.busy ? "disabled" : ""} onclick="buildSunday(false)">Save &amp; build PDF + images</button>
+        <button class="small" ${B.busy ? "disabled" : ""} onclick="buildSunday(true)">PDF only</button>` : ""}
       </p>
       ${SERVER ? "" : `<p class="hint">Saving writes parish/sundays/${esc(B.name)}.txt (Chrome/Edge) or downloads it. To check and build from here, open the browser with the Psalter launcher (or <code>python tools/serve.py</code>).</p>`}
       ${B.status ? `<p><b style="font-weight:normal">${esc(B.status)}</b></p>` : ""}
@@ -307,7 +307,15 @@ function transposedImg(id, shift) {
   });
   return `<img data-trans="${esc(k)}" src="${esc(chantImg(C[id]))}" alt="${esc(id)}" style="opacity:.35">`;
 }
-async function pdfPreview() {
+// one job at a time: while the launcher checks or builds, the buttons wait (a second click does nothing)
+async function busy(fn) {
+  if (B.busy) return;
+  B.busy = true; renderBuilder();
+  try { await fn(); } catch (e) { B.status = "Something went wrong:"; B.log = String(e); }
+  finally { B.busy = false; renderBuilder(); }
+}
+function pdfPreview() { return busy(pdfPreviewNow); }
+async function pdfPreviewNow() {
   if (!(await saveSunday())) return;
   B.status = "Making the PDF preview…"; B.log = ""; B.pdf = ""; renderBuilder();
   const j = await post("/api/build", {name: B.name, pdfOnly: true});
@@ -413,10 +421,10 @@ function psalmBlock(p, pi, recent) {
           [...new Set([-4, -3, -2, -1, 0, 1, 2, 3, 4, c.shift || 0])].sort((a, b) => a - b).map(s => `<option value="${s}" ${s === (c.shift || 0) ? "selected" : ""}>${esc(keyAt(ch, s))}${s ? " (" + shiftWords(s) + ")" : " (as written)"}</option>`).join("")}</select>` : ""}
         ${ci > 0 ? `from verse <input type="text" value="${esc(c.from)}" style="width:50px" onchange="B.psalms[${pi}].chants[${ci}].from=this.value.trim(); renderBuilder()">` : ""}
         ${/^tone[:\s]/i.test(c.name) ? toneMenus(c.name, `t => { B.psalms[${pi}].chants[${ci}].name = t; renderBuilder(); }`) : ""}
-        ${ch ? `<span class="hint">${esc(CN(ch.id))}, ${ch.double ? "double" : "single"} · last used ${esc(lastUsed(ch.id) || "never")}</span>
-          ${val(ch, "mood").map(t => chip(t, mood.includes(t) ? "on" : "")).join("") || (ch.suggest ? ch.suggest.moods.map(t => chip(t, "maybe")).join("") : '<span class="hint">no moods yet</span>')}
-          <span class="link" onclick="showChant('${esc(ch.id)}')">see</span> <button class="small play" onclick="play('${esc(ch.id)}', this, ${c.shift || 0})">▶ Play</button>` : (c.name && !/^tone[:\s]/i.test(c.name)) ? '<span class="hint">not in the catalog</span>' : ""}
-        ${ci > 0 ? `<span class="link" onclick="B.psalms[${pi}].chants.splice(${ci},1); renderBuilder()">remove</span>` : ""}</div>`;
+        ${ch ? `<button class="small play" onclick="play('${esc(ch.id)}', this, ${c.shift || 0})">▶ Play</button>` : (c.name && !/^tone[:\s]/i.test(c.name)) ? '<span class="hint">not in the catalog</span>' : ""}
+        ${ci > 0 ? `<span class="link" onclick="B.psalms[${pi}].chants.splice(${ci},1); renderBuilder()">remove</span>` : ""}</div>
+        ${ch ? `<div class="moodrow chantfacts"><span class="hint"><span class="link" onclick="showChant('${esc(ch.id)}')">${esc(CN(ch.id))}</span>, ${ch.double ? "double" : "single"} · last used ${esc(lastUsed(ch.id) || "never")}</span>
+          ${val(ch, "mood").map(t => chip(t, mood.includes(t) ? "on" : "")).join("") || (ch.suggest ? ch.suggest.moods.map(t => chip(t, "maybe")).join("") : '<span class="hint">no moods yet</span>')}</div>` : ""}`;
     }).join("")}
     ${B.choir === false ? "" : `<p style="margin:4px 0"><span class="link" onclick="B.psalms[${pi}].chants.push({name:'',from:''}); renderBuilder()">+ change chant partway</span></p>`}
     ${res.length && B.choir !== false ? `<div style="margin:2px 0 6px">${fitReport(p, pi)}${(() => { const d = p.daggers || textDaggers(res); return `<div class="hint">† ${d.length ? "on v. " + d.join(", ") : "on no verse"}${p.daggers ? " (moved for this Sunday)" : " (as marked in the text)"} · <span class="link" onclick="B.psalms[${pi}].open=true; renderBuilder()">change</span></div>`; })()}</div>` : ""}
@@ -447,13 +455,15 @@ async function saveSunday() {
   } catch (e) { if (e.name !== "AbortError") B.status = "Could not save: " + e.message; }
   renderBuilder();
 }
-async function checkSunday() {
+function checkSunday() { return busy(checkSundayNow); }
+async function checkSundayNow() {
   if (!(await saveSunday())) return;
   B.status = "Checking…"; renderBuilder();
   const j = await post("/api/check", {name: B.name});
   B.status = j.ok ? "Checks done." : "Problem:"; B.log = j.log || j.error; renderBuilder();
 }
-async function buildSunday(pdfOnly) {
+function buildSunday(pdfOnly) { return busy(() => buildSundayNow(pdfOnly)); }
+async function buildSundayNow(pdfOnly) {
   if (!(await saveSunday())) return;
   B.status = "Building… (LilyPond takes a little while)"; B.log = ""; B.files = []; renderBuilder();
   const j = await post("/api/build", {name: B.name, pdfOnly});
