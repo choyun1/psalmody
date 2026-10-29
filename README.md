@@ -63,7 +63,7 @@ It was built for the weekly use of one parish, St. Peter's Episcopal Church in C
 
 **The Psalms tab.** Every text, pointed. With the launcher, tick *edit the pointing* and click a verse to change it for good; the text as it was before its first change is kept (`parish/texts/originals/`), changed verses are marked ✱, and the original can always be put back.
 
-**The Chants tab.** Every chant in a list, with its key, your rating, when you last used it and its moods; click a column's heading to sort by it (again to reverse), and a chant to open it: the music, Play, the psalm the Anglican Chant Psalter sets it to, and your notes (where a chant they mention, Turle-2, shows by its name, Turle in D minor).
+**The Chants tab.** Every chant in a list, with its key, its moods, your rating, when you last used it and where it comes from (the Anglican Chant Psalter, the New Cathedral Psalter Chants of 1909 …); click a column's heading to sort by it (again to reverse), and a chant to open it: the music, Play, the psalm the Anglican Chant Psalter sets it to, and your notes (where a chant they mention, Turle-2, shows by its name, Turle in D minor).
 
 ![The Chants tab](docs/images/chants.png)
 

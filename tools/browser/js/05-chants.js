@@ -194,6 +194,8 @@ function pinButtons(c) {
   return `<span data-pins="${esc(c.id)}" style="float:right;margin-right:6px">${PINS.map(([p, on, off, label]) =>
     `<button class="small pin ${pinned(c, p) ? "on" : ""}" title="${pinned(c, p) ? "remove from " : "mark as "}${label}" onclick="togglePin('${esc(c.id)}','${p}')">${pinned(c, p) ? on : off}${pinned(c, p) ? " " + label : ""}</button>`).join(" ")}</span>`;
 }
+// where a chant comes from, short enough for a column: 'ACP 074', 'New Cathedral no. 12' (1909); the whole Source in the tooltip
+const srcShort = c => { const s = c.source || "", m = s.match(/New Cathedral Psalter.*?no\.\s*(\d+)/i); return m ? "New Cathedral no. " + m[1] : s; };
 const pinFilter = (c, want) => !want || pinned(c, want);
 const ordinal = n => n + (n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th");
 const modeRank = c => /^maj/i.test(c.mode || "") ? 0 : /^min/i.test(c.mode || "") ? 1 : 2;
@@ -210,6 +212,8 @@ const SORT_FIELDS = {
   rating:   {label: "rating", dir: -1, val: c => val(c, "rating") || null},
   pinned:   {label: "pinned first (favorites, to try, to check)", dir: 1, val: c => pinned(c, "favorite") ? 0 : pinned(c, "to try") ? 1 : pinned(c, "to check") ? 2 : null,
              head: c => pinned(c, "favorite") ? "Favorites" : pinned(c, "to try") ? "To try" : pinned(c, "to check") ? "To check" : "The rest"},
+  source:   {label: "source", dir: 1, val: c => srcShort(c).toLowerCase().replace(/\d+/g, n => n.padStart(4, "0")) || null,
+             head: c => /^ACP/.test(c.source || "") ? "The Anglican Chant Psalter (1987)" : /New Cathedral/i.test(c.source || "") ? "The New Cathedral Psalter Chants (1909)" : c.source ? "Other sources" : "Source not given"},
   stale:    {label: "last used", dir: 1, val: c => lastUsed(c.id)},
   used:     {label: "times used", dir: -1, val: c => (usedBy[c.id] || []).length},
   range:    {label: "highest soprano note", dir: 1, val: topNote},
@@ -326,7 +330,7 @@ function renderChants() {
   if (CV.tones) { renderTones(); return; }
   let list = D.chants.filter(c => {
     const mood = val(c, "mood"), r = val(c, "rating") || 0;
-    if (F.q && !(c.id + " " + c.composer + " " + c.label).toLowerCase().includes(F.q)) return false;
+    if (F.q && !(c.id + " " + c.composer + " " + c.label + " " + (c.source || "")).toLowerCase().includes(F.q)) return false;
     if (F.moods.size && ![...F.moods].some(t => mood.includes(t))) return false;
     if (!pinFilter(c, F.pin)) return false;
     if (F.mode === "other" ? ["Major", "Minor"].includes(c.mode) : F.mode && c.mode !== F.mode) return false;
@@ -343,7 +347,7 @@ function renderChants() {
   const heading = SORT_FIELDS[levels[0].f].head;
   const first = SORTS.chants.levels[0];
   const col = (f, label, cls = "") => `<span class="meta sortable ${cls} ${first.f === f ? "on" : ""}" title="Sort by ${esc(SORT_FIELDS[f].label)} (click again to reverse)" onclick="colSort('${f}')">${label}${first.f === f ? (first.d > 0 ? " ▲" : " ▼") : ""}</span>`;
-  $("#clist").innerHTML = `<div class="clist"><div class="crow head">${col("composer", "Chant")}${col("key", "Key")}${col("rating", "Rating")}${col("stale", "Last sung")}<span class="meta mo">Moods</span></div>` + list.map(c => {
+  $("#clist").innerHTML = `<div class="clist"><div class="crow head">${col("composer", "Chant")}${col("key", "Key")}<span class="meta mo">Moods</span>${col("rating", "Rating")}${col("stale", "Last sung")}${col("source", "Source", "src")}</div>` + list.map(c => {
     let head = "";
     if (heading) {
       const k = heading(c);
@@ -352,8 +356,8 @@ function renderChants() {
     }
     const open = OPEN.has(c.id);
     return head + `<div class="crow ${open ? "open" : ""} ${JUST === "row:" + c.id ? "just" : ""}" data-id="${esc(c.id)}" onclick="toggleRow('${esc(c.id)}')" title="${open ? "Close" : "Open"} ${esc(CN(c.id))}"><span class="nm"><span class="caret">▸</span>${pinMarks(c) ? pinMarks(c) + " " : ""}${esc(CN(c.id))}</span>
-      <span class="meta">${esc(keyName(c))}${c.double ? "" : ", single"}</span><span>${stars(val(c, "rating"))}</span>
-      <span class="meta">${esc(lastUsed(c.id) || "never")}</span><span class="mo">${val(c, "mood").map(t => chip(t)).join(" ")}</span></div>`
+      <span class="meta">${esc(keyName(c))}${c.double ? "" : ", single"}</span><span class="mo">${val(c, "mood").map(t => chip(t)).join(" ")}</span><span>${stars(val(c, "rating"))}</span>
+      <span class="meta">${esc(lastUsed(c.id) || "never")}</span><span class="meta src" title="${esc(c.source || "")}">${esc(srcShort(c))}</span></div>`
       + (open ? chantCard(c, {editing: openEdits.has(c.id)}) : "");
   }).join("") + `</div>`;
 }
