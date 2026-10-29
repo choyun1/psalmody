@@ -26,8 +26,19 @@ button.small { cursor: pointer; }
 button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
 main { padding: 18px 24px 60px; }
 .layout { display: grid; grid-template-columns: 250px 1fr; gap: 26px; align-items: start; }
-@media (max-width: 760px) { .layout { grid-template-columns: 1fr; } main, header { padding-left: 16px; padding-right: 16px; } }
-aside { position: sticky; top: 74px; max-height: calc(100vh - 90px); overflow: auto; }
+.layout > * { min-width: 0; }                  /* a long line wraps or scrolls in its column instead of widening the page */
+@media (max-width: 760px) { .layout, .layout.folded { grid-template-columns: 1fr; } main, header { padding-left: 16px; padding-right: 16px; } }
+aside { position: sticky; top: 74px; max-height: calc(100vh - 90px); overflow: auto; scrollbar-width: none; }
+aside::-webkit-scrollbar { display: none; }      /* scrolls with the wheel or a finger, like the page, with no bar of its own */
+/* folding a side pane away: ‹ hides it to a narrow strip, › brings it back */
+.layout.folded { grid-template-columns: 30px 1fr; }
+.layout.folded aside > :not(.fold) { display: none; }
+aside .fold { float: right; margin: 0 0 0 6px; padding: 4px 9px; color: var(--muted); line-height: 1.2; }
+aside .fold:hover { color: var(--accent); border-color: var(--accent); }
+.layout.folded aside .fold { float: none; margin: 0; }
+aside select { max-width: 100%; }
+aside .paneq { width: calc(100% - 40px); }
+aside > .fold + h3 { margin-top: 6px; }
 aside h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: normal; margin: 16px 0 6px; }
 aside .row { display: flex; gap: 6px; flex-wrap: wrap; }
 .chip { display: inline-block; font-size: 14px; padding: 1px 9px; border-radius: 99px; border: 1px solid currentColor;

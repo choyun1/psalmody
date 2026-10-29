@@ -18,6 +18,15 @@ const GROUP = {}; const ORDER = [];
 D.vocabulary.forEach(g => g.tags.forEach(t => { GROUP[t] = g.group; ORDER.push(t); }));
 const gclass = t => GROUP[t] ? "g-" + GROUP[t] : "";
 const info = t => `<span class="info" title="${esc(t)}">i</span>`;  // an explanation, on hover
+// a side pane that folds away to a narrow strip (‹ / ›), remembered for each tab in this browser
+const folded = name => { try { return localStorage.getItem("psalter-fold-" + name) === "1"; } catch (e) { return false; } };
+const layoutOpen = name => `<div class="layout ${folded(name) ? "folded" : ""}"><aside><button class="small fold" onclick="foldPane(this, '${name}')" ${foldTitle(folded(name))}>${folded(name) ? "›" : "‹"}</button>`;
+const foldTitle = on => `title="${on ? "Show" : "Hide"} this pane" aria-expanded="${!on}"`;
+function foldPane(btn, name) {
+  const lay = btn.closest(".layout"), on = lay.classList.toggle("folded");
+  btn.textContent = on ? "›" : "‹"; btn.title = (on ? "Show" : "Hide") + " this pane"; btn.setAttribute("aria-expanded", String(!on));
+  try { localStorage.setItem("psalter-fold-" + name, on ? "1" : "0"); } catch (e) {}
+}
 const chip = (t, extra = "") => `<span class="chip ${gclass(t)} ${extra}">${esc(t)}</span>`;
 
 

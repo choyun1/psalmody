@@ -108,8 +108,8 @@ async function saveVerse() {
 // ---------- psalms tab ----------
 let curText = null, textOpen = true;
 function renderTextsShell() {
-  $("#tab-texts").innerHTML = `<div class="layout"><aside>
-    <input type="search" id="tq" placeholder="Number, title or words" style="width:100%">
+  $("#tab-texts").innerHTML = `${layoutOpen("texts")}
+    <input type="search" id="tq" placeholder="Number, title or words" class="paneq">
     <h3>Mood</h3>${D.vocabulary.map(g => `<div class="row" style="margin-bottom:5px">${g.tags.map(t =>
       `<button class="chip g-${esc(g.group)}" data-tmood="${esc(t)}">${esc(t)}</button>`).join("")}</div>`).join("")}
     <h3>Psalms</h3><ul class="list" id="tlist"></ul></aside><div id="tdetail"></div></div>`;
