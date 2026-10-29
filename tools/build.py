@@ -14,6 +14,8 @@ A Sunday file looks like this (one item per line; # starts a comment):
     chant:   Smart-1 from 7           # change chant at verse 7
     chant:   Wesley-2 from 13
     chant:   Turle-2 down 2           # transposed: up or down so many semitones (here D minor to C minor)
+    verse:   7  And let them | know that this | is your | hand, *       # this Sunday's pointing of a verse,
+                that | you, O | Lord, have | done it.                  # the text's own left as it is
     tone:    VIIa                     # instead of chant: a Gregorian psalm tone (Liber Usualis), e.g. VIIa, 1D2, 8G, per
     gloria:  no                       # default: yes for Office/Evensong, no otherwise
     reprint: yes                      # reprint the chant at the top of a page (default yes)
@@ -43,10 +45,17 @@ def parse_sunday(path):
     import service
     s = {'date': None, 'service': 'Eucharist', 'gloria': None, 'reprint': True, 'sung': False, 'choir': True,
          'items': [], 'music': []}
+    verse = None                                   # a verse: line, collecting its indented lines
     for raw in paths.read(path).splitlines():
         line = raw.split('#', 1)[0].strip()
         if not line:
             continue
+        if verse is not None and raw[:1] in ' \t':
+            verse.append(line)
+            continue
+        if verse is not None:
+            _pointing(s, verse, path)
+            verse = None
         key, _, val = line.partition(':')
         key, val = key.strip().lower(), val.strip()
         if key == 'date':
@@ -83,6 +92,10 @@ def parse_sunday(path):
                     {int(x) for x in re.split(r'[\s,]+', v.replace('†', '').replace('v.', '')) if x}
             except ValueError:
                 raise SystemExit(f'{path}: cannot read {key} line {val!r} (verse numbers, e.g. "daggers: 7, 15", or "none")')
+        elif key == 'verse':
+            if not s['items']:
+                raise SystemExit(f'{path}: a verse: line must come after a psalm: line')
+            verse = [val]
         elif key in ('chant', 'tone'):
             if not s['items']:
                 raise SystemExit(f'{path}: a {key}: line must come after a psalm: line')
@@ -99,12 +112,25 @@ def parse_sunday(path):
             s['music'].append((key, val))         # the rest of the service
         else:
             raise SystemExit(f'{path}: unknown line {line!r}')
+    if verse is not None:
+        _pointing(s, verse, path)
     if s['gloria'] is None:
         s['gloria'] = s['service'].lower() in ('office', 'evensong', 'morning prayer', 'evening prayer')
     if not s['date']:
         stem = os.path.splitext(os.path.basename(path))[0]
         s['date'] = stem if re.match(r'^\d{4}-\d\d-\d\d', stem) else ''     # a psalm on its own may have no date
     return s
+
+
+def _pointing(s, lines, path):
+    """A verse: line and the indented lines after it -> this Sunday's pointing of that verse, for the psalm above."""
+    try:
+        vs = pointed.parse('x\n' + '\n'.join([lines[0]] + ['    ' + l for l in lines[1:]]))['verses']
+    except ValueError as e:
+        raise SystemExit(f'{path}: cannot read the verse: line {lines[0]!r} ({e})')
+    if len(vs) != 1:
+        raise SystemExit(f'{path}: a verse: line holds one verse, its number first: {lines[0]!r}')
+    s['items'][-1].setdefault('pointing', {})[vs[0]['n']] = vs[0]
 
 
 def verse_list(ns):
@@ -388,6 +414,8 @@ def plan(sunday):
         for path, take in resolve(item['spec'], item.get('optional', optional_default())):
             doc = pointed.load(path)
             vs = [v for v in doc['verses'] if take is None or v['n'] in take]
+            if item.get('pointing'):                      # this Sunday's pointing of some verses
+                vs = [item['pointing'].get(v['n'], v) for v in vs]
             if 'daggers' in item:                        # this Sunday's own † placement
                 vs = [dict(v, dagger=v['n'] in item['daggers']) for v in vs]
             segs.append((path, doc, vs))
@@ -440,6 +468,13 @@ def checks(sunday, psalms, chants):
             sing = it.get('optional', optional_default())
             out.append(f"Psalm {it['spec']}: optional vv. {verse_list(opt)} " +
                        ('sung' if sing else 'left out') + f" (optional: {'no' if sing else 'yes'} under the psalm to change)")
+    import check_texts
+    for ps in psalms:                              # this Sunday's own pointing: still one * and the BCP's words?
+        it = next((i for i in sunday['items'] if i['spec'] == ps['spec']), {})
+        mine = {n: v for n, v in (it.get('pointing') or {}).items() if any(x['n'] == n for x in ps['doc']['verses'])}
+        for n, v in sorted(mine.items()):
+            probs = check_texts.verse_problems(ps['id'] + '.txt', v)
+            out.append(f"{ps['doc']['title']} v. {n}: this Sunday's pointing" + (' ⚠ ' + '; '.join(probs) if probs else ''))
     for ps in psalms:
         for sec in ps['sections']:
             c = chants[sec['chant']]

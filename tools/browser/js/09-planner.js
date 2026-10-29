@@ -49,6 +49,9 @@ function sundayText() {
     if (p.intonation && (p.intonation === "every") !== intoneDefault(p) && p.chants.some(c => /^tone[:\s]/i.test(c.name))) L.push(`intonation: ${p.intonation === "every" ? "every verse" : "first verse"}`);
     if (optionalVerses(p.spec).length && p.optional != null && p.optional !== !!D.parish.optional) L.push(`optional: ${p.optional ? "yes" : "no"}           # ${p.optional ? "sing" : "leave out"} the verses in brackets`);
     if (p.daggers) L.push(`daggers: ${p.daggers.length ? p.daggers.join(", ") : "none"}            # this Sunday's †, in place of the text's`);
+    Object.keys(p.pointing || {}).sort((a, b) => a - b).forEach(n => {      // this Sunday's pointing of a verse
+      p.pointing[n].split("\n").forEach((l, i) => L.push(i ? "         " + l.trim() : "verse:   " + l));
+    });
   });
   if (B.gloria !== "auto") L.push(`gloria:  ${B.gloria}`);
   if (!B.reprint) L.push("reprint: no");
@@ -61,8 +64,12 @@ function sundayText() {
 function parseSunday(text) {
   B.psalms = []; B.service = "Eucharist"; B.gloria = "auto"; B.reprint = true; B.sung = false; B.choir = true; B.svc = {}; B.also = ""; B.note = ""; B.extra = {};
   const alsoL = [], noteL = [], seqL = [];
+  let verse = null;                              // a verse: line, collecting its indented lines
+  const endVerse = () => { if (verse && B.psalms.length) { const v = parseVerseBlock(verse.join("\n")); const p = B.psalms[B.psalms.length - 1]; if (v) p.pointing = Object.assign({}, p.pointing, {[v[0]]: verse.join("\n")}); } verse = null; };
   text.split("\n").forEach(raw => {
     const line = raw.split("#")[0].trim(); if (!line) return;
+    if (verse && /^[ \t]/.test(raw)) { verse.push("    " + line); return; }
+    endVerse();
     const i = line.indexOf(":"); if (i < 0) return;
     const k = line.slice(0, i).trim().toLowerCase(), v = line.slice(i + 1).trim();
     if (k === "service") B.service = v;
@@ -71,6 +78,7 @@ function parseSunday(text) {
     else if (k === "sung") B.sung = /^(y|yes|true|on)$/i.test(v);
     else if (k === "choir") B.choir = !/^(n|no|false|off|none)$/i.test(v);
     else if (k === "psalm") B.psalms.push({spec: v, chants: [], daggers: null});
+    else if (k === "verse" && B.psalms.length) verse = [v];
     else if (k === "intonation" && B.psalms.length) B.psalms[B.psalms.length - 1].intonation = /^(every|all|yes)/i.test(v) ? "every" : "first";
     else if (k === "optional" && B.psalms.length) B.psalms[B.psalms.length - 1].optional = /^(y|yes|true|on|sing|include)$/i.test(v);
     else if ((k === "daggers" || k === "dagger") && B.psalms.length) B.psalms[B.psalms.length - 1].daggers = /^(none|no|-)?$/i.test(v) ? [] : v.split(/[\s,]+/).map(x => parseInt(x.replace(/[^0-9]/g, ""))).filter(x => x);
@@ -80,6 +88,7 @@ function parseSunday(text) {
     else if (PLUGIN_KEYS.has(k)) B.extra[k] = (B.extra[k] ? B.extra[k] + "\n" : "") + raw.slice(raw.indexOf(":") + 1).trim();
     else if ((k === "chant" || k === "tone") && B.psalms.length) { const m = v.match(/^(.+?)(?:\s+from\s+(\d+))?$/); if (m) { const r = k === "tone" ? {name: "tone " + m[1], shift: 0} : chantRef(m[1]); B.psalms[B.psalms.length - 1].chants.push({name: r.name === "???" ? "" : r.name, from: m[2] || "", shift: r.shift}); } }
   });
+  endVerse();
   B.also = alsoL.join("\n"); B.note = noteL.join("\n"); B.seq = seqL;
   B.psalms.forEach(p => { if (!p.chants.length) p.chants.push({name: "", from: ""}); });
   if (!B.psalms.length) B.psalms = [{spec: "", chants: [{name: "", from: ""}]}];
@@ -209,7 +218,9 @@ function pointedHTML(body, verses, pi, textId) {
   const vn = (n, dag) => pi === undefined || n === "" ? `<span class="vn">${dag ? "† " : ""}${esc(n)}</span>`
     : `<span class="vn vclick" title="click: † on this verse or off (this file only)" onclick="toggleDagger(${pi}, ${n})">${dag ? "† " : ""}${esc(n)}</span>`;
   const t = textId && D.texts.find(x => x.id === textId);
-  const pen = n => t && SERVER && n !== "" ? ` <span class="link pen" title="Edit this verse's pointing (for every use of this text)" onclick="startEdit(${JSON.stringify(n)}, '${esc(textId)}', renderBuilder)">✎</span>` : "";
+  const own = n => pi !== undefined && (B.psalms[pi].pointing || {})[n];
+  const pen = n => t && SERVER && n !== "" ? (own(n) ? ' <span class="changed" title="Pointed differently for this service">✱</span>' : "") +
+    ` <span class="link pen" title="Change this verse's pointing for this service" onclick="startEdit(${JSON.stringify(n)}, '${esc(textId)}', renderBuilder, {pi: ${pi}})">✎</span>` : "";
   return '<div class="ptext">' + body.filter(v => !verses || verses.includes(v[0]) || v[0] === "").map(([n, dag, lines]) =>
     t && editing(textId, n) ? verseEditor(t, t.body.find(x => x[0] === n)) :
     `<div class="v">${lines.map((l, i) => `<div class="${i === 0 ? "" : l[2] ? "wrap" : l[1] === 2 ? "l2" : "l1"}">${i === 0 ? vn(n, dag) : ""}${pointedLine(l[0])}${i === lines.length - 1 ? pen(n) : ""}</div>`).join("")}</div>`).join("") + "</div>";
@@ -228,7 +239,7 @@ function toggleDagger(pi, n) {
 function fitReport(p, pi) {
   // the same check as the build: does each double-chant section come out even?
   const res = resolveSpec(p.spec, optOf(p)); if (!res.length) return "";
-  const verses = textBody(res).flatMap(seg => withDaggers(seg.body, p.daggers)).filter(v => v[0] !== "");
+  const verses = textBody(res, p).flatMap(seg => withDaggers(seg.body, p.daggers)).filter(v => v[0] !== "");
   let chants = p.chants.filter(c => c.name).map((c, i) => ({name: c.name, from: i === 0 ? verses[0][0] : +c.from}));
   if (!chants.length) { const prev = B.psalms.slice(0, pi).reverse().map(q => q.chants.filter(c => c.name).pop()).find(Boolean); if (prev) chants = [{name: prev.name, from: verses[0][0]}]; }
   const out = [];
@@ -245,8 +256,11 @@ function fitReport(p, pi) {
   });
   return out.join("<br>");
 }
-function textBody(res) {
-  return res.map(r => ({id: r.id, title: TX[r.id].title, body: TX[r.id].body.filter(v => !r.verses || r.verses.includes(v[0]))}));
+function textBody(res, p) {
+  // p given: with that psalm's pointing for this service in place of the text's (B.psalms[pi].pointing)
+  const own = n => p && p.pointing && p.pointing[n] && parseVerseBlock(p.pointing[n]);
+  return res.map(r => ({id: r.id, title: TX[r.id].title,
+    body: TX[r.id].body.filter(v => !r.verses || r.verses.includes(v[0])).map(v => own(v[0]) || v)}));
 }
 
 // quick preview of the whole page, without LilyPond
@@ -258,7 +272,7 @@ function quickPreview() {
     const res = resolveSpec(p.spec, optOf(p)); if (!res.length) return;
     const chants = p.chants.filter(c => c.name).map((c, i) => ({name: c.name, shift: c.shift || 0, from: i === 0 ? null : +c.from || null}));
     if (!chants.length && lastMusic) chants.push({...lastMusic, from: null});
-    textBody(res).map(seg => ({...seg, body: withDaggers(seg.body, p.daggers)})).forEach((seg, si) => {
+    textBody(res, p).map(seg => ({...seg, body: withDaggers(seg.body, p.daggers)})).forEach((seg, si) => {
       seg.body.forEach((v, vi) => {
         const starts = chants.filter((c, i) => (i === 0 && pi >= 0 && si === 0 && vi === 0) || (c.from === v[0]));
         starts.forEach(c => { out.push(musicHTML(c.name, c.shift)); lastMusic = c; });
@@ -381,15 +395,15 @@ function psalmBlock(p, pi, recent) {
     .sort((a, b) => b.s - a.s || (val(b.ch, "rating") || 0) - (val(a.ch, "rating") || 0) || lastUsed(a.ch.id).localeCompare(lastUsed(b.ch.id))).slice(0, 8) : [];
   return `<div class="card">
     <div class="moodrow">Psalm <input type="text" value="${esc(p.spec)}" placeholder="e.g. 70, 72:1-7,18-19, 119 Aleph" style="width:260px"
-      onchange="Object.assign(B.psalms[${pi}], {spec: this.value, daggers: null, optional: null}); renderBuilder()">
+      onchange="Object.assign(B.psalms[${pi}], {spec: this.value, daggers: null, optional: null, pointing: null}); renderBuilder()">
       ${res.length ? res.map(r => `<span class="link" onclick="goText('${esc(r.id)}')">${esc(TX[r.id].title)}</span>`).join(", ") : (p.spec ? '<span class="hint">no matching text</span>' : "")}
       ${mood.map(m => chip(m)).join(" ")}
       ${B.psalms.length > 1 ? `<span class="link" style="margin-left:auto" onclick="B.psalms.splice(${pi},1); renderBuilder()">remove</span>` : ""}</div>
     ${p.chants.some(c => /^tone[:\s]/i.test(c.name)) ? `<div class="moodrow"><label class="hint"><input type="checkbox" ${intoneEvery(p) ? "checked" : ""} onchange="B.psalms[${pi}].intonation=this.checked ? 'every' : 'first'; renderBuilder()"> sing the tone's intonation on every verse (otherwise on verse 1 only)</label></div>` : ""}
     ${opt.length ? `<div class="moodrow"><label class="hint"><input type="checkbox" ${optOf(p) ? "checked" : ""} onchange="B.psalms[${pi}].optional=this.checked; renderBuilder()"> sing the optional verses (${esc(opt.length > 1 ? "vv. " + opt[0] + "–" + opt[opt.length - 1] : "v. " + opt[0])}, in brackets in the lectionary)</label></div>` : ""}
     ${res.length ? `<details ${p.open ? "open" : ""} ontoggle="B.psalms[${pi}].open=this.open"><summary>The text</summary>
-      <p class="hint" style="margin:6px 0 0">Click a verse number to put a † (second half again) on it or take it off, for this file only (the psalm text keeps its own).${SERVER ? " ✎ beside a verse changes its pointing, for every use of the text." : ""}${p.daggers ? ` <span class="link" onclick="B.psalms[${pi}].daggers=null; renderBuilder()">back to the text's own †</span>` : ""}</p>
-      ${textBody(res).map(seg => `<div class="hint" style="margin-top:6px">${esc(seg.title)}</div>` + pointedHTML(withDaggers(seg.body, p.daggers), null, pi, seg.id)).join("")}</details>` : ""}
+      <p class="hint" style="margin:6px 0 0">Click a verse number to put a † (second half again) on it or take it off, for this file only (the psalm text keeps its own).${SERVER ? " ✎ beside a verse changes its pointing for this service (✱ marks one changed); the text's own pointing is changed on the Psalms tab." : ""}${p.daggers ? ` <span class="link" onclick="B.psalms[${pi}].daggers=null; renderBuilder()">back to the text's own †</span>` : ""}</p>
+      ${textBody(res, p).map(seg => `<div class="hint" style="margin-top:6px">${esc(seg.title)}</div>` + pointedHTML(withDaggers(seg.body, p.daggers), null, pi, seg.id)).join("")}</details>` : ""}
     ${B.choir === false ? '<p class="hint" style="margin:6px 0">No choir this week: the psalm is said, so no chant (untick <i>no choir</i> under Options to choose one).</p>' : p.chants.map((c, ci) => {
       const ch = C[c.name];
       return `<div class="moodrow">${ci === 0 ? "Chant" : "then"} <input type="text" list="chantlist" value="${esc(c.name)}" placeholder="chant, or e.g. tone 7a" style="width:170px"
@@ -410,7 +424,7 @@ function psalmBlock(p, pi, recent) {
       : ""}
   </div>`;
 }
-function usePsalm(spec) { Object.assign(B.psalms[0], {spec, daggers: null, optional: null}); renderBuilder(); }   // the †s were the old psalm's
+function usePsalm(spec) { Object.assign(B.psalms[0], {spec, daggers: null, optional: null, pointing: null}); renderBuilder(); }   // the †s were the old psalm's
 function addPsalm() { B.psalms.push({spec: "", chants: [{name: "", from: ""}]}); renderBuilder(); }
 function useChant(pi, id) { const cs = B.psalms[pi].chants; const slot = cs.find(c => !c.name) || cs[0]; slot.name = id; slot.shift = 0; renderBuilder(); }
 function loadExisting() { parseSunday(B.existing); B.existing = null; renderBuilder(); }

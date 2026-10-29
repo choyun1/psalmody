@@ -32,6 +32,7 @@ CHANT_DIRS = [os.path.join(CORE, 'chants')] + ([os.path.join(PARISH, 'chants')] 
 # a parish's own pointed copies, in parish/texts/, take their place
 TEXT_DIRS = [os.path.join(CORE, 'texts')] + ([os.path.join(PARISH, 'texts')] if PARISH else [])
 OWN_TEXTS = TEXT_DIRS[-1]                   # where pointing done in the browser is saved
+ORIGINALS = os.path.join(OWN_TEXTS, 'originals')   # each text as it was before its first change in the browser
 
 CATALOG_COLUMNS = ['Chant', 'Composer', 'Years', 'Key', 'Mode', 'Single/Double', 'Source', 'ACP Psalm']
 NOTE_COLUMNS = ['Chant', 'Rating', 'Mood', 'Notes', 'Pin']    # Pin: favorite, to try, to check

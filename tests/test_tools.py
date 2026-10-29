@@ -71,6 +71,17 @@ class Psalms(unittest.TestCase):
         ps = self.plan('psalm: 23\nchant: Turle-2\npsalm: 24\nchant: Goss-1 from 5\n')
         self.assertEqual([(s['chant'], s['verses'][0]['n']) for s in ps[1]['sections']], [('Turle-2', 1), ('Goss-1', 5)])
 
+    def test_this_sundays_pointing(self):
+        ps = self.plan('psalm: 23\nchant: Turle-2\nverse:   1  The | LORD is my | shepherd; *\n'
+                       '              I shall | not be | in | want.\n')
+        v1 = ps[0]['sections'][0]['verses'][0]
+        self.assertEqual(v1['lines'][0]['text'], 'The | LORD is my | shepherd; *')
+        self.assertEqual(v1['lines'][1]['half'], 2)
+        import check_texts
+        self.assertEqual(check_texts.verse_problems('Psalm_023.txt', v1), [])
+        wrong = dict(v1, lines=[dict(v1['lines'][0], text='The | LORD is my | shepherd;'), v1['lines'][1]])
+        self.assertTrue(check_texts.verse_problems('Psalm_023.txt', wrong))      # no *
+
     def test_changes_out_of_order_are_refused(self):
         with self.assertRaises(SystemExit):
             self.plan('psalm: 23\nchant: Turle-2\nchant: Goss-1 from 4\nchant: Smart-1 from 2\n')
@@ -120,6 +131,19 @@ class ChantEditing(unittest.TestCase):
             chantedit.apply(text, {'key': {'tonic': 'h', 'mode': 'major'}})
         with self.assertRaises(ValueError):
             chantedit.apply(text, {'voices': [{'var': 'S_notes', 'start': "c''", 'body': 'c2 { d'}]})
+
+
+class Moods(unittest.TestCase):
+    def test_suggestions_follow_the_mode(self):
+        import moodsuggest
+        G, tm = moodsuggest.groups(), moodsuggest.text_moods()
+        major, _ = moodsuggest.suggest({'Mode': 'Major', 'ACP Psalm': ''}, {}, [], tm, G)
+        minor, _ = moodsuggest.suggest({'Mode': 'Minor', 'ACP Psalm': ''}, {}, [], tm, G)
+        self.assertTrue(major and all(G[t] in ('bright', 'calm') for t in major))
+        self.assertTrue(minor and all(G[t] in ('shadowed', 'dark') for t in minor))
+        leapy, why = moodsuggest.suggest({'Mode': 'Minor', 'ACP Psalm': '7'}, {'leaps': 2.0}, [], tm, G)
+        self.assertIn('dramatic', leapy)
+        self.assertIn('leaps in the tune', why)
 
 
 class Service(unittest.TestCase):

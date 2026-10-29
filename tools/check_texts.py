@@ -65,6 +65,24 @@ def reference(fname):
     return {v['n']: v['text'] for v in vs}
 
 
+def verse_problems(filename, v, ref='look it up'):
+    """What's wrong with one pointed verse of a text (by its file name, Psalm_085.txt): one * and the BCP's words."""
+    ref = reference(filename) if ref == 'look it up' else ref
+    out = []
+    stars = sum(1 for ln in v['lines'] for t in pointed.tokens(ln['text']) if t == '*')
+    if stars != 1:
+        out.append(f'v. {v["n"]}: {stars} asterisks (should be 1)')
+    if ref is not None:
+        if v['n'] not in ref:
+            return out + [f'v. {v["n"]}: not in the BCP for this psalm']
+        a, b = norm(words_of_txt(v['lines'])), norm(ref[v['n']].split())
+        if a != b and (filename, v['n']) not in KNOWN_REFERENCE_SLIPS:
+            aw, bw = a.split(), b.split()
+            i = next((k for k in range(min(len(aw), len(bw))) if aw[k] != bw[k]), min(len(aw), len(bw)))
+            out.append(f'v. {v["n"]}: "{" ".join(aw[max(0, i - 3):i + 4])}"  — BCP: "{" ".join(bw[max(0, i - 3):i + 4])}"')
+    return out
+
+
 def check(path):
     problems = []
     try:
@@ -76,18 +94,7 @@ def check(path):
     if nums != sorted(nums) or len(set(nums)) != len(nums):
         problems.append('verse numbers out of order or repeated')
     for v in doc['verses']:
-        stars = sum(1 for ln in v['lines'] for t in pointed.tokens(ln['text']) if t == '*')
-        if stars != 1:
-            problems.append(f'v. {v["n"]}: {stars} asterisks (should be 1)')
-        if ref is not None:
-            if v['n'] not in ref:
-                problems.append(f'v. {v["n"]}: not in the BCP for this psalm')
-                continue
-            a, b = norm(words_of_txt(v['lines'])), norm(ref[v['n']].split())
-            if a != b and (os.path.basename(path), v['n']) not in KNOWN_REFERENCE_SLIPS:
-                aw, bw = a.split(), b.split()
-                i = next((k for k in range(min(len(aw), len(bw))) if aw[k] != bw[k]), min(len(aw), len(bw)))
-                problems.append(f'v. {v["n"]}: "{" ".join(aw[max(0, i - 3):i + 4])}"  — BCP: "{" ".join(bw[max(0, i - 3):i + 4])}"')
+        problems += verse_problems(os.path.basename(path), v, ref)
     if ref is not None:
         missing = sorted(set(ref) - set(nums))
         if missing and 'unpointed' not in ' '.join(doc['comments']).lower():

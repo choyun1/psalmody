@@ -1,6 +1,7 @@
 // ---------- pointing editor ----------
 // one verse at a time, in the Psalms tab or in the Service planner's text; E.redraw draws whichever it is
-const E = {text: null, n: null, lines: [], msg: "", busy: false, redraw: () => renderText()};
+// E.service: editing for one service (the planner), {pi}: kept in that psalm's B.psalms[pi].pointing, not the text
+const E = {text: null, n: null, lines: [], msg: "", busy: false, redraw: () => renderText(), service: null};
 function verseBlock(v) {
   const [n, dag, lines] = v;
   const num = (dag ? "†" : "") + n;
@@ -10,15 +11,34 @@ function verseBlock(v) {
     return (l[1] === 1 ? "    " : "      ") + t;
   }).join("\n");
 }
+// a parsed verse block (as verseBlock writes it) -> [n, dagger, lines]; the JavaScript twin of pointed.parse
+function parseVerseBlock(block) {
+  let v = null, star = false;
+  for (const raw of String(block).split("\n")) {
+    const line = raw.replace(/\s+$/, ""); if (!line.trim()) continue;
+    const m = line.match(/^\s*(†)?\s*(\d+)\s+(.*)$/);
+    let body;
+    if (m && (!v || !line.startsWith(" "))) { if (v) break; v = [+m[2], m[1] ? 1 : 0, []]; body = m[3]; }
+    else { if (!v) return null; body = line.trim(); }
+    const wrap = body.startsWith("+ "); if (wrap) body = body.slice(2);
+    v[2].push([body.trim(), star ? 2 : 1, wrap ? 1 : 0]);
+    if (/(^|\s)\*(\s|$)/.test(body)) star = true;
+  }
+  return v;
+}
+const changedMark = (t, n) => t.orig && t.orig[n] ? ' <span class="changed" title="Changed from the original pointing: click the verse to see it, or put it back">✱</span>' : "";
 function editableText(t) {
-  return '<div class="ptext">' + t.body.map(v => editing(t.id, v[0]) ? verseEditor(t, v) :
-    `<div class="v" style="cursor:pointer" title="Click to edit this verse" onclick="startEdit(${JSON.stringify(v[0])})">${pointedHTML([v]).replace(/^<div class="ptext">|<\/div>$/g, "")}</div>`).join("") +
+  const n = Object.keys(t.orig || {}).length;
+  return (n ? `<p class="hint">✱ ${n} verse${n > 1 ? "s" : ""} changed from the original pointing; the original is always kept, to put back.</p>` : "") +
+    '<div class="ptext">' + t.body.map(v => editing(t.id, v[0]) ? verseEditor(t, v) :
+    `<div class="v" style="cursor:pointer" title="Click to edit this verse" onclick="startEdit(${JSON.stringify(v[0])})">${pointedHTML([v]).replace(/^<div class="ptext">|<\/div>$/g, "").replace(/<\/div>$/, changedMark(t, v[0]) + "</div>")}</div>`).join("") +
     '</div><p class="hint">Click a verse to edit it. In the editor, click a word to put a bar before it (or take it away); Shift+click to mark it held; or type in the box. Saving checks that the words still match the 1979 BCP.</p>';
 }
-function startEdit(n, textId = curText, redraw = () => renderText()) {
+function startEdit(n, textId = curText, redraw = () => renderText(), service = null) {
   const t = D.texts.find(x => x.id === textId);
+  const own = service && (B.psalms[service.pi].pointing || {})[n];       // this service's pointing, if it has one
   const v = t.body.find(x => x[0] === n);
-  Object.assign(E, {text: textId, n, lines: verseBlock(v).split("\n"), msg: "", redraw}); E.redraw();
+  Object.assign(E, {text: textId, n, lines: (own || verseBlock(v)).split("\n"), msg: "", redraw, service}); E.redraw();
 }
 const editing = (textId, n) => E.text === textId && E.n === n;
 function editorPreview() {
@@ -33,14 +53,19 @@ function editorPreview() {
   }).join("");
 }
 function verseEditor(t, v) {
-  const preview = editorPreview();
+  const preview = editorPreview(), orig = !E.service && t.orig && t.orig[v[0]];
+  const own = E.service && (B.psalms[E.service.pi].pointing || {})[v[0]];
   return `<div class="v" style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:6px 0">
     <div id="eprev" style="font: 16px/1.7 EBG, Georgia, serif">${preview}</div>
     <textarea id="eta" spellcheck="false" oninput="E.lines=this.value.split('\\n'); $('#eprev').innerHTML=editorPreview()" style="width:100%;height:${E.lines.length * 1.6 + 1.2}em;font: 14px/1.6 ui-monospace, Menlo, Consolas, monospace;margin-top:6px">${esc(E.lines.join("\n"))}</textarea>
-    <p style="margin:6px 0 0"><button class="small primary" ${E.busy ? "disabled" : ""} onclick="saveVerse()">Save verse</button>
+    <p style="margin:6px 0 0"><button class="small primary" ${E.busy ? "disabled" : ""} onclick="saveVerse()">${E.service ? "Use for this service" : "Save verse"}</button>
       <button class="small" onclick="E.n=null; E.msg=''; E.redraw()">Cancel</button>
+      ${own ? `<button class="small" onclick="dropServicePointing()">Back to the text's pointing</button>` : ""}
       ${E.msg ? `<span class="hint" style="margin-left:8px">${esc(E.msg)}</span>` : ""}</p>
     <p class="hint" style="margin:4px 0 0">| bar · . split · * mediant · =word held · word- | -word divided word · + line runs over · † before the number: second half again</p>
+    ${E.service ? `<p class="hint" style="margin:4px 0 0">For this service only: the text keeps its pointing (change that on the Psalms tab).</p>` : ""}
+    ${orig ? `<div class="notes" style="margin-top:8px"><span class="nlabel">Original</span>${pointedHTML([orig]).replace(/^<div class="ptext">|<\/div>$/g, "")}
+      <span class="link" onclick="E.lines = verseBlock(D.texts.find(x => x.id === E.text).orig[E.n]).split('\\n'); E.redraw()">put the original back</span> <span class="hint">(then Save verse)</span></div>` : ""}
   </div>`;
 }
 function clickTok(ev, li, ti) {
@@ -60,13 +85,23 @@ function clickTok(ev, li, ti) {
 }
 async function saveVerse() {
   const ta = $("#eta"); if (ta) E.lines = ta.value.split("\n");
-  E.busy = true; E.msg = "Saving…"; E.redraw();
-  const j = await post("/api/text", {id: E.text, n: E.n, block: E.lines.join("\n")});
+  E.busy = true; E.msg = E.service ? "Checking…" : "Saving…"; E.redraw();
+  const block = E.lines.join("\n");
+  const j = await post("/api/text", {id: E.text, n: E.n, block, check: !!E.service});
   E.busy = false;
   if (!j.ok) { E.msg = j.error || "Could not save"; E.redraw(); return; }
   const t = D.texts.find(x => x.id === E.text);
   const i = t.body.findIndex(x => x[0] === E.n);
-  t.body[i] = j.verse;
+  if (E.service) {                                  // this service only: into the Sunday file, the text untouched
+    const p = B.psalms[E.service.pi];
+    p.pointing = Object.assign({}, p.pointing);
+    if (verseBlock(j.verse) === verseBlock(t.body[i])) delete p.pointing[E.n]; else p.pointing[E.n] = verseBlock(j.verse);
+  } else {                                          // the text itself; the original stays known
+    t.orig = t.orig || {};
+    const was = t.orig[E.n] || t.body[i];
+    if (JSON.stringify(was) === JSON.stringify(j.verse)) delete t.orig[E.n]; else t.orig[E.n] = was;
+    t.body[i] = j.verse;
+  }
   E.n = null; E.msg = ""; E.redraw();
 }
 
@@ -120,4 +155,9 @@ function renderText() {
     <h3 style="font-weight:normal;margin-bottom:4px">${D.parish.name ? "Sung at " + esc(D.parish.name) : "Past use"}</h3>
     ${hist.length ? `<table class="hist">${hist.map(h => `<tr><td>${esc(h.date)}</td><td>${esc(h.verses)}</td><td>${C[h.chant] ? `<span class="link" onclick="showChant('${esc(h.chant)}')">${esc(CN(h.chant))}</span>${h.shift ? ` <span class="hint">${shiftWords(h.shift)}</span>` : ""}` : h.chant && h.chant !== "?" ? esc(h.chant.replace(/^tone:/, "Tone ")) : '<span class="hint">no chant</span>'}</td><td class="hint">${esc(h.note)}</td></tr>`).join("")}</table>` : '<p class="hint">Not yet.</p>'}
   </div>`;
+}
+function dropServicePointing() {
+  const p = B.psalms[E.service.pi];
+  if (p.pointing) { p.pointing = Object.assign({}, p.pointing); delete p.pointing[E.n]; }
+  E.n = null; E.msg = ""; E.redraw();
 }

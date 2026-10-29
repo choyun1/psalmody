@@ -163,6 +163,16 @@ def unconfirmed():
 
 
 # ------------------------------------------------------------- texts
+def changed_verses(name, doc):
+    """{verse: its pointing before the browser first changed it} for the verses that differ now (paths.ORIGINALS)."""
+    f = os.path.join(paths.ORIGINALS, name + '.txt')
+    if not os.path.exists(f):
+        return {}
+    now = {v['n']: v for v in doc['verses']}
+    return {v['n']: [v['n'], int(v['dagger']), [[ln['text'], ln['half'], int(ln['wrap'])] for ln in v['lines']]]
+            for v in pointed.load(f)['verses'] if v['n'] in now and (v['lines'], v['dagger']) != (now[v['n']]['lines'], now[v['n']]['dagger'])}
+
+
 def texts():
     moods = {}
     for r in read_csv(os.path.join(ROOT, 'texts', 'moods.csv')):
@@ -185,7 +195,7 @@ def texts():
                     'noGloria': any(c.lower().startswith('no gloria patri') for c in doc['comments']),
                     'body': [[v['n'], int(v['dagger']), [[ln['text'], ln['half'], int(ln['wrap'])] for ln in v['lines']]]
                              for v in doc['verses']],
-                    'sections': moods.get(name, [])})
+                    'sections': moods.get(name, []), 'orig': changed_verses(name, doc)})
     def order(t):
         m = re.match(r'(Psalm|Canticle)_(\d+)', t['id'])
         return (0 if m.group(1) == 'Psalm' else 1, int(m.group(2)), t['verses'][0] if t['verses'] else 0)
@@ -462,6 +472,11 @@ def main():
             'private': row['private'],
         })
     label_chants(chants)
+    import moodsuggest                          # moods to suggest for chants not yet tagged (accepted in the page)
+    for c, sug in moodsuggest.all_suggestions().items():
+        for ch in chants:
+            if ch['id'] == c:
+                ch['suggest'] = sug
     tone_endings, tone_groups_data = tones_data(args.redraw)
     data = {'aliases': paths.aliases(), 'vocabulary': vocabulary(), 'chants': chants, 'tones': tone_endings, 'toneGroups': tone_groups_data, 'texts': texts(), 'history': history(), 'calendar': calendar(),
             'unconfirmed': unconfirmed(), 'gloria': gloria_body(), 'service': service_data(),

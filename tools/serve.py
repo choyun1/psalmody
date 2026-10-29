@@ -159,40 +159,45 @@ def api_open(data):
 
 
 def api_text(data):
-    """Replace one verse of a text's pointing, after checking the words still match the BCP."""
-    import pointed, check_texts, tempfile, shutil
+    """One verse's pointing: checked (check: true, for this Sunday's own pointing, nothing saved), or saved into the
+    text, after checking it keeps one * and the BCP's words. The text as it was before its first change is kept
+    (parish/texts/originals/), so the original pointing can always be put back."""
+    import pointed, check_texts, shutil
     name, n = safe_name(data.get('id')), str(data.get('n'))
     src = paths.text_file(name)
     if not src:
         raise ValueError(f'no text {name}')
-    doc = pointed.load(src)
-    doc['comments'] = [c for c in doc['comments'] if 'unpointed' not in c.lower()]
     try:
         new = pointed.parse('x\n' + text_arg(data, 'block'))['verses']
     except Exception as e:
         return {'ok': False, 'error': f'cannot read the verse: {e}'}
     if len(new) != 1 or str(new[0]['n']) != n:
         return {'ok': False, 'error': 'keep exactly one verse, with the same number'}
-    i = next((k for k, v in enumerate(doc['verses']) if str(v['n']) == n), None)
+    v = new[0]
+    shown = [v['n'], int(v['dagger']), [[l['text'], l['half'], int(l['wrap'])] for l in v['lines']]]
+    problems = check_texts.verse_problems(name + '.txt', v)
+    if problems:
+        return {'ok': False, 'error': '; '.join(problems)}
+    if data.get('check'):
+        return {'ok': True, 'verse': shown}
+    doc = pointed.load(src)
+    doc['comments'] = [c for c in doc['comments'] if 'unpointed' not in c.lower()]
+    i = next((k for k, x in enumerate(doc['verses']) if str(x['n']) == n), None)
     if i is None:
         raise ValueError(f'{name} has no verse {n}')
-    doc['verses'][i] = new[0]
+    doc['verses'][i] = v
     path = os.path.join(paths.OWN_TEXTS, name + '.txt')        # pointing is the parish's own: saved there
-    tmp = tempfile.mkdtemp()
-    try:
-        tp = os.path.join(tmp, name + '.txt')
-        open(tp, 'w', encoding='utf-8').write(pointed.write(doc))
-        problems = [p for p in check_texts.check(tp) if p.startswith(f'v. {n}:')]
-        if problems:
-            return {'ok': False, 'error': '; '.join(problems)}
-        os.makedirs(paths.OWN_TEXTS, exist_ok=True)
-        shutil.copy(tp, path)
-    finally:
-        shutil.rmtree(tmp)
-    v = new[0]
-    history.record([path], f"Pointing: {name.replace('_', ' ')} v. {n}")
+    original = os.path.join(paths.ORIGINALS, name + '.txt')
+    os.makedirs(paths.ORIGINALS, exist_ok=True)
+    kept = []
+    if not os.path.exists(original):
+        shutil.copy(src, original)
+        kept = [original]
+    with open(path, 'w', encoding='utf-8') as fh:
+        fh.write(pointed.write(doc))
+    history.record([path] + kept, f"Pointing: {name.replace('_', ' ')} v. {n}")
     rebuild_later()
-    return {'ok': True, 'verse': [v['n'], int(v['dagger']), [[l['text'], l['half'], int(l['wrap'])] for l in v['lines']]]}
+    return {'ok': True, 'verse': shown}
 
 
 def api_check(data):
