@@ -162,12 +162,12 @@ function renderBuilder() {
       `<span class="link" onclick="usePsalm('${esc(o.spec)}')">${o.track ? esc(o.track) + ": " : ""}${/^\d/.test(o.spec) ? "Psalm " : ""}${esc(o.spec)}</span>${o.texts.length ? "" : ` <span class="hint">(${/^\d/.test(o.spec) ? esc(o.error || "no text yet") : "not in the library yet"})</span>`}`).join(" · ")}${info("Click one to use it." + (D.parish.name ? " " + D.parish.name + " uses" : " Default:") + " Track " + D.parish.track + " after Pentecost (parish.txt).")}</p>` : ""}
     ${B.psalms.map((p, pi) => psalmBlock(p, pi, recent)).join("")}
     <p><span class="link" onclick="addPsalm()">+ another psalm</span></p>
-    ${B.mode === "psalm" ? "" : serviceCard()}
     <div class="card"><details ${B.previewOpen ? "open" : ""} ontoggle="B.previewOpen=this.open"><summary>Preview</summary>
       ${SERVER ? `<p style="margin:8px 0"><button class="small" onclick="pdfPreview()">Exact PDF preview</button> <span class="hint">LilyPond takes a few seconds</span></p>` : ""}
       ${B.pdf ? `<p style="margin:4px 0"><a href="/${encodeURI(B.pdf)}" target="_blank">Open the PDF in its own tab</a> · <span class="link" onclick="B.pdf=''; renderBuilder()">back to the quick preview</span></p>
         <iframe src="/${encodeURI(B.pdf)}?t=${Date.now()}" style="width:100%;height:80vh;border:1px solid var(--line);border-radius:6px;background:#fff"></iframe>` : quickPreview()}
     </details></div>
+    ${B.mode === "psalm" ? "" : serviceCard()}
     <div class="card"><h3 style="font-weight:normal;margin:0 0 6px">The file: ${esc(B.name)}.txt</h3>
       <pre id="bfile" style="font: 14px/1.5 ui-monospace, Menlo, Consolas, monospace; white-space: pre-wrap; margin:0">${esc(text)}</pre>
       <p style="margin:10px 0 0">
@@ -414,6 +414,7 @@ function psalmBlock(p, pi, recent) {
         ${ci > 0 ? `from verse <input type="text" value="${esc(c.from)}" style="width:50px" onchange="B.psalms[${pi}].chants[${ci}].from=this.value.trim(); renderBuilder()">` : ""}
         ${/^tone[:\s]/i.test(c.name) ? toneMenus(c.name, `t => { B.psalms[${pi}].chants[${ci}].name = t; renderBuilder(); }`) : ""}
         ${ch ? `<span class="hint">${esc(CN(ch.id))}, ${ch.double ? "double" : "single"} · last used ${esc(lastUsed(ch.id) || "never")}</span>
+          ${val(ch, "mood").map(t => chip(t, mood.includes(t) ? "on" : "")).join("") || (ch.suggest ? ch.suggest.moods.map(t => chip(t, "maybe")).join("") : '<span class="hint">no moods yet</span>')}
           <span class="link" onclick="showChant('${esc(ch.id)}')">see</span> <button class="small play" onclick="play('${esc(ch.id)}', this, ${c.shift || 0})">▶ Play</button>` : (c.name && !/^tone[:\s]/i.test(c.name)) ? '<span class="hint">not in the catalog</span>' : ""}
         ${ci > 0 ? `<span class="link" onclick="B.psalms[${pi}].chants.splice(${ci},1); renderBuilder()">remove</span>` : ""}</div>`;
     }).join("")}
