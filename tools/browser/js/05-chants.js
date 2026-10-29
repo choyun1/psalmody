@@ -176,10 +176,12 @@ function topNote(c) {                                   // the soprano's highest
   const n = String([].concat(c.range || []).slice(-1)[0] || "").split(/[–-]/).pop().trim().match(/^([A-G])([#♯b♭]?)(-?\d)$/);
   return n ? 12 * (+n[3] + 1) + NOTE_PC[n[1]] + (/[#♯]/.test(n[2]) ? 1 : /[b♭]/.test(n[2]) ? -1 : 0) : null;
 }
-// pins: ★ a favorite, a pushpin for one to try, ⚑ one to check (a doubt about a note); kept with the ratings in
+// pins: a heart for a favorite (the stars are the rating), a pushpin for one to try, ⚑ one to check (a doubt about a
+// note); kept with the ratings in
 // chant_notes.csv. Each is hollow when off and filled when on, drawn in the text's color.
 const pushpin = filled => `<svg class="pinicon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 6 3 3v2H7v-2l3-3z" fill="${filled ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 14v7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
-const PINS = [["favorite", "★", "☆", "favorite"], ["to try", pushpin(true), pushpin(false), "to try"], ["to check", "⚑", "⚐", "to check"]];
+const heart = filled => `<svg class="pinicon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7.5-4.6-7.5-10A4.2 4.2 0 0 1 12 7.4 4.2 4.2 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z" fill="${filled ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>`;
+const PINS = [["favorite", heart(true), heart(false), "favorite"], ["to try", pushpin(true), pushpin(false), "to try"], ["to check", "⚑", "⚐", "to check"]];
 const pinMarks = c => PINS.filter(([p]) => pinned(c, p)).map(([, on]) => on).join(" ");
 const pinned = (c, p) => (val(c, "pins") || []).includes(p);
 function togglePin(id, p) {

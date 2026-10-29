@@ -179,7 +179,7 @@ LORD, GOD and YAHWEH are set in small capitals automatically, and straight quote
 - **Coming up**: the next Sundays and feasts, one line each; click one for its psalms, moods and chant ideas.
 - **Service planner**: [above](#planning-a-service).
 - **Psalms**: every text (listed with its Latin opening words) with its mood tags, the chants that match them best, and what it was sung to before.
-- **Chants**: every chant in notation with playback, filtered by mood, mode, key and rating; and the plainchant tones. Click a row (▸) to open its card; mark a chant ★ *favorite*, *to try* (a pushpin) or ⚑ *to check*.
+- **Chants**: every chant in notation with playback, filtered by mood, mode, key and rating; and the plainchant tones. Click a row (▸) to open its card; mark a chant *favorite* (a heart; the stars are your rating), *to try* (a pushpin) or ⚑ *to check*.
 - **History**: every pairing on record, and every whole service, with **Download the whole record (CSV)**. A Sunday joins the history once it's marked as sung.
 
 **Moods.** Psalms and chants share one vocabulary (`moods.txt`) in four families: bright, calm, shadowed and dark. A chant scores fully for each mood it shares with the text and partly for one in the same family; the text's first tag counts most; ties go to the higher rating, then to the chant used least recently. Tag chants with *Edit mood, rating, notes* on the Chants tab. The psalm tags (`texts/moods.csv`) were assigned by reading each psalm, then checked against the NRC emotion lexicon; correct them as you see fit.
