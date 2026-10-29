@@ -1,0 +1,79 @@
+\version "2.24.1"
+
+\header{
+  composer = \markup{\hspace #-33 \italic "Charles H. H. Parry (1848-1918)"}
+  tagline=#f
+}
+
+global = {
+  \key aes \major
+  \time 2/4
+}
+
+
+S_notes = \relative c'' {
+  as2 | g4 as | es2 \bar "||"
+  f2 | bes4 bes | c f, | des'2 \bar "||"
+  bes2 | as4 g | c2 \bar "||"
+  c2 | bes4 f | es des | es2 \bar "||"
+}
+
+A_notes = \relative c' {
+  es2 | des4 c | bes2 \bar "||"
+  c2 | bes4 es | ges f | f2 \bar "||"
+  f2 | f4 e | f2 \bar "||"
+  es2 | des4 des | c as | bes2 \bar "||"
+}
+
+T_notes = \relative c' {
+  c2 | bes4 as | g2 \bar "||"
+  a2 | bes4 bes | bes a | bes2 \bar "||"
+  f4. g8 | as4 des | c2 \bar "||"
+  f,2 | f4 g | as as | as g \bar "||"
+}
+
+B_notes = \relative c {
+  as2 | bes4 c8 des | es2 \bar "||"
+  es2 | des4 ges | es f | bes2 \bar "||"
+  des,2 | c4 bes | as2 \bar "||"
+  a2 | bes4 bes | c f | es2 \bar "||"
+}
+
+% Use markup to center the chant on the page
+\markup {
+  \fill-line {
+    \score {  % centered
+      <<
+        \new ChoirStaff <<
+          \new Staff <<
+            \global
+            \clef "treble"
+            \new Voice = "Soprano" <<
+              \voiceOne \S_notes
+            >>
+            \new Voice = "Alto" <<
+              \voiceTwo \A_notes
+            >>
+          >>
+          \new Staff <<
+            \global
+            \clef "bass"
+            \new Voice = "Tenor" <<
+              \voiceOne \T_notes
+            >>
+            \new Voice = "Bass" <<
+              \voiceTwo \B_notes
+            >>
+          >>
+        >>
+      >>
+
+      \layout {
+        \context {
+          \Staff
+          \remove "Time_signature_engraver"
+        }
+      }
+    }  % End score
+  }
+}  % End markup
