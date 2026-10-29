@@ -1,6 +1,9 @@
 Chant,Composer,Years,Key,Mode,Single/Double,Source,ACP Psalm
+Atkins-2,"Atkins, Ivor Algernon",1869-1953,Bb,Major,Double,ACP 058,27
+Atkins-3,"Atkins, Ivor Algernon",1869-1953,Eb,Major,Double,ACP 097,45
 Attwood-1,"Attwood, Thomas",1765-1838,Ab,Major,Double,ACP 074,35
 Attwood-2,"Attwood, Thomas",1765-1838,D,Major,Double,ACP 226,99
+Bairstow-1,"Bairstow, Edward Cuthbert",1874-1946,Eb,Major,Double,"ACP 032, 050, 149","16, 23, 67"
 Barnby-1,"Barnby, Joseph",1838-1896,A,Minor,Double,"ACP 066, 142","31, 64"
 Barnby-2,"Barnby, Joseph",1838-1896,D,Minor,Double,ACP 106,"49, 94"
 Barnby-3,"Barnby, Joseph",1838-1896,F#,Minor,Double,ACP 163,73
@@ -10,6 +13,7 @@ Beale-1,"Beale, William",1784-1854,A,Minor,Double,ACP 129,59
 Best-1,"Best, William",1826-1897,E,Minor,Double,"ACP 033, 188","17, 83"
 Blow-1,"Blow, John",1649-1708,D,Minor,Single,"ACP 075, 115","36, 53"
 Boyce-1,"Boyce, William",1711-1779,D,Major,Double,ACP 038,18-2
+Buck-1,"Buck, Percy",1871-1947,G,Major,Double,"ACP 044, 062","21, 29"
 Cambridge-1,Cambridge Chant,,F,Minor,Double,"ACP 105, 198","49, 88"
 Camidge-1,"Camidge, Matthew",1764-1844,D,Minor,Double,"ACP 019, 110","10, 51"
 Camidge-2,"Camidge, Matthew",1764-1844,D,Major,Double,"ACP 041, 096","20, 45"
@@ -20,8 +24,10 @@ Crotch-1,"Crotch, William",1775-1847,C,Major,Double,ACP 052,24
 Crotch-2,"Crotch, William",1775-1847,G,Major,Double,"ACP 053, 073, 121","25, 35, 56"
 Crotch-3,"Crotch, William",1775-1847,G,Major,Double,"ACP 090, 092, 103, 194","42, 43, 48, 86"
 Crotch-4,"Crotch, William",1775-1847,G,Minor,Double,ACP 128,58
+Davies-2,"Davies, Henry Walford",1869-1941,C,Major,Double,ACP 182,80
 Davy-1,"Davy, John",1763-1824,D,Major,Double,"ACP 101, 147","47, 66"
 Dibdin-1,"Dibdin, Henry Edward",1813-1866,A,Major,Double,ACP 017,9
+Elgar-1,"Elgar, Edward",1857-1934,G,Major,Single,ACP 132,59
 ElveyG-1,"Elvey, George J.",1816-1893,D,Major,Double,"ACP 060, ACP 213","28, 93"
 ElveyG-2,"Elvey, George J.",1816-1893,Ab,Major,Double,ACP 185,
 ElveyS-1,"Elvey, Stephen",1805-1860,F,Major,Double,ACP 009,5
