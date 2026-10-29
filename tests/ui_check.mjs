@@ -119,11 +119,25 @@ try {
     const ta = page.locator("#eta"); await ta.fill((await ta.inputValue()).replace(/ \| /, "  "));
     await page.click("button:has-text('Use for this service')"); await wait(1500);
   });
+  await step("Planner: the music changed for this service only", async () => {
+    await page.click("text=change the music for this service"); await wait(4000);
+    await page.fill(".me-voice >> nth=1", ""); await page.click("button:has-text('Use for this service')"); await wait(500);
+    const text = await page.evaluate(() => sundayText());
+    if (!/chant:\s+Turle-2 down 2\nmusic:\s+A_notes silent/.test(text)) throw new Error("no music: line:\n" + text);
+    if (!/changed for this service: alto silent/.test(await page.textContent("#tab-builder"))) throw new Error("the preview doesn't say so");
+    await wait(4000);
+    const drawn = await page.evaluate(() => [...document.querySelectorAll('#tab-builder img[data-trans*="A_notes"]')].map(i => i.src.includes("/api/chant/img") && i.style.opacity === "1"));
+    if (!drawn.length || !drawn.every(Boolean)) throw new Error("the changed chant wasn't drawn: " + JSON.stringify(drawn));
+  });
   await step("Planner: save and check (one at a time)", async () => {
     await page.fill("#bname", "zz-ui-check"); await page.press("#bname", "Tab"); await wait(200);
     await page.evaluate(() => { checkSunday(); checkSunday(); }); await wait(4000);
     const st = await page.evaluate(() => B.status);
     if (!/Checks done|Problem/.test(st)) throw new Error("status: " + st);
+    const log = await page.evaluate(() => B.log);
+    if (!/Turle-2: music changed for this service \(alto silent\)/.test(log)) throw new Error("the check didn't read the music: line:\n" + log);
+    await page.click("text=put the chant's own music back"); await wait(300);
+    if (/music:/.test(await page.evaluate(() => sundayText()))) throw new Error("not put back");
   });
   await step("Sync: the confirmation opens and cancels", async () => {
     await page.click("button.sync"); await wait(200);

@@ -73,10 +73,31 @@ def apply(text, new):
         if v['body'].count('{') != v['body'].count('}'):
             raise ValueError(f"{LABELS.get(v['var'], v['var'])}: a {{ without its }} (or the other way round)")
         end = _body_end(text, m.end() - 1)
+        if not v['body'].strip():                     # a voice left empty: silent, its bars kept (spacers)
+            v = dict(v, body=spacers(text[m.end():end - 1]))
         body = '\n'.join('  ' + l if l.strip() else '' for l in v['body'].strip('\n').split('\n'))
         head = f"{v['var']} = \\relative {v.get('start', m.group('start'))} {{"
         text = text[:m.start()] + head + '\n' + body + '\n' + text[end:]
     return text
+
+
+SOUNDING = re.compile(r"(?<![\\\w])(?:<[^>]*>|[a-g](?:isis|eses|is|es|s)?[',]*|r)(?=[\d.~?!\s|\\]|$)")
+
+
+def spacers(body):
+    """A voice's notes made silent, their lengths and bars kept: 'a2 | <d fis>4 e~ |' -> 's2 | s4 s |'."""
+    return re.sub(r'[~?!]', '', SOUNDING.sub('s', body)).strip('\n')
+
+
+def service_text(text, music):
+    """A chant file as one service has it: music is {var: (start, body)} for the voices changed for that service,
+    or {var: None} for a voice that doesn't sing there."""
+    p = parts(text)
+    for v in p['voices']:
+        if v['var'] in music:
+            got = music[v['var']]
+            v['start'], v['body'] = (v['start'], '') if got is None else got
+    return apply(text, p)
 
 
 def check(text):
@@ -100,6 +121,21 @@ def check(text):
                             f"{LABELS.get(next(iter(shapes)), '')} has {len(first)} of {', '.join(map(str, first))}")
     if first and len(first) not in (2, 4):
         problems.append(f'{len(first)} phrases: a single chant has 2 (|| between them), a double 4')
+    tm = re.search(r'\\time\s+(\d+)/(\d+)', text)
+    if tm and int(tm.group(2)):                   # each bar as long as the time signature says
+        from fractions import Fraction
+        whole = Fraction(int(tm.group(1)), int(tm.group(2)))
+        for v, (notes, _) in c['voices'].items():
+            bars = {}
+            for n in notes:
+                h = n[0] if isinstance(n, list) else n
+                bars[h.bar] = bars.get(h.bar, 0) + Fraction(h.dur)
+            off = [(b, x) for b, x in sorted(bars.items()) if x != whole]
+            if off:
+                b, x = off[0]
+                more = f' (and {len(off) - 1} more)' if len(off) > 1 else ''
+                problems.append(f"{LABELS.get(v, v)}: bar {b + 1} is {'too long' if x > whole else 'too short'} "
+                                f"for {tm.group(1)}/{tm.group(2)}{more}")
     return problems, facts
 
 

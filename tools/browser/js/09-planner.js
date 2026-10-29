@@ -1,6 +1,6 @@
 // ---------- Service planner (psalm builder + the rest of the service) ----------
 const SERVICES = [...new Set(Object.keys((D.service || {}).orders || {}).concat(["Eucharist", "Evensong", "Office", "Morning Prayer", "Evening Prayer"]))];
-const B = {date: "", name: "", label: "", year: "", service: "Eucharist", gloria: "auto", reprint: true, sung: false,
+const B = {music: {}, date: "", name: "", label: "", year: "", service: "Eucharist", gloria: "auto", reprint: true, sung: false,
            psalms: [{spec: "", chants: [{name: "", from: ""}]}], status: "", log: "", files: [], existing: null,
            svc: {}, also: "", note: "", extra: {}, showOpt: new Set(), mode: (() => { try { return localStorage.getItem("psalter-mode") || "service"; } catch (e) { return "service"; } })()};
 function setMode(m) { B.mode = m; try { localStorage.setItem("psalter-mode", m); } catch (e) {} renderBuilder(); }
@@ -38,6 +38,7 @@ function sundayText() {
   if (B.label) L.push(`# ${B.label}${B.year ? ", Year " + B.year : ""}`);
   if (B.date) L.push(`date:    ${B.date}`);
   if (B.service !== "Eucharist") L.push(`service: ${B.service}`);
+  const musicDone = new Set();            // a chant's music for this service, written once, under its first use
   B.psalms.forEach(p => {
     if (!p.spec.trim()) return;
     L.push(`psalm:   ${p.spec.trim()}`);
@@ -45,6 +46,11 @@ function sundayText() {
       const nm = c.name.trim(); if (!nm) return;
       const tm = nm.match(/^tone[:\s]+(.+)$/i);
       L.push(`${tm ? "tone:    " + tm[1].replace(/\s+/g, "") : "chant:   " + nm + (c.shift ? " " + shiftWords(c.shift) : "")}${i > 0 && c.from ? " from " + c.from : ""}`);
+      const mine = !tm && (B.music || {})[nm];
+      if (mine && !musicDone.has(nm)) {
+        musicDone.add(nm);
+        Object.entries(mine).forEach(([v, x]) => L.push(`music:   ${v} ${x ? x.start + " " + x.body.replace(/\s+/g, " ").trim() : "silent"}`));
+      }
     });
     if (p.intonation && (p.intonation === "every") !== intoneDefault(p) && p.chants.some(c => /^tone[:\s]/i.test(c.name))) L.push(`intonation: ${p.intonation === "every" ? "every verse" : "first verse"}`);
     if (optionalVerses(p.spec).length && p.optional != null && p.optional !== !!D.parish.optional) L.push(`optional: ${p.optional ? "yes" : "no"}           # ${p.optional ? "sing" : "leave out"} the verses in brackets`);
@@ -62,7 +68,7 @@ function sundayText() {
   return L.join("\n") + "\n";
 }
 function parseSunday(text) {
-  B.psalms = []; B.service = "Eucharist"; B.gloria = "auto"; B.reprint = true; B.sung = false; B.choir = true; B.svc = {}; B.also = ""; B.note = ""; B.extra = {};
+  B.psalms = []; B.music = {}; B.service = "Eucharist"; B.gloria = "auto"; B.reprint = true; B.sung = false; B.choir = true; B.svc = {}; B.also = ""; B.note = ""; B.extra = {};
   const alsoL = [], noteL = [], seqL = [];
   let verse = null;                              // a verse: line, collecting its indented lines
   const endVerse = () => { if (verse && B.psalms.length) { const v = parseVerseBlock(verse.join("\n")); const p = B.psalms[B.psalms.length - 1]; if (v) p.pointing = Object.assign({}, p.pointing, {[v[0]]: verse.join("\n")}); } verse = null; };
@@ -86,6 +92,10 @@ function parseSunday(text) {
     else if (k === "also") { alsoL.push(v); seqL.push(["also", v]); }
     else if (k === "note") noteL.push(raw.slice(raw.indexOf(":") + 1).trim());
     else if (PLUGIN_KEYS.has(k)) B.extra[k] = (B.extra[k] ? B.extra[k] + "\n" : "") + raw.slice(raw.indexOf(":") + 1).trim();
+    else if (k === "music" && B.psalms.length) {        // a voice of the chant above, as this service has it
+      const cs = B.psalms[B.psalms.length - 1].chants, c = cs[cs.length - 1], m = v.match(/^(\w+_notes)\s+(silent|(\S+)\s+(.+))$/);
+      if (c && c.name && m) (B.music[c.name] = B.music[c.name] || {})[m[1]] = m[2] === "silent" ? null : {start: m[3], body: m[4].replace(/\\bar "\|\|"\s*/g, '\\bar "||"\n').trim()};
+    }
     else if ((k === "chant" || k === "tone") && B.psalms.length) { const m = v.match(/^(.+?)(?:\s+from\s+(\d+))?$/); if (m) { const r = k === "tone" ? {name: "tone " + m[1], shift: 0} : chantRef(m[1]); B.psalms[B.psalms.length - 1].chants.push({name: r.name === "???" ? "" : r.name, from: m[2] || "", shift: r.shift}); } }
   });
   endVerse();
@@ -104,7 +114,7 @@ function buildThisPsalm(id) {
   B.mode = "psalm"; try { localStorage.setItem("psalter-mode", "psalm"); } catch (e) {}
   B.started = true; B.date = ""; B.label = ""; B.year = ""; B.service = "Eucharist"; B.existing = null; B.files = []; B.status = ""; B.log = ""; B.pdf = "";
   B.name = id.toLowerCase().replace(/_/g, "-"); B.svc = {}; B.also = ""; B.note = ""; B.extra = {}; PLUGINS.reset.forEach(f => f()); B.sung = false; B.choir = true;
-  B.psalms = [{spec: specOf(id), chants: [{name: "", from: ""}], daggers: null, open: true}];
+  B.psalms = [{spec: specOf(id), chants: [{name: "", from: ""}], daggers: null, open: true}]; B.music = {};
   document.querySelector('nav button[data-tab="builder"]').click();
 }
 async function setDate(date) {
@@ -118,7 +128,7 @@ async function setDate(date) {
   B.label = c ? c.label : ""; B.year = c ? c.year : "";
   const opts = c ? c.options.filter(o => o.texts.length) : [];
   const pick = opts.find(o => o.track === "Track " + D.parish.track) || opts[0];
-  B.psalms = [{spec: pick ? pick.spec : "", chants: [{name: "", from: ""}], daggers: null}];
+  B.psalms = [{spec: pick ? pick.spec : "", chants: [{name: "", from: ""}], daggers: null}]; B.music = {};
   B.service = c && /Ash Wednesday|Good Friday|Maundy|Vigil/.test(c.label) ? c.label : "Eucharist";
   prefillService(date);
   PLUGINS.reset.forEach(f => f());
@@ -290,10 +300,30 @@ function musicHTML(name, shift = 0) {
   if (tm) return `<div class="pv-music"><div class="pv-credit">Tone ${esc(tm[1])}</div><p class="hint">(The tone and the first verse set to it appear in the PDF.)</p></div>`;
   const c = C[name];
   if (!c) return `<p class="hint">${esc(name)}: not in the catalog</p>`;
+  const mine = (B.music || {})[c.id];
   return `<div class="pv-music"><div class="pv-credit">${esc(c.composer)}${c.years ? " (" + esc(c.years) + ")" : ""}</div>
-    ${shift && SERVER ? transposedImg(c.id, shift) : c.img ? `<img src="${esc(chantImg(c))}" alt="${esc(c.id)}">` : esc(c.id)}
+    ${mine && SERVER ? serviceImg(c.id, shift, mine) : shift && SERVER ? transposedImg(c.id, shift) : c.img ? `<img src="${esc(chantImg(c))}" alt="${esc(c.id)}">` : esc(c.id)}
     ${shift ? `<p class="hint">${SERVER ? `In ${esc(keyAt(c, shift))} (${shiftWords(shift)}), as the PDF prints it.` : `Shown as written; the PDF prints it in ${esc(keyAt(c, shift))} (${shiftWords(shift)}).`}</p>` : ""}
-    ${SERVER ? `<p class="hint" style="margin:2px 0"><span class="link" onclick="editMusic('${esc(c.id)}', renderBuilder)">edit the music</span></p>` : ""}</div>`;
+    ${mine ? `<p class="hint" style="margin:2px 0"><span class="changed">✱</span> changed for this service: ${esc(musicChanges(mine))}. The chant itself is unchanged.</p>` : ""}
+    ${SERVER ? `<p class="hint" style="margin:2px 0"><span class="link" onclick="editMusic('${esc(c.id)}', renderBuilder, {service: true})">${mine ? "change it further" : "change the music for this service"}</span>${mine
+      ? ` · <span class="link" onclick="delete B.music['${esc(c.id)}']; renderBuilder()">put the chant's own music back</span>` : ""}</p>` : ""}</div>`;
+}
+const VOICE_NAMES = {S_notes: "soprano", A_notes: "alto", T_notes: "tenor", B_notes: "bass", Unison_notes: "unison", Descant_notes: "descant"};
+const musicChanges = m => Object.entries(m).map(([v, x]) => (VOICE_NAMES[v] || v) + (x ? " changed" : " silent")).join(", ");
+// a chant as this service has it (its music: lines), drawn by the launcher: like transposedImg
+function serviceImg(id, shift, mine) {
+  const k = id + "@" + shift + "@" + JSON.stringify(mine);
+  if (TRANS[k]) return `<img src="${esc(TRANS[k])}" alt="${esc(id)} as changed for this service">`;
+  post("/api/chant/open", {name: id}).then(j => {
+    if (!j.ok) return;
+    j.parts.voices.forEach(v => { if (v.var in mine) Object.assign(v, mine[v.var] ? {start: mine[v.var].start, body: mine[v.var].body} : {body: ""}); });
+    return post("/api/chant/preview", {name: id, shift, parts: j.parts});
+  }).then(j => {
+    if (!j || !j.ok) return;
+    TRANS[k] = j.img;
+    document.querySelectorAll(`img[data-trans="${CSS.escape(k)}"]`).forEach(el => { el.src = j.img; el.style.opacity = 1; });
+  });
+  return `<img data-trans="${esc(k)}" src="${esc(chantImg(C[id]))}" alt="${esc(id)}" style="opacity:.35">`;
 }
 // a chant transposed, drawn by the launcher once and kept: an <img> filled in when the picture comes
 const TRANS = {};

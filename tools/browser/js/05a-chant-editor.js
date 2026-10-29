@@ -36,19 +36,24 @@ const ME = {name: "", parts: null, img: "", problems: [], error: "", voices: nul
 const TONICS = ["c", "cis", "des", "d", "dis", "ees", "e", "f", "fis", "ges", "g", "gis", "aes", "a", "ais", "bes", "b"];
 const tonicName = t => t[0].toUpperCase() + t.slice(1).replace("is", "♯").replace(/e?s$/, "♭");     // aes -> A♭
 const catalogKey = t => t[0].toUpperCase() + t.slice(1).replace("is", "#").replace(/e?s$/, "b");    // aes -> Ab
-async function editMusic(name, after) {
+async function editMusic(name, after, opts = {}) {
   const j = await post("/api/chant/open", {name});
   if (!j.ok) { window.alert(j.error || "Could not open it"); return; }
-  Object.assign(ME, {name, parts: j.parts, img: "", problems: [], error: "", voices: null, isNew: !j.exists, after: after || null, details: null});
+  // for one service (from the planner): the chant's own music with this service's changes; saved in the Sunday file
+  const mine = opts.service ? (B.music || {})[name] || {} : null, own = JSON.parse(JSON.stringify(j.parts));
+  if (mine) j.parts.voices.forEach(v => { if (v.var in mine) Object.assign(v, mine[v.var] ? {start: mine[v.var].start, body: mine[v.var].body} : {body: ""}); });
+  Object.assign(ME, {name, parts: j.parts, own: opts.service ? own : null, service: !!opts.service,
+                     img: "", problems: [], error: "", voices: null, isNew: !j.exists, after: after || null, details: null});
   drawMusicEditor(); dlg.classList.add("wide"); if (!dlg.open) dlg.showModal();
   previewMusic();
 }
 function drawMusicEditor() {
   const p = ME.parts, k = p.key || {tonic: "c", mode: "major"};
   const modes = [...new Set(["major", "minor", k.mode])];
-  $("#dlgbody").innerHTML = `<h3 style="margin:4px 0">${ME.isNew ? "New chant: " : "Music: "}${esc(C[ME.name] ? CN(ME.name) : ME.name)} <span class="hint">${esc(ME.name)}.ly</span></h3>
+  $("#dlgbody").innerHTML = `<h3 style="margin:4px 0">${ME.service ? "Music for this service: " : ME.isNew ? "New chant: " : "Music: "}${esc(C[ME.name] ? CN(ME.name) : ME.name)} <span class="hint">${esc(ME.name)}${ME.service ? "" : ".ly"}</span></h3>
+    ${ME.service ? `<p class="hint" style="margin:0 0 6px">Changes here are for this service only, kept in its Sunday file (like pointing changed for a service); the chant itself stays as it is. Leave a voice empty and it doesn't sing; edit a chord (<code>&lt;a f&gt;2</code>) to one note to drop a part. The key and the time stay the chant's; to move the key, transpose it in the planner.</p>` : ""}
     <div class="me-grid"><div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;${ME.service ? "display:none" : ""}">
         <label class="hint">Key<br><select id="me-tonic">${TONICS.map(t => `<option value="${t}" ${t === k.tonic ? "selected" : ""}>${esc(tonicName(t))}</option>`).join("")}</select>
           <select id="me-mode">${modes.map(m => `<option ${m === k.mode ? "selected" : ""}>${m}</option>`).join("")}</select></label>
         <label class="hint">Time<br><input type="text" id="me-time" value="${esc(p.time)}" style="width:60px"></label>
@@ -61,7 +66,10 @@ function drawMusicEditor() {
       <div id="me-pic" class="notation">${musicPicture()}</div>
       <p style="margin:6px 0"><button class="small play" onclick="playEdited(this)">▶ Play</button> <span class="hint" id="me-state"></span></p>
     </div></div>
-    <p style="margin:10px 0 0"><button class="small primary" id="me-save" onclick="saveMusic()">${ME.isNew ? "Add the chant" : "Save the music"}</button>
+    <p style="margin:10px 0 0">${ME.service
+      ? `<button class="small primary" id="me-save" onclick="useForService()">Use for this service</button>
+         ${(B.music || {})[ME.name] ? `<button class="small" onclick="delete B.music[ME.name]; const a = ME.after; dlg.close(); if (a) a()">Put the chant's own music back</button>` : ""}`
+      : `<button class="small primary" id="me-save" onclick="saveMusic()">${ME.isNew ? "Add the chant" : "Save the music"}</button>`}
       <button class="small" onclick="dlg.close()">Cancel</button></p>`;
   $("#dlgbody").querySelectorAll("select, input, textarea").forEach(el => el.addEventListener("input", () => { clearTimeout(ME.timer); ME.timer = setTimeout(previewMusic, 700); }));
 }
@@ -89,6 +97,18 @@ async function previewMusic() {
                      double: j.double});
   if ($("#me-pic")) $("#me-pic").innerHTML = musicPicture();
   if (state) state.textContent = "";
+}
+// for one service: keep in B.music only the voices that differ from the chant's own (empty: that voice is silent)
+function useForService() {
+  const parts = editedParts(), own = ME.own, mine = {};
+  parts.voices.forEach(v => {
+    const o = own.voices.find(x => x.var === v.var);
+    if (!v.body.trim()) mine[v.var] = null;
+    else if (!o || o.body.replace(/\s+/g, " ").trim() !== v.body.replace(/\s+/g, " ").trim() || o.start !== v.start) mine[v.var] = {start: v.start, body: v.body.trim()};
+  });
+  if (Object.keys(mine).length) B.music[ME.name] = mine; else delete B.music[ME.name];
+  const after = ME.after; dlg.close();
+  if (after) after();
 }
 function playEdited(btn) { if (ME.voices) playVoices(ME.voices, btn); }
 async function saveMusic() {
@@ -170,6 +190,6 @@ async function startNewChant() {
   const j = await post("/api/chant/open", {name, credit});
   if (!j.ok) { $("#nc-msg").textContent = j.error || "Could not start it"; return; }
   const parts = ME.imported ? Object.assign(JSON.parse(JSON.stringify(ME.imported)), {credit: j.parts.credit}) : j.parts;
-  Object.assign(ME, {name, parts, img: "", problems: [], error: "", voices: null, isNew: true, after: null});
+  Object.assign(ME, {name, parts, service: false, own: null, img: "", problems: [], error: "", voices: null, isNew: true, after: null});
   drawMusicEditor(); dlg.classList.add("wide"); previewMusic();
 }

@@ -82,6 +82,40 @@ class Psalms(unittest.TestCase):
         wrong = dict(v1, lines=[dict(v1['lines'][0], text='The | LORD is my | shepherd;'), v1['lines'][1]])
         self.assertTrue(check_texts.verse_problems('Psalm_023.txt', wrong))      # no *
 
+    def test_this_services_music(self):
+        """music: lines change a chant's voices for one service (an empty one silent), never the chant's file."""
+        f = tempfile.NamedTemporaryFile('w', suffix='.txt', delete=False)
+        f.write('psalm: 23\nchant: Turle-2 down 2\nmusic:   A_notes silent\n'
+                'music:   S_notes g\' a2 | d,4 e | f2 \\bar "||" g2 | a4 a | a d | d cis | \\bar "||" '
+                'd2 | c4 bes | a2 \\bar "||" a2 | a4 g | f e | d2 | \\bar "||"\n')
+        f.close()
+        try:
+            s = build.parse_sunday(f.name)
+        finally:
+            os.unlink(f.name)
+        music = s['chant_music']['Turle-2']
+        self.assertIsNone(music['A_notes'])
+        self.assertEqual(music['S_notes'][0], "g'")
+        before = paths.read(paths.chant_file('Turle-2'))
+        c = build.load_music('Turle-2 down 2', music)
+        self.assertIn('\\transpose d c', c['score'])
+        self.assertEqual(paths.read(paths.chant_file('Turle-2')), before)           # the chant itself untouched
+        text = chantedit.service_text(before, music)
+        alto = re.search(r'A_notes = .*?\n}', text, re.S).group(0)
+        self.assertNotRegex(alto.split('{', 1)[1], r'(?<![\\\w])[a-g]')               # silent: spacers only
+        self.assertEqual(chantedit.check(text)[0], [])
+        report = '\n'.join(build.checks(s, build.plan(s), {'Turle-2 down 2': c}))
+        self.assertIn('Turle-2: music changed for this service (alto silent, soprano)', report)
+        with self.assertRaises(SystemExit):                                         # a music: line needs a chant
+            self.plan('psalm: 23\nmusic: A_notes silent\n')
+
+    def test_a_bar_too_long(self):
+        text = paths.read(paths.chant_file('Turle-2'))
+        p = chantedit.parts(text)
+        p['voices'][0]['body'] = p['voices'][0]['body'].replace('a2', 'a1', 1)
+        self.assertIn('Soprano: bar 1 is too long for 2/4', chantedit.check(chantedit.apply(text, p))[0])
+        self.assertEqual(chantedit.spacers('a2 | <d fis>4 e~ | d?2 \\bar "||" r4 bes, |'), 's2 | s4 s | s2 \\bar "||" s4 s |')
+
     def test_changes_out_of_order_are_refused(self):
         with self.assertRaises(SystemExit):
             self.plan('psalm: 23\nchant: Turle-2\nchant: Goss-1 from 4\nchant: Smart-1 from 2\n')

@@ -44,7 +44,7 @@ STYLE = os.path.join(ROOT, 'style', 'psalm-style.ily')
 def parse_sunday(path):
     import service
     s = {'date': None, 'service': 'Eucharist', 'gloria': None, 'reprint': True, 'sung': False, 'choir': True,
-         'items': [], 'music': []}
+         'items': [], 'music': [], 'chant_music': {}}
     verse = None                                   # a verse: line, collecting its indented lines
     for raw in paths.read(path).splitlines():
         line = raw.split('#', 1)[0].strip()
@@ -108,6 +108,18 @@ def parse_sunday(path):
             else:
                 name = paths.canonical(name)            # 'Turle-5' (a copy of Turle-2) -> 'Turle-2 down 2'
             s['items'][-1]['chants'].append((name, int(m.group(2)) if m.group(2) else None))
+        elif key == 'music':
+            # a voice of the chant above as this service has it: "music: A_notes c' d2 | …", or "music: T_notes silent"
+            chants = s['items'][-1]['chants'] if s['items'] else []
+            if not chants or is_tone(chants[-1][0]):
+                raise SystemExit(f'{path}: a music: line must come after a chant: line')
+            mm = re.match(r"^([STAB]_notes|Unison_notes|Descant_notes)\s+(silent|[a-g](?:is|es|s)?[',]*\s+(.+))$", val)
+            if not mm:
+                raise SystemExit(f'{path}: cannot read the music: line {val!r} (a voice, its first pitch, its notes; '
+                                 'or a voice and "silent")')
+            base = paths.split_chant(chants[-1][0])[0]
+            got = None if mm.group(2) == 'silent' else (mm.group(2).split()[0], mm.group(3).replace('\\bar "||" ', '\\bar "||"\n'))
+            s['chant_music'].setdefault(base, {})[mm.group(1)] = got
         elif key in service.KEYS:
             s['music'].append((key, val))         # the rest of the service
         else:
@@ -307,13 +319,21 @@ def is_tone(name):
     return name.startswith('tone:')
 
 
-def load_music(name):
-    """A chant file (perhaps transposed: 'Turle-2 down 2'), or a psalm tone given as tone:VIIa."""
+def load_music(name, music=None):
+    """A chant file (perhaps transposed: 'Turle-2 down 2'), or a psalm tone given as tone:VIIa. music: the voices
+    one service changes ({var: (start, notes) or None for silent}, from its music: lines)."""
     if is_tone(name):
         t = tones.tone(name[5:])
         return {'name': name, 'tone': t, 'double': False, 'credit': [t['label']], 'key': None}
     base, shift = paths.split_chant(name)
-    info = read_chant(base)
+    if music:
+        import chantedit
+        try:
+            info = read_chant(base, chantedit.service_text(paths.read(chant_path(base)), music))
+        except ValueError as e:
+            raise SystemExit(f'{base}: the music changed for this service: {e}')
+    else:
+        info = read_chant(base)
     if shift:
         transpose(info, shift)
     catalog_key(info, base, shift)
@@ -468,6 +488,14 @@ def checks(sunday, psalms, chants):
             sing = it.get('optional', optional_default())
             out.append(f"Psalm {it['spec']}: optional vv. {verse_list(opt)} " +
                        ('sung' if sing else 'left out') + f" (optional: {'no' if sing else 'yes'} under the psalm to change)")
+    import chantedit
+    names = {'S_notes': 'soprano', 'A_notes': 'alto', 'T_notes': 'tenor', 'B_notes': 'bass', 'Unison_notes': 'unison',
+             'Descant_notes': 'descant'}
+    for base, music in sunday['chant_music'].items():   # a chant's music as this service has it
+        what = ', '.join(names.get(v, v) + (' silent' if got is None else '') for v, got in music.items())
+        out.append(f'{base}: music changed for this service ({what}); the chant itself is unchanged')
+        for problem in chantedit.check(chantedit.service_text(paths.read(chant_path(base)), music))[0]:
+            out.append(f'  ! {base} as changed: {problem}')
     import check_texts
     for ps in psalms:                              # this Sunday's own pointing: still one * and the BCP's words?
         it = next((i for i in sunday['items'] if i['spec'] == ps['spec']), {})
@@ -746,7 +774,7 @@ def main():
         for sec in ps['sections']:
             if sec['chant'] not in names:
                 names.append(sec['chant'])
-    chants = {n: load_music(n) for n in names}
+    chants = {n: load_music(n, sunday['chant_music'].get(paths.split_chant(n)[0]) if not is_tone(n) else None) for n in names}
     real = [n for n in names if not is_tone(n)]
     tags = {n: 'ch' + 'abcdefghijklmnopqrstuvwxyz'[i] for i, n in enumerate(real)}
 
