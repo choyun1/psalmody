@@ -263,14 +263,13 @@ function sortAdd(view) {
 }
 
 // ---------- chants tab ----------
-const F = {moods: new Set(), mode: "", sd: "", key: "", minRating: 0, q: "", untagged: false, pin: ""};
+const F = {moods: new Set(), mode: "", sd: "", key: "", minRating: 0, q: "", pin: ""};
 SORTS.chants = {levels: sortLevels("chants", [{f: "composer", d: 1}]), render: () => { $("#sortbox").innerHTML = sortControl("chants", false); renderChants(); }};
 function renderChantsShell() {
   $("#tab-chants").innerHTML = `<div class="layout"><aside>
     <input type="search" id="q" placeholder="Composer or chant" style="width:100%">
     <h3>Mood</h3>${D.vocabulary.map(g => `<div class="row" style="margin-bottom:5px">${g.tags.map(t =>
       `<button class="chip g-${esc(g.group)}" data-mood="${esc(t)}">${esc(t)}</button>`).join("")}</div>`).join("")}
-    <label class="hint"><input type="checkbox" id="untagged"> only chants without moods</label>
     <h3>Pinned</h3><select id="pinf"><option value="">all chants</option><option value="favorite">favorites</option><option value="to try">to try</option><option value="to check">to check</option></select>
     <h3>Mode</h3><select id="mode"><option value="">any</option><option>Major</option><option>Minor</option><option value="other">modal / other</option></select>
     <h3>Key</h3><select id="keyf"><option value="">any</option>${KEYS_PRESENT.map(k => `<option>${esc(k)}</option>`).join("")}</select>
@@ -283,13 +282,12 @@ function renderChantsShell() {
     <p class="count" id="ccount"></p><div id="clist"></div></div></div>`;
   if (CV.tones) { $("#tab-chants aside").style.display = "none"; $("#tab-chants .layout").style.gridTemplateColumns = "1fr"; }
   // the controls show the filters still in force (after the tones and back)
-  $("#q").value = F.q; $("#untagged").checked = F.untagged; $("#pinf").value = F.pin || ""; $("#mode").value = F.mode || "";
+  $("#q").value = F.q; $("#pinf").value = F.pin || ""; $("#mode").value = F.mode || "";
   $("#sd").value = F.sd || ""; $("#keyf").value = F.key || ""; $("#rating").value = String(F.minRating || 0);
   document.querySelectorAll("[data-mood]").forEach(b => b.classList.toggle("on", F.moods.has(b.dataset.mood)));
   $("#q").oninput = e => { F.q = e.target.value.toLowerCase(); renderChants(); };
   document.querySelectorAll("[data-mood]").forEach(b => b.onclick = () => {
     const t = b.dataset.mood; F.moods.has(t) ? F.moods.delete(t) : F.moods.add(t); b.classList.toggle("on"); renderChants(); });
-  $("#untagged").onchange = e => { F.untagged = e.target.checked; renderChants(); };
   $("#pinf").onchange = e => { F.pin = e.target.value; renderChants(); };
   $("#mode").onchange = e => { F.mode = e.target.value; renderChants(); };
   $("#sd").onchange = e => { F.sd = e.target.value; renderChants(); };
@@ -328,7 +326,6 @@ function renderChants() {
     const mood = val(c, "mood"), r = val(c, "rating") || 0;
     if (F.q && !(c.id + " " + c.composer + " " + c.label).toLowerCase().includes(F.q)) return false;
     if (F.moods.size && ![...F.moods].some(t => mood.includes(t))) return false;
-    if (F.untagged && mood.length) return false;
     if (!pinFilter(c, F.pin)) return false;
     if (F.mode === "other" ? ["Major", "Minor"].includes(c.mode) : F.mode && c.mode !== F.mode) return false;
     if (F.sd && (F.sd === "d") !== c.double) return false;
