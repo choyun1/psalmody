@@ -425,6 +425,28 @@ class MusicXMLScores(unittest.TestCase):
             z.writestr('score.musicxml', plain)
         self.assertEqual(self.imp(buf.getvalue())[0], ref)
 
+    def test_a_zip_bomb_is_refused(self):
+        import io, zipfile, musicxml
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as z:      # 1 MB that would expand to 1 GB
+            with z.open('score.xml', 'w') as f:
+                for _ in range(256):
+                    f.write(b'\0' * (4 << 20))
+        with self.assertRaises(ValueError) as e:
+            musicxml.to_parts(buf.getvalue())
+        self.assertIn('over 20 MB', str(e.exception))
+
+    def test_xml_attacks_are_refused(self):
+        import musicxml
+        laughs = (b'<?xml version="1.0"?><!DOCTYPE l [<!ENTITY a "aaaaaaaaaa">' + b''.join(
+            b'<!ENTITY %c "%s">' % (98 + i, (b'&%c;' % (97 + i)) * 10) for i in range(8)) +
+            b']><score-partwise><work><work-title>&i;</work-title></work></score-partwise>')
+        local_file = (b'<?xml version="1.0"?><!DOCTYPE s [<!ENTITY x SYSTEM "file:///etc/passwd">]>'
+                      b'<score-partwise><work><work-title>&x;</work-title></work></score-partwise>')
+        for data in (laughs, local_file):                                # nothing expanded, nothing read
+            with self.assertRaises(ValueError):
+                musicxml.to_parts(data)
+
     def test_key_and_time(self):
         parts, info = self.imp(score([(n, [bar(b) for b in PHRASE[v]]) for n, v in zip(('S', 'A', 'T', 'B'), 'SATB')],
                                      fifths=-1, mode='minor'))

@@ -24,6 +24,7 @@ SEMITONES = {'c': 0, 'd': 2, 'e': 4, 'f': 5, 'g': 7, 'a': 9, 'b': 11}
 NAMES = {'S_notes': ('soprano', 'sopranos', 's', 's.', 'treble', 'trebles'), 'A_notes': ('alto', 'altos', 'a', 'a.', 'contralto'),
          'T_notes': ('tenor', 'tenors', 't', 't.'), 'B_notes': ('bass', 'basses', 'b', 'b.', 'baritone')}
 LABELS = [('S_notes', 'Soprano'), ('A_notes', 'Alto'), ('T_notes', 'Tenor'), ('B_notes', 'Bass')]
+MAX_SCORE = 20 * 2 ** 20                                   # bytes of MusicXML: a chant is a few dozen KB
 NOTE = re.compile(r"^(<[^>]*>|[a-gr](?:is|es)*[',]*)(\\breve|\d+\.*)?(~?)$")     # a note as written here
 
 
@@ -43,7 +44,10 @@ def read(data, filename=''):
             path = next((n for n in names if n.lower().endswith(('.xml', '.musicxml')) and not n.startswith('META-INF')), None)
         if not path:
             raise ValueError('no score inside the .mxl file')
-        data = z.read(path)
+        with z.open(path) as fh:                         # read no more than a score could be (not a zip bomb)
+            data = fh.read(MAX_SCORE + 1)
+        if len(data) > MAX_SCORE:
+            raise ValueError(f'the score inside the .mxl file is over {MAX_SCORE // 2 ** 20} MB, far more than a chant')
     try:
         root = ET.fromstring(data)
     except ET.ParseError as e:
