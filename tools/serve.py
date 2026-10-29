@@ -327,7 +327,35 @@ def get_sunday(q):
     return {'exists': os.path.exists(fp), 'text': paths.read(fp) if os.path.exists(fp) else ''}
 
 
-GETS = {'/api/ping': lambda q: {'ok': True}, '/api/git': lambda q: {'repos': history.pending()},
+def api_setup(data):
+    """The first run: make parish/ from the template with these settings, then start again in it."""
+    import setup
+    if paths.PARISH:
+        raise ValueError('there is a parish folder already')
+    done = setup.make_parish(text_arg(data, 'name'), str(data.get('track') or '2'), data.get('patronal') or '',
+                             data.get('optionalVerses') or 'sing')
+    threading.Timer(0.5, restart).start()            # paths are worked out once, at the start
+    return {'ok': True, 'done': done, 'url': '/parish/site/index.html'}
+
+
+SERVING = {}
+
+
+def restart():
+    """Stop serving; main() then starts the launcher again (see the end of main)."""
+    SERVING['restart'] = True
+    SERVING['srv'].shutdown()
+
+
+def get_ping(q):
+    if paths.PARISH:
+        return {'ok': True, 'setup': False}
+    import setup                                    # no parish folder yet: what the first-run form offers
+    return {'ok': True, 'setup': True, 'feasts': [{'key': k, 'name': n, 'date': md} for md, k, n in setup.FEASTS]}
+
+
+ROUTES['/api/setup'] = api_setup
+GETS = {'/api/ping': get_ping, '/api/git': lambda q: {'repos': history.pending()},
         '/api/history': lambda q: {'changes': history.changes()}, '/api/sunday': get_sunday}
 
 
@@ -446,14 +474,23 @@ def main():
     elif f'"linksSignature":"{lectionary.links_signature()}"' not in paths.read(os.path.join(paths.SITE, 'data.js')):
         print('updating the links to the lectionary…')        # the table changed since the page was built
         rebuild()
-    srv = Server(('127.0.0.1', PORT), Handler)
+    srv = SERVING['srv'] = Server(('127.0.0.1', PORT), Handler)
     url = f'http://localhost:{PORT}{SITE_URL}'
     print(f'Chant browser with the Service planner: {url}\n(Ctrl+C to stop)')
-    threading.Timer(0.6, lambda: webbrowser.open(url)).start()
+    if '--no-open' not in sys.argv:                  # (not when starting again after the first-run setup)
+        threading.Timer(0.6, lambda: webbrowser.open(url)).start()
     try:
         srv.serve_forever()
     except KeyboardInterrupt:
         print('\nstopped')
+        return
+    srv.server_close()
+    if SERVING.get('restart'):                       # after the first-run setup: the same launcher, in the new folder
+        print('starting again with the new parish folder…')
+        again = [sys.executable, os.path.abspath(__file__), '--no-open']
+        if os.name == 'nt':                          # (Windows has no exec: run it and wait, in this window)
+            sys.exit(subprocess.call(again))
+        os.execv(sys.executable, again)
 
 
 if __name__ == '__main__':

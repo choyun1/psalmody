@@ -37,6 +37,11 @@ try {
   page.on("dialog", d => d.dismiss());
   await page.goto(`http://localhost:${PORT}/`); await wait(1500);
 
+  await step("First run: the setup card, when there's no parish folder", async () => {
+    const ping = await (await fetch(`http://localhost:${PORT}/api/ping`)).json();
+    if (ping.setup && !await page.locator("#setup #su-feast option").count()) throw new Error("no setup card");
+    if (!ping.setup && await page.locator("#setup").count()) throw new Error("a setup card, with a parish folder");
+  });
   await step("Coming up: open a day", async () => {
     await page.click(".urow >> nth=0"); await wait(200);
     if (!await page.locator("#tab-upcoming .card").count()) throw new Error("the day did not open");

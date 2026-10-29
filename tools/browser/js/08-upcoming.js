@@ -22,11 +22,39 @@ function goText(id) {
   curText = id;
   document.querySelector('nav button[data-tab="texts"]').click();
 }
+// the copy on GitHub Pages: everything to look at, nothing to save
+const demoNote = () => D.demo ? `<div class="card" style="margin-bottom:12px"><b>A demo of the chant browser</b>, for the fictional St. Example's: the chants, the psalms with their moods, and the lectionary are all here to try. Planning and saving a service, building its leaflet and keeping your own notes need a copy on your own computer: see <a href="https://github.com/choyun1/psalmody#getting-started" target="_blank" rel="noopener">Getting started</a>.</div>` : "";
+
+// the launcher's first run: no parish folder yet
+function setupCard() {
+  if (!SETUP) return "";
+  return `<div class="card" id="setup" style="margin-bottom:12px"><b>Welcome.</b> A few things about your parish, to make its own folder (<code>parish/</code>), where your services, notes and pointing will be kept. All of it can be changed later in <code>parish/parish.txt</code>.
+    <label class="hint" style="display:block;margin:8px 0 4px">The parish's name (as on a service leaflet)<br><input type="text" id="su-name" style="width:100%" placeholder="St. Mary's, Anytown"></label>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <label class="hint">Season after Pentecost: lectionary track${info("Track 1 follows the Old Testament stories week by week (semicontinuous); Track 2 pairs the reading with the Gospel. The other is always offered too.")}<br><select id="su-track"><option value="2">Track 2</option><option value="1">Track 1</option></select></label>
+      <label class="hint">Patronal feast<br><select id="su-feast"><option value="">none</option>${SETUP.map(f => `<option value="${esc(f.key)}">${esc(f.name)} (${esc(f.date)})</option>`).join("")}</select></label>
+      <label class="hint">Verses the lectionary puts in brackets<br><select id="su-verses"><option value="sing">sing them</option><option value="leave out">leave them out</option></select></label></div>
+    <p style="margin:10px 0 0"><button class="small primary" onclick="setupParish(this)">Make the parish folder</button> <span class="hint" id="su-msg"></span></p></div>`;
+}
+async function setupParish(btn) {
+  const name = $("#su-name").value.trim(), msg = $("#su-msg");
+  if (!name) { msg.textContent = "the parish's name, please"; return; }
+  btn.disabled = true; msg.textContent = "Making it…";
+  const j = await post("/api/setup", {name, track: $("#su-track").value, patronal: $("#su-feast").value, optionalVerses: $("#su-verses").value});
+  if (!j.ok) { btn.disabled = false; msg.textContent = j.error || "Could not make it"; return; }
+  msg.textContent = j.done.join(" ") + " Starting again in it (the chants' pictures are kept; this takes a moment)…";
+  for (let i = 0; i < 300; i++) {                  // the launcher starts again, rebuilding the page for the parish
+    await new Promise(r => setTimeout(r, 2000));
+    try { const p = await fetch("/api/ping").then(r => r.json()); if (p.ok && !p.setup) { location.href = j.url; return; } } catch (e) {}
+  }
+  msg.textContent = "The launcher hasn't come back: close it and open it again.";
+}
+
 function renderUpcoming() {
   const today = ymd();
   const all = D.calendar.filter(c => c.date >= today), rows = all.slice(0, UPCOMING.n);
   const first = c => c.options.find(o => o.track === "Track " + D.parish.track) || c.options[0];
-  $("#tab-upcoming").innerHTML = `<p class="count">The psalms appointed for the coming weeks${info("The Revised Common Lectionary (Episcopal edition). In the season after Pentecost, Track 1 is the semicontinuous psalm and Track 2 the one related to the Old Testament reading. Click a day for its psalms, their moods and chants to try.")}</p>
+  $("#tab-upcoming").innerHTML = demoNote() + setupCard() + `<p class="count">The psalms appointed for the coming weeks${info("The Revised Common Lectionary (Episcopal edition). In the season after Pentecost, Track 1 is the semicontinuous psalm and Track 2 the one related to the Old Testament reading. Click a day for its psalms, their moods and chants to try.")}</p>
     <div class="clist">` + rows.map(c => {
     const open = UPCOMING.open.has(c.date), f = first(c);
     const status = c.planned.map(pl => `<span class="chip ${pl.sung ? "g-calm on" : "g-calm"}">${pl.sung ? "sung" : "planned"}: ${pl.choir === false ? "no choir" : esc(pl.chants.map(chantText).join(", ") || "chant not chosen")}</span>`).join(" ");

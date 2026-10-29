@@ -482,6 +482,7 @@ def main():
             'unconfirmed': unconfirmed(), 'gloria': gloria_body(), 'service': service_data(),
             'parish': {'name': lectionary.PARISH.get('name', ''), 'track': lectionary.PARISH.get('track', '2'),
                        'optional': build.optional_default()},
+            'demo': bool(os.environ.get('PSALTER_DEMO')),      # the copy on GitHub Pages (.github/workflows/pages.yml)
             }
     with open(os.path.join(SITE, 'data.js'), 'w', encoding='utf-8') as fh:
         fh.write('window.PSALTER = ' + json.dumps(data, ensure_ascii=False, separators=(',', ':')) + ';\n')

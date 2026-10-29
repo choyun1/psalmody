@@ -255,6 +255,38 @@ class Service(unittest.TestCase):
         self.assertEqual(service.find_anthem('Ave verum corpus - W. A. Mozart', lib)['file'], 'ave-mozart')
 
 
+class Setup(unittest.TestCase):
+    def test_settings(self):
+        import setup
+        t = setup.settings_text(paths.read(os.path.join(setup.TEMPLATE, 'parish.txt')), "St. Mary's, Anytown", '1',
+                                'st_mary_the_virgin', 'leave out')
+        self.assertIn("name:          St. Mary's, Anytown", t)
+        self.assertRegex(t, r'(?m)^track:\s+1$')
+        self.assertRegex(t, r"(?m)^patronal:\s+08-15 st_mary_the_virgin Saint Mary the Virgin$")
+        self.assertRegex(t, r'(?m)^optional_verses: leave out$')
+        self.assertIn('# season_colors:', t)                       # the template's comments are kept
+        for bad in (('', '2', ''), ('X', '3', ''), ('X', '2', 'st_nobody')):
+            with self.assertRaises(ValueError):
+                setup.settings_text(t, *bad)
+
+    def test_every_feast_has_its_psalm(self):
+        import csv, setup
+        keys = {r['day'] for r in csv.DictReader(open(os.path.join(ROOT, 'reference', 'rcl_psalms.csv'), encoding='utf-8'))}
+        self.assertEqual([k for _, k, _ in setup.FEASTS if k not in keys], [])
+
+    def test_the_folder(self):
+        import setup
+        d = os.path.join(tempfile.mkdtemp(), 'parish')
+        try:
+            setup.make_parish('St. Test', target=d)
+            self.assertTrue(os.path.isdir(os.path.join(d, '.git')))
+            self.assertEqual([f for f in os.listdir(os.path.join(d, 'sundays')) if f.endswith('.txt')], [])
+            with self.assertRaises(ValueError):
+                setup.make_parish('St. Test', target=d)            # never over an existing folder
+        finally:
+            subprocess.run(['rm', '-rf', os.path.dirname(d)])
+
+
 class Server(unittest.TestCase):
     def test_file_names(self):
         import serve

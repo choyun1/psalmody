@@ -2,7 +2,7 @@
 
 Psalmody sets the psalms of the 1979 Book of Common Prayer for a parish choir, typeset with LilyPond, either to Anglican chant or to the Gregorian psalm tones. Texts and chants are kept apart, so any text can be sung to any chant. One short text file per Sunday becomes the choir's copy (a PDF) and cropped images for the service leaflet. A planner that runs in your web browser opens on the psalm the lectionary appoints, helps choose a chant by mood, key and when it was last sung, and keeps the rest of the service (hymns, anthems, voluntaries, service music) as the parish's record of what was sung.
 
-It was built for the weekly use of one parish, St. Peter's Episcopal Church in Cambridge, Massachusetts, and is shared in case it helps others. Anything particular to a parish lives in its own folder, apart from the tools, and a parish can add to the planner with plugins of its own.
+It was built for the weekly use of one parish, St. Peter's Episcopal Church in Cambridge, Massachusetts, and is shared in case it helps others. To look around first, there's a [demo of the chant browser](https://choyun1.github.io/psalmody/) for a made-up parish (it can't save). Anything particular to a parish lives in its own folder, apart from the tools, and a parish can add to the planner with plugins of its own.
 
 <!-- Contents: one entry per ## section, in order (tools/check_readme.py checks it). -->
 <table><tr><td>
@@ -42,7 +42,7 @@ It was built for the weekly use of one parish, St. Peter's Episcopal Church in C
 
 1. Install Python 3.9 or later and [LilyPond](https://lilypond.org) (2.26 is what the spacing is tuned for; another version works, with a note). If `lilypond` isn't on the PATH, set the `LILYPOND` environment variable to it.
 2. Download this repository and double-click **Psalter.bat** (Windows) or run `psalter.sh` (Linux, macOS). It installs the Python packages it needs (`requirements.txt`) and opens the chant browser in your web browser. Everything stays on your computer; close the launcher's window to stop.
-3. Copy `parish.example/` to `parish/` and edit `parish/parish.txt`: your parish's name, and the lectionary track. Keep `parish/` as its own private git repository if you like. It holds your Sunday files, pointing, ratings and history, and this repository ignores it. Without it, the tools still work, keeping those things here.
+3. The first time, the chant browser asks your parish's name, its lectionary track, its patronal feast and whether to sing the bracketed verses, and makes your parish folder, `parish/` (or run `python tools/setup.py`, or copy `parish.example/` to `parish/` by hand). It holds your Sunday files, pointing, ratings and history, and this repository ignores it; it's a git repository of its own, for Undo, and once you give it a private copy on GitHub, **Sync** keeps the two alike. Everything it asked can be changed later in `parish/parish.txt`, along with the liturgical colors, the Christmas psalms and any plugins.
 
 ## Gallery
 
@@ -206,8 +206,7 @@ In this folder: `texts/` and `chants/` (with `catalog.csv`), `moods.txt`, `servi
 
 - **Pointing that can be shared.** Automatic Anglican-chant pointing from word stress, as the plainchant tones already have, checked against printed psalters, so that every psalm comes pointed.
 - **The plainchant tones.** An audit of the tone pointing against printed English plainsong psalters, and a way to move an accent by hand.
-- **More parishes.** A first-run setup that writes `parish.txt`; more hymnals; other psalters (Coverdale, Common Worship) and lectionaries.
-- **A demo** of the chant browser on GitHub Pages.
+- **More parishes.** More hymnals; other psalters (Coverdale, Common Worship) and lectionaries.
 - **The corpus.** The chants in LilyPond and MusicXML with their metadata, as a dataset, and the studies it allows: keys and ranges across composers and periods, whether mood tags follow from musical features, and automatic pointing.
 
 Maybe later:
