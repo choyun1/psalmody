@@ -630,6 +630,29 @@ class History(unittest.TestCase):
         self.assertEqual(paths.read(f), 'two\n')
         self.assertEqual(history.changes()[0]['message'], 'Redid: Service: a')
 
+    def test_a_sync_reports_its_progress(self):
+        """Each step of a sync moves the bar on (save, ask GitHub, bring in, send), ending at the last."""
+        remote = tempfile.mkdtemp()
+        subprocess.run(['git', 'init', '-q', '--bare', remote], check=True)
+        f = self.write('a.txt', 'one\n')
+        history.record([f], 'New service: a')
+        for args in (['remote', 'add', 'origin', remote], ['push', '-q', '-u', 'origin', 'HEAD']):
+            subprocess.run(['git'] + args, cwd=self.d, check=True, capture_output=True)
+        self.write('a.txt', 'two\n')
+        seen = []
+        real = history.step
+        history.step = lambda what: (real(what), seen.append((history.PROGRESS['done'], what)))
+        history.PROGRESS.update(done=0, total=history.SYNC_STEPS * len(history.repos()))
+        try:
+            ok, log = history.sync('by hand')
+        finally:
+            history.step = real
+            subprocess.run(['rm', '-rf', remote])
+        self.assertTrue(ok, log)
+        self.assertEqual([d for d, _ in seen], list(range(1, len(seen) + 1)))       # one step at a time
+        self.assertEqual(len(seen), history.PROGRESS['total'])                        # all of them
+        self.assertIn('sending yours to GitHub', seen[-1][1])
+
     def test_only_a_change_id_reaches_git(self):
         self.assertEqual(history.undo('parish', '--output=/tmp/x'), (False, 'no such change'))
         self.assertEqual(history.undo('parish', 'HEAD~2..HEAD'), (False, 'no such change'))

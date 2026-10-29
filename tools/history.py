@@ -177,6 +177,14 @@ def pending():
     return out
 
 
+PROGRESS = {'done': 0, 'total': 0, 'step': ''}      # how far a sync has got, for the page's progress bar
+SYNC_STEPS = 4                                        # for each folder: save, fetch, merge, send
+
+
+def step(what):
+    PROGRESS.update(done=min(PROGRESS['done'] + 1, PROGRESS['total'] or 1), step=what)
+
+
 def sync(message):
     """Sync with GitHub: record anything changed by hand, bring in GitHub's changes, send ours. -> (ok, log)"""
     log = []
@@ -186,17 +194,21 @@ def sync(message):
 
 def _sync(message, log):
     for d, name in repos():
+        step(f'{name}: saving what changed here')
         code, st = git(d, 'status', '--porcelain')
         if st.strip():
             git(d, 'add', '-A')
             git(d, 'commit', '-q', '-m', message)
         if not upstream(d):                                          # a history kept only on this computer
             log.append(f'{name}: kept on this computer only (no GitHub copy is set up for this folder)')
+            PROGRESS['done'] += SYNC_STEPS - 1
             continue
+        step(f'{name}: asking GitHub what is new')
         code, out = git(d, 'fetch', '-q')
         if code != 0:
             return False, f'{name}: could not reach GitHub:\n{out.strip()}'
         code, before = git(d, 'rev-list', '--count', 'HEAD..@{u}')
+        step(f'{name}: bringing in the changes')
         code, out = git(d, 'merge', '--no-edit', '-q', '@{u}')
         if code != 0:
             clash = names(git(d, 'diff', '--name-only', '-z', '--diff-filter=U')[1])
@@ -219,6 +231,7 @@ def _sync(message, log):
                 log.append('(the tools were updated: stop the launcher and start it again to use them)')
         code, ahead = git(d, 'rev-list', '--count', '@{u}..HEAD')
         n = int(ahead.strip() or 0) if code == 0 else 0
+        step(f'{name}: sending yours to GitHub')
         if n:
             code, out = git(d, 'push', '-q')
             if code != 0 and d == paths.CORE and paths.PARISH:      # the tools are someone else's: bringing in is enough

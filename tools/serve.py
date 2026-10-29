@@ -115,12 +115,19 @@ def api_sung(data):
 def api_commit(data):
     """Sync with GitHub: bring in what's new there, send what's new here."""
     msg = (data.get('message') if isinstance(data.get('message'), str) else '') or 'Changes made outside the chant browser'
-    with REBUILD:                                     # not while a rebuild is writing the pages
-        ok, log = history.sync(msg.strip())
-    if ok and history.STALE.pop('site', None):        # pages built on both sides: build them afresh, and send those too
-        rebuild('after bringing in changes')
-        with REBUILD:
-            history.sync(msg.strip())
+    P = history.PROGRESS
+    P.update(done=0, total=history.SYNC_STEPS * len(history.repos()), step='starting')
+    try:
+        with REBUILD:                                 # not while a rebuild is writing the pages
+            ok, log = history.sync(msg.strip())
+        if ok and history.STALE.pop('site', None):    # pages built on both sides: build them afresh, and send those too
+            P.update(total=P['total'] * 2 + 1)
+            history.step('building the pages again with what came in')
+            rebuild('after bringing in changes')
+            with REBUILD:
+                history.sync(msg.strip())
+    finally:
+        P.update(done=P['total'], step='done')
     return {'ok': ok, 'log': log}
 
 
@@ -361,7 +368,7 @@ def get_ping(q):
 
 
 ROUTES['/api/setup'] = api_setup
-GETS = {'/api/ping': get_ping, '/api/git': lambda q: {'repos': history.pending()},
+GETS = {'/api/sync/progress': lambda q: dict(history.PROGRESS), '/api/ping': get_ping, '/api/git': lambda q: {'repos': history.pending()},
         '/api/history': lambda q: {'changes': history.changes()}, '/api/sunday': get_sunday}
 
 

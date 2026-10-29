@@ -69,10 +69,27 @@ function showSync() {
     <div style="margin-top:8px;text-align:right"><button class="small" onclick="closeSyncPop()">Cancel</button> <button class="small primary" onclick="commitAll()">Sync</button></div>`, true);
 }
 function showSyncWhy() { $("#dlgbody").innerHTML = `<h3>${SYNC_ICON} Why sync with GitHub</h3><p style="white-space:pre-line">${esc(SYNC_WHY)}</p>`; dlg.showModal(); }
+// while it syncs: a bar that fills step by step (save, ask GitHub, bring in, send, for each folder), and the step
+const syncBar = (done, total, step) => `<div class="hint">Syncing with GitHub…</div>
+  <div class="bar"><span style="width:${total ? Math.max(6, Math.round(100 * done / total)) : 6}%"></span></div>
+  <div class="hint step" style="font-size:13px;margin-top:3px">${esc(step && step !== "starting" ? step : "starting")}</div>`;
 async function commitAll() {
-  syncPop('<span class="hint">Syncing with GitHub…</span>', true);
-  let j;
+  syncPop(syncBar(0, 0, ""), true);
+  let j, polling = true;
+  const poll = async () => {
+    while (polling) {
+      try {
+        const p = await fetch("/api/sync/progress").then(r => r.json()), bar = $("#syncpop .bar span");
+        if (!polling) break;
+        if (bar) { bar.style.width = (p.total ? Math.max(6, Math.round(100 * p.done / p.total)) : 6) + "%"; $("#syncpop .step").textContent = p.step && p.step !== "starting" ? p.step : "starting"; }
+        else syncPop(syncBar(p.done, p.total, p.step), true);
+      } catch (e) {}
+      await new Promise(r => setTimeout(r, 250));
+    }
+  };
+  poll();
   try { j = await post("/api/commit", {}); } catch (e) { j = {ok: false, error: "the launcher didn't answer: is it still running?"}; }
+  polling = false;
   if (j.ok && /brought in/.test(j.log || "")) { location.reload(); return; }     // new things came: show them
   if (j.ok) syncPop(`<span class="ok">✓</span> ${esc(j.log || "Done.").replace(/\n/g, "<br>")}`);
   else syncPop(`<span class="warn">Could not sync:</span> ${esc(j.error || j.log || "something went wrong").replace(/\n/g, "<br>")}

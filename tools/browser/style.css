@@ -180,3 +180,7 @@ button:disabled { opacity: .55; cursor: wait; }
 .act:hover, .act:focus-visible { background: var(--hover); border-color: var(--line); }
 .act.on { background: var(--hover); color: var(--ink); }
 @media (prefers-reduced-motion: reduce) { .caret { transition: none; } .crow.just .caret { animation: none; } }
+
+/* the sync progress bar */
+.pop .bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; margin-top: 6px; width: 240px; }
+.pop .bar span { display: block; height: 100%; background: var(--accent); border-radius: 3px; transition: width .25s ease; }
