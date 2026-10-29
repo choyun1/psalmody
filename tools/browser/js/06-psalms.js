@@ -121,7 +121,7 @@ function renderTextsShell() {
       if (tm.size && !t.sections.some(s => s.mood.some(m => tm.has(m)))) return false;
       return true;
     });
-    $("#tlist").innerHTML = items.map(t => `<li data-id="${esc(t.id)}" class="${t.id === curText ? "on" : ""}"><span>${esc(t.title)}</span>
+    $("#tlist").innerHTML = items.map(t => `<li data-id="${esc(t.id)}" class="${t.id === curText ? "on" : ""}"><span class="tname">${esc(t.title)}${t.latin ? `<span class="lat">${esc(t.latin)}</span>` : ""}</span>
       <span class="dots">${[...new Set(t.sections.flatMap(s => s.mood.slice(0, 1)))].map(m => `<span class="dot ${gclass(m)}" title="${esc(m)}"></span>`).join("")}</span></li>`).join("");
     document.querySelectorAll("#tlist li").forEach(li => li.onclick = () => { curText = li.dataset.id; draw(); renderText(); });
   };

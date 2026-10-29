@@ -50,6 +50,15 @@ async function setupParish(btn) {
   msg.textContent = "The launcher hasn't come back: close it and open it again.";
 }
 
+function toggleDay(date) {             // open a day (sliding), or shut it
+  if (UPCOMING.open.has(date)) {
+    const row = document.querySelector(`.urow[data-date="${date}"]`);
+    if (row) row.classList.remove("open");
+    slideShut([document.querySelector(`#tab-upcoming .card[data-day="${date}"]`)], () => { UPCOMING.open.delete(date); renderUpcoming(); });
+  } else {
+    UPCOMING.open.add(date); JUST = "day:" + date; renderUpcoming(); slideOpen();
+  }
+}
 function renderUpcoming() {
   const today = ymd();
   const all = D.calendar.filter(c => c.date >= today), rows = all.slice(0, UPCOMING.n);
@@ -58,14 +67,14 @@ function renderUpcoming() {
     <div class="clist">` + rows.map(c => {
     const open = UPCOMING.open.has(c.date), f = first(c);
     const status = c.planned.map(pl => `<span class="chip ${pl.sung ? "g-calm on" : "g-calm"}">${pl.sung ? "sung" : "planned"}: ${pl.choir === false ? "no choir" : esc(pl.chants.map(chantText).join(", ") || "chant not chosen")}</span>`).join(" ");
-    const row = `<div class="crow urow ${open ? "open" : ""}" onclick="UPCOMING.open.has('${c.date}') ? UPCOMING.open.delete('${c.date}') : UPCOMING.open.add('${c.date}'); renderUpcoming()">
-      <span class="nm">${swatch(c.date)}${esc(new Date(c.date + "T12:00").toLocaleDateString(undefined, {weekday: "short", month: "short", day: "numeric"}))}</span>
+    const row = `<div class="crow urow ${open ? "open" : ""} ${JUST === "day:" + c.date ? "just" : ""}" data-date="${c.date}" onclick="toggleDay('${c.date}')">
+      <span class="nm"><span class="caret">▸</span>${swatch(c.date)}${esc(new Date(c.date + "T12:00").toLocaleDateString(undefined, {weekday: "short", month: "short", day: "numeric"}))}</span>
       <span>${esc(c.label)} <span class="meta">· ${esc(c.year)}</span></span>
       <span class="meta">${f ? (/^\d/.test(f.spec) ? "Ps " : "") + esc(f.spec) + (c.options.length > 1 ? ` <span title="${esc(c.options.slice(1).map(o => o.spec).join(", "))}">+${c.options.length - 1}</span>` : "") : "—"}</span>
       <span>${status}</span></div>`;
     if (!open) return row;
     const recent = recentChants(c.date);
-    return row + `<div class="card"><p style="margin:0 0 4px">${lectLink("The readings for " + c.label, c.link)} · <span class="link" onclick="planOn('${c.date}')">Plan this day</span></p>
+    return row + `<div class="card ${JUST === "day:" + c.date ? "opening" : ""}" data-day="${c.date}"><p style="margin:0 0 4px">${lectLink("The readings for " + c.label, c.link)} · <span class="link" onclick="planOn('${c.date}')">Plan this day</span></p>
       ${c.options.length ? c.options.map(o => {
         const mood = overlapMoods(o.texts, o.verses);
         const sg = mood.length ? D.chants.map(ch => ({ch, ...score(mood, val(ch, "mood"))})).filter(x => x.s > 0 && !recent.has(x.ch.id))

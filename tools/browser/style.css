@@ -66,6 +66,9 @@ button.pin.on { color: var(--accent); border-color: var(--accent); }
 .list li:hover { background: var(--panel); }
 .list li.on { background: var(--panel); outline: 1px solid var(--line); }
 .list .dots { display: flex; gap: 3px; align-items: center; }
+.list .tname { min-width: 0; }
+.list .lat { display: block; font-size: 13px; font-style: italic; color: var(--muted); line-height: 1.2;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c); display: inline-block; }
 .latin { font-style: italic; color: var(--muted); margin-left: 10px; }
 .section { border-left: 3px solid var(--line); padding: 2px 0 2px 14px; margin: 14px 0; }
@@ -160,3 +163,21 @@ button.chip.maybe:hover { opacity: 1; }
 .changed { color: var(--accent); font-size: 13px; margin-left: 3px; cursor: help; }
 .moodrow.chantfacts { margin: -2px 0 6px 3.2em; }
 button:disabled { opacity: .55; cursor: wait; }
+
+/* things that open: a ▸ that turns, a highlight under the pointer, and spaced-out actions */
+:root { --hover: color-mix(in srgb, var(--accent) 11%, var(--panel)); }
+.caret { display: inline-block; width: .95em; font-size: .72em; color: var(--muted); transition: transform .15s ease, color .15s; vertical-align: 1px; }
+.crow .caret { margin-right: 5px; }
+.crow:not(.head):hover { background: var(--hover); }
+.crow:not(.head):hover .caret, .crow.open .caret { color: var(--accent); }
+.crow.open .caret, .act.on .caret { transform: rotate(90deg); }
+.crow.just .caret { animation: turn .15s ease; }
+@keyframes turn { from { transform: rotate(0deg); } to { transform: rotate(90deg); } }
+.list li:hover { background: var(--hover); }
+.actions { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 10px 0 0 -10px; }
+.act { background: none; border: 1px solid transparent; border-radius: 6px; padding: 4px 10px; color: var(--accent);
+  font: 16px "EBG", Georgia, serif; cursor: pointer; }
+.act .caret { color: inherit; margin-right: 4px; }
+.act:hover, .act:focus-visible { background: var(--hover); border-color: var(--line); }
+.act.on { background: var(--hover); color: var(--ink); }
+@media (prefers-reduced-motion: reduce) { .caret { transition: none; } .crow.just .caret { animation: none; } }

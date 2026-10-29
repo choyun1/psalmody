@@ -12,10 +12,14 @@ function detailsBox(c) {
       <label class="hint" style="display:block;margin:4px 0">Single or double<br><select data-f="Single/Double"><option ${c.double ? "" : "selected"}>Single</option><option ${c.double ? "selected" : ""}>Double</option></select></label></div>
     ${f("Source", "Source (ACP 074, a book…)", c.source)}${f("ACP Psalm", "Psalms the ACP sets it to (35, 78-1)", c.acp)}
     <p style="margin:6px 0 0"><button class="small primary" onclick="saveDetails('${esc(c.id)}')">Save details</button>
-      <button class="small" onclick="detailsOpen.delete('${esc(c.id)}'); refreshCard('${esc(c.id)}')">Cancel</button> <span class="hint" id="dmsg-${esc(c.id)}"></span></p>
+      <button class="small" onclick="toggleDetails('${esc(c.id)}')">Cancel</button> <span class="hint" id="dmsg-${esc(c.id)}"></span></p>
   </div>`;
 }
-function openDetails(id) { detailsOpen.add(id); refreshCard(id); }
+function toggleDetails(id) {
+  if (detailsOpen.has(id)) return shutPanel(id, () => detailsOpen.delete(id));
+  openEdits.delete(id); detailsOpen.add(id); JUST = "details:" + id; refreshCard(id);
+}
+function openDetails(id) { if (!detailsOpen.has(id)) toggleDetails(id); }
 async function saveDetails(id) {
   const box = $("#details-" + CSS.escape(id)), fields = {};
   box.querySelectorAll("[data-f]").forEach(el => fields[el.dataset.f] = el.value.trim());
@@ -24,7 +28,7 @@ async function saveDetails(id) {
   if (!j.ok) { $("#dmsg-" + CSS.escape(id)).textContent = j.error || "Could not save"; return; }
   Object.assign(C[id], {composer: fields.Composer, years: fields.Years, key: fields.Key, mode: fields.Mode,
                         double: fields["Single/Double"] === "Double", source: fields.Source, acp: fields["ACP Psalm"]});
-  detailsOpen.delete(id); refreshCard(id);
+  shutPanel(id, () => detailsOpen.delete(id));
 }
 
 // the music: each voice in LilyPond's note language, with a picture that redraws as you type

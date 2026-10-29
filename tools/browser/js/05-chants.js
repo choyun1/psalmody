@@ -4,8 +4,10 @@ function chantCard(c, opts = {}) {
   const mood = val(c, "mood"), uses = usedBy[c.id] || [];
   const last = uses.length ? uses.slice().sort((a, b) => a.date < b.date ? 1 : -1)[0] : null;
   const usedTxt = uses.length ? `Used ${uses.length}× · last ${last.date} (${esc(textTitle[last.text] || last.text)}${last.verses ? " " + last.verses : ""})` : "Not used yet";
-  const editing = opts.editing;
-  return `<div class="card" id="card-${esc(c.id)}">
+  const editing = opts.editing, details = !editing && detailsOpen.has(c.id);
+  let panel = editing ? editBox(c) : details ? detailsBox(c) : "";
+  if (panel && JUST === (editing ? "edit:" : "details:") + c.id) panel = panel.replace('class="edit"', 'class="edit opening"');
+  return `<div class="card ${JUST === "row:" + c.id ? "opening" : ""}" id="card-${esc(c.id)}">
     <button class="small play" onclick="play('${esc(c.id)}', this)">▶ Play</button>${pinButtons(c)}
     <h2>${esc(CN(c.id))}</h2><span class="who">${esc(c.id)} · ${esc(c.composer)}${c.years ? " (" + esc(c.years) + ")" : ""}</span>
     <div class="facts"><b>${esc(keyName(c))}</b> · ${c.double ? "double" : "single"}
@@ -14,10 +16,16 @@ function chantCard(c, opts = {}) {
     ${c.img ? `<div class="notation"><img loading="lazy" src="${esc(chantImg(c))}" alt="${esc(c.id)}"></div>` : ""}
     ${notesBox(val(c, "notes"))}
     <div class="used">${usedTxt} ${uses.length > 1 ? `<span class="link" onclick="showUses('${esc(c.id)}')">all</span>` : ""}</div>
-    ${editing ? editBox(c) : detailsOpen.has(c.id) ? detailsBox(c) : `<p style="margin:6px 0 0"><span class="link" onclick="openEdit('${esc(c.id)}')">Edit mood, rating, notes</span>
-      ${SERVER ? `· <span class="link" onclick="openDetails('${esc(c.id)}')">Edit details</span> · <span class="link" onclick="editMusic('${esc(c.id)}')">Edit music</span>` : ""}
-      · <span class="link" onclick="dlg.close(); useInBuilder('${esc(c.id)}')">Use in the Service planner</span></p>`}
+    ${actionRow(c, editing, details)}${panel}
   </div>`;
+}
+// what can be done with a chant: two panels that open in the card (▸/▾), a window (…), and the planner (→)
+function actionRow(c, editing, details) {
+  const id = esc(c.id), panel = (on, label, fn) =>
+    `<button class="act ${on ? "on" : ""}" aria-expanded="${on}" onclick="${fn}('${id}')"><span class="caret">▸</span>${label}</button>`;
+  return `<div class="actions">${panel(editing, "Edit mood, rating, notes", "toggleEdit")}
+    ${SERVER ? panel(details, "Edit details", "toggleDetails") + `<button class="act" title="Opens the music editor" onclick="editMusic('${id}')">Edit music…</button>` : ""}
+    <button class="act" onclick="dlg.close(); useInBuilder('${id}')">Use in the Service planner →</button></div>`;
 }
 // moods suggested for an untagged chant (tools/moodsuggest.py): click one to take it, or take them all
 function suggestedMoods(c, taken = []) {
@@ -34,23 +42,65 @@ function editBox(c) {
     Rating: <select onchange="setEdit('${esc(c.id)}','rating', this.value === '' ? null : +this.value); refreshCard('${esc(c.id)}')">
       <option value="">–</option>${[1, 2, 3, 4, 5].map(n => `<option ${r === n ? "selected" : ""}>${n}</option>`).join("")}</select>
     <textarea placeholder="Notes on its character" onchange="setEdit('${esc(c.id)}','notes', this.value)">${esc(val(c, "notes"))}</textarea>
-    <span class="link" onclick="closeEdit('${esc(c.id)}')">Done</span>
+    <p style="margin:8px 0 0"><button class="small" onclick="closeEdit('${esc(c.id)}')">Done</button></p>
   </div>`;
 }
 const openEdits = new Set();
 const OPEN = new Set();               // chants opened in the Chants list
-function toggleRow(id) { OPEN.has(id) ? OPEN.delete(id) : OPEN.add(id); renderChants(); }
-function openEdit(id) { openEdits.add(id); refreshCard(id); }
-function closeEdit(id) { openEdits.delete(id); refreshCard(id); }
+
+// opening and closing, with a slide (none if the system asks for less motion)
+let JUST = "";                        // what was just opened ("row:Turle-2", "edit:…", "details:…"): it slides open
+const STILL = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+function slideOpen() {                // after drawing: whatever was just opened grows to its height
+  document.querySelectorAll(".opening").forEach(el => {
+    el.classList.remove("opening");
+    if (STILL() || !el.animate) return;
+    el.animate([{height: "0px", opacity: 0, overflow: "hidden"}, {height: el.scrollHeight + "px", opacity: 1, overflow: "hidden"}],
+               {duration: 180, easing: "ease-out"});
+  });
+  JUST = "";
+}
+function slideShut(els, then) {       // shrink these away, then redraw (then)
+  els = els.filter(Boolean);
+  if (!els.length || STILL() || !els[0].animate) return then();
+  let done = false;
+  const go = () => { if (!done) { done = true; then(); } };
+  els.forEach(el => el.animate([{height: el.offsetHeight + "px", opacity: 1, overflow: "hidden"}, {height: "0px", opacity: 0, overflow: "hidden"}],
+                               {duration: 150, easing: "ease-in", fill: "forwards"}).onfinish = go);
+  setTimeout(go, 400);
+}
+function toggleRow(id) {
+  const row = document.querySelector(`#clist .crow[data-id="${CSS.escape(id)}"]`);
+  if (OPEN.has(id)) {
+    if (row) row.classList.remove("open");                         // the ▾ turns back while the card shuts
+    slideShut([document.querySelector("#clist #card-" + CSS.escape(id))], () => { OPEN.delete(id); renderChants(); });
+  } else {
+    OPEN.add(id); JUST = "row:" + id; renderChants(); slideOpen();
+  }
+}
+function cardPanels(id) { return [...document.querySelectorAll("#card-" + CSS.escape(id) + " .edit")]; }
+function shutPanel(id, change) {
+  document.querySelectorAll(`#card-${CSS.escape(id)} .act.on`).forEach(b => b.classList.remove("on"));
+  slideShut(cardPanels(id), () => { change(); refreshCard(id); });
+}
+function toggleEdit(id) {
+  if (openEdits.has(id)) return closeEdit(id);
+  detailsOpen.delete(id); openEdits.add(id); JUST = "edit:" + id; refreshCard(id);
+}
+function openEdit(id) { if (!openEdits.has(id)) toggleEdit(id); }
+function closeEdit(id) { shutPanel(id, () => openEdits.delete(id)); }
 function toggleMood(id, t) {
   const m = val(C[id], "mood").slice(), i = m.indexOf(t);
   if (i >= 0) m.splice(i, 1); else m.push(t);
   setEdit(id, "mood", m); refreshCard(id);
 }
 function refreshCard(id) {
+  const just = JUST;
   document.querySelectorAll("#card-" + CSS.escape(id)).forEach(el => {
-    el.outerHTML = chantCard(C[id], {editing: openEdits.has(id)});
+    JUST = just;
+    el.outerHTML = chantCard(C[id], {editing: openEdits.has(id)}).replace('class="card opening"', 'class="card "');
   });
+  slideOpen();
 }
 function showUses(id) {
   const rows = (usedBy[id] || []).slice().sort((a, b) => a.date < b.date ? 1 : -1);
@@ -308,7 +358,7 @@ function renderChants() {
       prevKey = k;
     }
     const open = OPEN.has(c.id);
-    return head + `<div class="crow ${open ? "open" : ""}" onclick="toggleRow('${esc(c.id)}')"><span class="nm">${pinMarks(c) ? pinMarks(c) + " " : ""}${esc(CN(c.id))}</span>
+    return head + `<div class="crow ${open ? "open" : ""} ${JUST === "row:" + c.id ? "just" : ""}" data-id="${esc(c.id)}" onclick="toggleRow('${esc(c.id)}')" title="${open ? "Close" : "Open"} ${esc(CN(c.id))}"><span class="nm"><span class="caret">▸</span>${pinMarks(c) ? pinMarks(c) + " " : ""}${esc(CN(c.id))}</span>
       <span class="meta">${esc(keyName(c))}${c.double ? "" : ", single"}</span><span>${stars(val(c, "rating"))}</span>
       <span class="meta">${esc(lastUsed(c.id) || "never")}</span><span class="mo">${val(c, "mood").length ? val(c, "mood").map(t => chip(t)).join(" ") : (c.suggest ? c.suggest.moods.map(t => chip(t, "maybe")).join(" ") : "")}</span></div>`
       + (open ? chantCard(c, {editing: openEdits.has(c.id)}) : "");

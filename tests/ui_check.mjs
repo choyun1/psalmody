@@ -54,8 +54,25 @@ try {
     await page.fill("#q", "goss"); await wait(200);
     await page.fill("#q", "");
   });
+  await step("Chants: a panel opens and shuts in the card; the row shuts", async () => {
+    await page.click("#clist .card .act:has-text('Edit mood')"); await wait(400);
+    if (!await page.locator("#clist .card .edit").count()) throw new Error("the panel didn't open");
+    if (await page.getAttribute("#clist .card .act:has-text('Edit mood')", "aria-expanded") !== "true") throw new Error("not marked open");
+    await page.click("#clist .card .act:has-text('Edit mood')"); await wait(500);
+    if (await page.locator("#clist .card .edit").count()) throw new Error("the panel didn't shut");
+    await page.click("#clist .crow.open"); await wait(500);
+    if (await page.locator("#clist .card").count()) throw new Error("the row didn't shut");
+    await page.click("#clist .crow:not(.head) >> nth=0"); await wait(400);
+  });
+  await step("Psalms: the Latin under each name", async () => {
+    await page.click("nav button[data-tab=texts]"); await wait(300);
+    if (!/Dominus regit me/.test(await page.textContent("#tlist"))) throw new Error("no Latin in the list");
+    await page.click("nav button[data-tab=chants]"); await wait(300);
+    if (!await page.locator("#clist .card").count()) await page.click("#clist .crow:not(.head) >> nth=0");
+    await wait(300);
+  });
   await step("Chants: the music editor opens and draws", async () => {
-    await page.click("#clist .card .link:has-text('Edit music')"); await wait(6000);
+    await page.click("#clist .card .act:has-text('Edit music')"); await wait(6000);
     if (!await page.locator("#me-pic img").count()) throw new Error("no picture");
     await page.evaluate(() => dlg.close());
   });
