@@ -427,6 +427,9 @@ def page_html():
             .replace('/*SCRIPT*/', safe(js)).replace('/*PLUGINS*/', safe(plugins.scripts())))
 
 
+JUNIOR = re.compile(r'\(?\b(?:jr|jun|junior)\b\.?\)?', re.I)
+
+
 def label_chants(chants):
     """How a chant is named on screen, as service sheets name them: 'Turle in D minor'; a number in brackets
     where one composer has two in the same key ('Goss in F (2)'), in the order of the file names."""
@@ -439,8 +442,10 @@ def label_chants(chants):
     for c in chants:
         last, _, first = c['composer'].partition(',')
         who = last.strip() or nat(c)[0]
-        if len(full.get(last.strip(), ())) > 1 and first.strip():       # G. Elvey and S. Elvey
-            who = ' '.join(w[0] + '.' for w in first.replace('.', ' ').split()) + ' ' + who
+        given = JUNIOR.sub(' ', first)
+        if len(full.get(last.strip(), ())) > 1 and given.strip(' ,()'):   # G. Elvey and S. Elvey
+            who = ' '.join(w[0] + '.' for w in given.replace('.', ' ').replace(',', ' ').split()) + ' ' + who
+            if given != first: who += ' Jr.'                            # R. Woodward Jr., J. Camidge Jr.
         k = re.sub(r'([A-G])b', r'\1♭', c['key'] or '').replace('#', '♯')
         mode = (c['mode'] or '').lower()
         c['label'] = f"{who} in {k}" + (' minor' if mode.startswith('min') else '') if k else who

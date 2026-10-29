@@ -1,7 +1,7 @@
 \version "2.24.1"
 
 \header{
-  composer = \markup{\hspace #-33 \italic "George (junior) Cooper (1820-1876)"}
+  composer = \markup{\hspace #-33 \italic "George Cooper, Jr. (1820-1876)"}
   tagline=#f
 }
 

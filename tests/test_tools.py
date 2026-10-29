@@ -137,6 +137,16 @@ class Chants(unittest.TestCase):
         self.assertIn('\\scs "A"', emit.word_markup('=YAHWEH'))
         self.assertIn('\\scs "S"', emit.word_markup("=GOD'S"))
 
+    def test_junior_labels(self):
+        import browser
+        cs = [dict(id=i, composer=c, key='Ab', mode='Major') for i, c in (
+            ('WoodwardG-1', 'Woodward, George'), ('WoodwardJr-1', 'Woodward, Jr., Richard'),
+            ('Camidge-1', 'Camidge, Matthew'), ('CamidgeJr-1', 'Camidge, John Jr.'),
+            ('CooperJr-1', 'Cooper, George (junior)'))]
+        browser.label_chants(cs)
+        self.assertEqual([c['label'] for c in cs], ['G. Woodward in A♭', 'R. Woodward Jr. in A♭',
+                                                    'M. Camidge in A♭', 'J. Camidge Jr. in A♭', 'Cooper in A♭'])
+
 
 class ChantEditing(unittest.TestCase):
     def test_parts_round_trip(self):

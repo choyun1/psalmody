@@ -1,7 +1,7 @@
 \version "2.24.1"
 
 \header{
-  composer = \markup{\hspace #-33 \italic "John Jr. Camidge (1790-1859)"}
+  composer = \markup{\hspace #-33 \italic "John Camidge, Jr. (1790-1859)"}
   tagline=#f
 }
 
