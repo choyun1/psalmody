@@ -184,15 +184,17 @@ function topNote(c) {                                   // the soprano's highest
   const n = String([].concat(c.range || []).slice(-1)[0] || "").split(/[–-]/).pop().trim().match(/^([A-G])([#♯b♭]?)(-?\d)$/);
   return n ? 12 * (+n[3] + 1) + NOTE_PC[n[1]] + (/[#♯]/.test(n[2]) ? 1 : /[b♭]/.test(n[2]) ? -1 : 0) : null;
 }
-// pins: ★ a favorite, 📌 one to try, ⚑ one to check (a doubt about a note); kept with the ratings in chant_notes.csv
-const PINS = [["favorite", "★", "☆", "favorite"], ["to try", "📌", "📌", "to try"], ["to check", "⚑", "⚑", "to check"]];
+// pins: ★ a favorite, a pushpin for one to try, ⚑ one to check (a doubt about a note); kept with the ratings in
+// chant_notes.csv. Each is hollow when off and filled when on, drawn in the text's color.
+const pushpin = filled => `<svg class="pinicon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 6 3 3v2H7v-2l3-3z" fill="${filled ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 14v7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+const PINS = [["favorite", "★", "☆", "favorite"], ["to try", pushpin(true), pushpin(false), "to try"], ["to check", "⚑", "⚐", "to check"]];
 const pinMarks = c => PINS.filter(([p]) => pinned(c, p)).map(([, on]) => on).join(" ");
 const pinned = (c, p) => (val(c, "pins") || []).includes(p);
 function togglePin(id, p) {
   const cur = val(C[id], "pins") || [];
   setEdit(id, "pins", cur.includes(p) ? cur.filter(x => x !== p) : PINS.map(x => x[0]).filter(x => x === p || cur.includes(x)));
   document.querySelectorAll(`[data-pins="${CSS.escape(id)}"]`).forEach(el => el.outerHTML = pinButtons(C[id]));
-  if (!$("#tab-chants").hidden && !CV.tones) renderChants();          // the ★ / 📌 in its row
+  if (!$("#tab-chants").hidden && !CV.tones) renderChants();          // the marks in its row
 }
 function pinButtons(c) {
   return `<span data-pins="${esc(c.id)}" style="float:right;margin-right:6px">${PINS.map(([p, on, off, label]) =>
@@ -212,8 +214,8 @@ const SORT_FIELDS = {
   fifths:   {label: "key (circle of fifths)", dir: 1, val: c => keyRank(c, true), head: c => keyName(c)},
   sd:       {label: "single / double", dir: 1, val: c => c.double ? 1 : 0, head: c => c.double ? "Double chants" : "Single chants"},
   rating:   {label: "rating", dir: -1, val: c => val(c, "rating") || null},
-  pinned:   {label: "pinned first (★, 📌, then ⚑)", dir: 1, val: c => pinned(c, "favorite") ? 0 : pinned(c, "to try") ? 1 : pinned(c, "to check") ? 2 : null,
-             head: c => pinned(c, "favorite") ? "★ Favorites" : pinned(c, "to try") ? "📌 To try" : pinned(c, "to check") ? "⚑ To check" : "The rest"},
+  pinned:   {label: "pinned first (favorites, to try, to check)", dir: 1, val: c => pinned(c, "favorite") ? 0 : pinned(c, "to try") ? 1 : pinned(c, "to check") ? 2 : null,
+             head: c => pinned(c, "favorite") ? "Favorites" : pinned(c, "to try") ? "To try" : pinned(c, "to check") ? "To check" : "The rest"},
   stale:    {label: "last used", dir: 1, val: c => lastUsed(c.id)},
   used:     {label: "times used", dir: -1, val: c => (usedBy[c.id] || []).length},
   range:    {label: "highest soprano note", dir: 1, val: topNote},
@@ -277,7 +279,7 @@ function renderChantsShell() {
     <h3>Mood</h3>${D.vocabulary.map(g => `<div class="row" style="margin-bottom:5px">${g.tags.map(t =>
       `<button class="chip g-${esc(g.group)}" data-mood="${esc(t)}">${esc(t)}</button>`).join("")}</div>`).join("")}
     <label class="hint"><input type="checkbox" id="untagged"> only chants without moods</label>
-    <h3>Pinned</h3><select id="pinf"><option value="">all chants</option><option value="favorite">★ favorites</option><option value="to try">📌 to try</option><option value="to check">⚑ to check</option></select>
+    <h3>Pinned</h3><select id="pinf"><option value="">all chants</option><option value="favorite">favorites</option><option value="to try">to try</option><option value="to check">to check</option></select>
     <h3>Mode</h3><select id="mode"><option value="">any</option><option>Major</option><option>Minor</option><option value="other">modal / other</option></select>
     <h3>Key</h3><select id="keyf"><option value="">any</option>${KEYS_PRESENT.map(k => `<option>${esc(k)}</option>`).join("")}</select>
     <h3>Single or double</h3><select id="sd"><option value="">either</option><option value="s">single</option><option value="d">double</option></select>

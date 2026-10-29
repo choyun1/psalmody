@@ -36,6 +36,7 @@ button.chip { cursor: pointer; font-family: inherit; }
 .chip.on { background: var(--c, var(--other)); color: var(--panel); }
 .chip.off { opacity: .45; }
 button.pin { padding: 2px 8px; }
+.pinicon { width: 15px; height: 15px; vertical-align: -2px; }
 .endings { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
 .ending { border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; }
 .ending img { display: block; height: 46px; width: auto; max-width: 100%; margin: 4px 0; }
