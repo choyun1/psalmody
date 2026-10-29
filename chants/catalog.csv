@@ -1,44 +1,91 @@
 Chant,Composer,Years,Key,Mode,Single/Double,Source,ACP Psalm
+Alcock-2,"Alcock, Walter Galpin",1861-1947,Bb,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 1",
+Alcock-3,"Alcock, Walter Galpin",1861-1947,Eb,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 2",
+Alcock-4,"Alcock, Walter Galpin",1861-1947,Ab,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 3",
+Alcock-5,"Alcock, Walter Galpin",1861-1947,G,Minor,Double,"New Cathedral Psalter Chants, village edition (1909) no. 100",
+Alcock-6,"Alcock, Walter Galpin",1861-1947,G,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 101",
+Alcock-7,"Alcock, Walter Galpin",1861-1947,Bb,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 133",
+Aldrich-1,"Aldrich, Henry",1647-1710,F,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 52",
 Alford-1,"Alford, Henry",1810-1871,G,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 78",
+Armes-1,"Armes, Philip",1836-1908,G,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 176",
+Armes-2,"Armes, Philip",1836-1908,Db,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 292",
 Atkins-2,"Atkins, Ivor Algernon",1869-1953,Bb,Major,Double,ACP 058,27
 Atkins-3,"Atkins, Ivor Algernon",1869-1953,Eb,Major,Double,ACP 097,45
 Attwood-1,"Attwood, Thomas",1765-1838,Ab,Major,Double,ACP 074,35
 Attwood-2,"Attwood, Thomas",1765-1838,D,Major,Double,ACP 226,99
+Attwood-3,"Attwood, Thomas",1765-1838,Eb,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 145",
 Bairstow-1,"Bairstow, Edward Cuthbert",1874-1946,Eb,Major,Double,"ACP 032, 050, 149","16, 23, 67"
+Bairstow-2,"Bairstow, Edward Cuthbert",1874-1946,Eb,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 45",
+Bairstow-3,"Bairstow, Edward Cuthbert",1874-1946,C,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 53",
+Bairstow-4,"Bairstow, Edward Cuthbert",1874-1946,C,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 111",
 Barnby-1,"Barnby, Joseph",1838-1896,A,Minor,Double,"ACP 066, 142","31, 64"
 Barnby-2,"Barnby, Joseph",1838-1896,D,Minor,Double,ACP 106,"49, 94"
 Barnby-3,"Barnby, Joseph",1838-1896,F#,Minor,Double,ACP 163,73
+Barnby-5,"Barnby, Joseph",1838-1896,E,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 59",
+Barnby-6,"Barnby, Joseph",1838-1896,Ab,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 222",
+Barnby-7,"Barnby, Joseph",1838-1896,Ab,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 268",
 Battishill-1,"Battishill, Jonathan",1738-1801,F,Major,Double,"ACP 001, 107, 181","1, 50, 80"
 Battishill-2,"Battishill, Jonathan",1738-1801,A,Minor,Double,"ACP 137, 154","61, 69"
+Bayley-1,"Bayley, William",1810-1858,Eb,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 137",
 Beale-1,"Beale, William",1784-1854,A,Minor,Double,ACP 129,59
+Bennett-1,"Bennett, George John",1863-1930,C,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 4",
+Bennett-2,"Bennett, George John",1863-1930,G,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 5",
+Bennett-3,"Bennett, George John",1863-1930,D,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 6",
+Bennett-4,"Bennett, George John",1863-1930,Bb,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 46",
+Bennett-5,"Bennett, George John",1863-1930,C,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 177",
 Best-1,"Best, William",1826-1897,E,Minor,Double,"ACP 033, 188","17, 83"
 Blow-1,"Blow, John",1649-1708,D,Minor,Single,"ACP 075, 115","36, 53"
 Boyce-1,"Boyce, William",1711-1779,D,Major,Double,ACP 038,18-2
+Brewer-1,"Brewer, Alfred Herbert",1865-1928,Bb,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 192",
+Brewer-2,"Brewer, Alfred Herbert",1865-1928,F,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 194",
+Bridge-1,"Bridge, John Frederick",1844-1924,C,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 264",
+Brownsmith-1,"Brownsmith, John Leman",1809-1866,F,Minor,Double,"New Cathedral Psalter Chants, village edition (1909) no. 189",
 Buck-1,"Buck, Percy",1871-1947,G,Major,Double,"ACP 044, 062","21, 29"
 Cambridge-1,Cambridge Chant,,F,Minor,Double,"ACP 105, 198","49, 88"
 Camidge-1,"Camidge, Matthew",1764-1844,D,Minor,Double,"ACP 019, 110","10, 51"
 Camidge-2,"Camidge, Matthew",1764-1844,D,Major,Double,"ACP 041, 096","20, 45"
+CamidgeJr-1,"Camidge, John Jr.",1790-1859,A,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 229",
 Chipp-1,"Chipp, Edmund T.",1823-1886,E,Major,Double,ACP 155,69
 Clark-1,"Clark, Richard",1780-1856,F,Minor,Double,"ACP 023, 084, 179","12, 39, 79"
 Cooke-1,"Cooke, Robert",,D,Minor,Double,ACP 178,"78-1, 78-2"
+CooperJr-1,"Cooper, George (junior)",1820-1876,G,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 231",
+Corfe-1,"Corfe, Joseph",1740-1820,C,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 269",
+Cross-1,"Cross, William",1777-1825,Eb,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 107",
 Crotch-1,"Crotch, William",1775-1847,C,Major,Double,ACP 052,24
 Crotch-2,"Crotch, William",1775-1847,G,Major,Double,"ACP 053, 073, 121","25, 35, 56"
 Crotch-3,"Crotch, William",1775-1847,G,Major,Double,"ACP 090, 092, 103, 194","42, 43, 48, 86"
 Crotch-4,"Crotch, William",1775-1847,G,Minor,Double,ACP 128,58
+Crow-1,"Crow, Edwin John",1841-1907,C,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 153",
 Davies-2,"Davies, Henry Walford",1869-1941,C,Major,Double,ACP 182,80
+Davies-3,"Davies, Henry Walford",1869-1941,G,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 232",
+Davies-4,"Davies, Henry Walford",1869-1941,D,Minor,Double,"New Cathedral Psalter Chants, village edition (1909) no. 234",
 Davy-1,"Davy, John",1763-1824,D,Major,Double,"ACP 101, 147","47, 66"
 Dibdin-1,"Dibdin, Henry Edward",1813-1866,A,Major,Double,ACP 017,9
+Doorly-1,"Doorly, Charles Carte",?-1926,G,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 227",
+Edwards-1,"Edwards, Edwin",1830-1907,Eb,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 54",
+Edwards-2,"Edwards, Edwin",1830-1907,F,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 288",
 Elgar-1,"Elgar, Edward",1857-1934,G,Major,Single,ACP 132,59
 ElveyG-1,"Elvey, George J.",1816-1893,D,Major,Double,"ACP 060, ACP 213","28, 93"
 ElveyG-2,"Elvey, George J.",1816-1893,Ab,Major,Double,ACP 185,
+ElveyG-3,"Elvey, George J.",1816-1893,Eb,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 273",
+ElveyG-4,"Elvey, George J.",1816-1893,Eb,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 277",
 ElveyS-1,"Elvey, Stephen",1805-1860,F,Major,Double,ACP 009,5
 ElveyS-2,"Elvey, Stephen",1805-1860,Eb,Major,Double,ACP 160,72
+ElveyS-3,"Elvey, Stephen",1805-1860,F,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 47",
+ElveyS-4,"Elvey, Stephen",1805-1860,Ab,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 144",
 Farrant-1,"Farrant, Richard",1525-1580,G,Minor,Double,ACP 014,7
 Farrant-2,"Farrant, Richard",1525-1580,F,Major,Single,ACP 055,26
 Felton-1,"Felton, William",1715-1769,G,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 76",
 Flintoff-1,"Flintoff, Luke",1680-1727,F,Minor,Double,ACP 127,58
 Foster-1,"Foster, John",1752-1822,E,Major,Double,ACP 195,86
 Foster-2,"Foster, John",1752-1822,D,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 77",
+Foster-3,"Foster, John",1752-1822,D,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 61",
+FosterM-1,"Foster, Myles B.",1851-1922,Eb,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 62",
+Garrett-1,"Garrett, George Mursell",1834-1897,E,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 186",
+Gauntlett-1,"Gauntlett, Henry John",1805-1876,G,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 150",
+Gauntlett-2,"Gauntlett, Henry John",1805-1876,E,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 285",
+Gibbons-1,"Gibbons, Christopher",1615-1676,G,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 174",
+Goodenough-1,"Goodenough, Robert Philip",1775-1826,G,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 180",
 Goodson-1,"Goodson, Richard",1655-1718,C,Major,Single,ACP 130,59
 Goss-1,"Goss, John",1800-1880,F,Minor,Single,"ACP 011, 027","6, 14"
 Goss-2,"Goss, John",1800-1880,Eb,Major,Double,ACP 012,6
@@ -52,58 +99,125 @@ Goss-10,"Goss, John",1800-1880,C,Minor,Double,ACP 116,53
 Goss-11,"Goss, John",1800-1880,G,Major,Single,ACP 117,54
 Goss-12,"Goss, John",1800-1880,A,Major,Double,"ACP 133, 210","60, 92"
 Goss-13,"Goss, John",1800-1880,D,Major,Double,ACP 197,"87, 89-2"
+Goss-15,"Goss, John",1800-1880,A,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 98",
+Gray-1,"Gray, Alan",1855-1935,Bb,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 142",
+Gray-2,"Gray, Alan",1855-1935,Bb,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 216",
 HarrisJ-1,"Harris, Joseph",1743-1814,Eb,Major,Double,"ACP 164, 189","74, 83"
+Harwood-1,"Harwood, Basil",1859-1949,Eb,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 13",
+Harwood-2,"Harwood, Basil",1859-1949,Ab,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 14",
+Harwood-3,"Harwood, Basil",1859-1949,Eb,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 15",
+Hawes-1,"Hawes, William",1785-1846,F,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 217",
+Hervey-1,"Hervey, Frederick Alfred John",1846-1910,G,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 113",
+Hervey-2,"Hervey, Frederick Alfred John",1846-1910,F,Minor,Double,"New Cathedral Psalter Chants, village edition (1909) no. 135",
 Hopkins-1,"Hopkins, Edward John",1818-1901,F,Minor,Double,"ACP 045, 204","22, 89-2, 55"
 Hopkins-2,"Hopkins, Edward John",1818-1901,F,Major,Double,"ACP 046, 202","22, 89-1"
 Hopkins-4,"Hopkins, Edward John",1818-1901,Ab,Major,Double,ACP 190,84
 Hopkins-5,"Hopkins, Edward John",1818-1901,F,Major,Double,ACP 209,91
 Hopkins-6,"Hopkins, Edward John",1818-1901,C,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 79",
+Hopkins-7,"Hopkins, Edward John",1818-1901,F,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 94",
+Huntley-1,"Huntley, George Frederick William",1859-1913,A,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 7",
+Huntley-2,"Huntley, George Frederick William",1859-1913,D,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 8",
+Huntley-3,"Huntley, George Frederick William",1859-1913,A,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 9",
+Huntley-4,"Huntley, George Frederick William",1859-1913,G,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 48",
+Huntley-5,"Huntley, George Frederick William",1859-1913,F,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 263",
 JacksonT-1,"Jackson, Thomas",1715-1781,G,Major,Double,"ACP 140, 174","63, 78-1, 78-2"
+Jones-1,"Jones, John",1728-1796,Ab,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 106",
+Keeton-1,"Keeton, Haydn",1847-1921,D,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 175",
 Knyvett-1,"Knyvett, William",1779-1856,F,Major,Double,ACP 007,4
+Lloyd-1,"Lloyd, Charles Harford",1849-1919,A,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 10",
+Lloyd-2,"Lloyd, Charles Harford",1849-1919,E,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 11",
+Lloyd-3,"Lloyd, Charles Harford",1849-1919,A,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 12",
+Lloyd-4,"Lloyd, Charles Harford",1849-1919,G,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 96",
+Lloyd-5,"Lloyd, Charles Harford",1849-1919,F,Minor,Double,"New Cathedral Psalter Chants, village edition (1909) no. 139",
+Lloyd-6,"Lloyd, Charles Harford",1849-1919,G,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 184",
+Lloyd-7,"Lloyd, Charles Harford",1849-1919,E,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 286",
+LuardSelby-1,"Luard-Selby, Bertram",1853-1918,C,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 226",
 Luther-1,"Luther, Martin",1483-1546,C,Major,Double,ACP 098,46
 Luther-2,"Luther, Martin",1483-1546,C,Major,Double,ACP 099,46
 Macfarren-1,"Macfarren, George A.",1813-1887,A,Minor,Single,ACP 156,70
 Macfarren-2,"Macfarren, George A.",1813-1887,Ab,Major,Single,ACP 223,98
+Macfarren-3,"Macfarren, George A.",1813-1887,G,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 182",
+Macpherson-1,"Macpherson, Charles",1870-1927,E,Minor,Single,"New Cathedral Psalter Chants, village edition (1909) no. 220",
 Martin-1,"Martin, George Clement",1844-1916,A,Major,Double,ACP 139,62
+Martin-2,"Martin, George Clement",1844-1916,D,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 97",
+Martin-3,"Martin, George Clement",1844-1916,F,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 112",
+Martin-4,"Martin, George Clement",1844-1916,Ab,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 190",
+Matthews-1,"Matthews, Samuel",1796-1832,Eb,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 181",
+Maunder-1,"Maunder, John Henry",1858-1920,F,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 49",
 Monk-1,"Monk, Edwin George",1819-1900,G,Minor,Single,ACP 005,3
 Monk-2,"Monk, Edwin George",1819-1900,G,Major,Double,ACP 104,48
 Monk-3,"Monk, Edwin George",1819-1900,C,Major,Single,ACP 196,87
+Morley-1,"Morley, William",?-1731,D,Minor,Double,"New Cathedral Psalter Chants, village edition (1909) no. 289",
 Nares-1,"Nares, James",1715-1783,A,Major,Single,ACP 029,15
 Nares-2,"Nares, James",1715-1783,G,Minor,Double,ACP 067,32
+Naylor-1,"Naylor, John",1838-1897,E,Minor,Double,"New Cathedral Psalter Chants, village edition (1909) no. 187",
+Noble-2,"Noble, Thomas Tertius",1867-1953,A,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 50",
+Noble-3,"Noble, Thomas Tertius",1867-1953,Eb,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 143",
+Noble-4,"Noble, Thomas Tertius",1867-1953,Eb,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 215",
 Norris-1,"Norris, Thomas",1741-1790,G,Major,Double,ACP 071,34
+Norris-2,"Norris, Thomas",1741-1790,Ab,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 265",
 Ouseley-1,"Ouseley, Frederick A. Gore",1825-1889,Bb,Major,Single,ACP 006,3
 Ouseley-2,"Ouseley, Frederick A. Gore",1825-1889,D,Minor,Single,ACP 125,57
 Ouseley-3,"Ouseley, Frederick A. Gore",1825-1889,D,Major,Single,ACP 126,57
+Ouseley-4,"Ouseley, Frederick A. Gore",1825-1889,G,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 154",
 Parisian-1,Parisian Tone,,F,Major,Single,ACP 025,13
 Parratt-1,"Parratt, Walter",1841-1924,Eb,Major,Double,ACP 026,13
 Parratt-2,"Parratt, Walter",1841-1924,C,Major,Double,ACP 222,97
+Parratt-3,"Parratt, Walter",1841-1924,C,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 95",
 Parry-1,"Parry, Charles H. H.",1848-1918,E,Major,Double,ACP 191,84
+Parry-2,"Parry, Charles H. H.",1848-1918,F,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 51",
+Parry-3,"Parry, Charles H. H.",1848-1918,Bb,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 224",
+Patten-1,"Patten, William",,Eb,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 149",
+Peregrinus-1,"Peregrinus, Tonus",,E,Minor,Single,"New Cathedral Psalter Chants, village edition (1909) no. 219",
 Pring-1,"Pring, Joseph",1776-1842,F,Major,Double,ACP 018,9
 Purcell-1,"Purcell, Henry",1659-1695,G,Minor,Single,ACP 123,57
 Purcell-2,"Purcell, Henry",1659-1695,G,Major,Single,ACP 124,57
+PurcellD-1,"Purcell, Daniel",c. 1664-1717,G,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 178",
+PurcellT-1,"Purcell, Thomas",?-1682,F,Minor,Single,"New Cathedral Psalter Chants, village edition (1909) no. 291",
 Pye-1,"Pye, Kellow J.",1812-1901,Eb,Major,Double,ACP 150,68
 Randall-1,"Randall, John",1716-1799,D,Major,Double,ACP 069,33
+Rimbault-1,"Rimbault, Edward Francis",1816-1876,C,Minor,Single,"New Cathedral Psalter Chants, village edition (1909) no. 138",
 Robinson-1,"Robinson, John",1682-1762,Eb,Major,Double,ACP 042,20
 Roeckel-1,"Roeckel, Joseph Leopold",1838-1923,Eb,Major,Double,ACP 136,61
+RogersJ-1,"Rogers, John Leman",1780-1847,G,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 42",
+Russell-1,"Russell, William",1777-1813,F,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 103",
+Russell-2,"Russell, William",1777-1813,Eb,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 275",
+Russell-3,"Russell, William",1777-1813,C,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 305",
+Sinclair-1,"Sinclair, George Robertson",1863-1917,G,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 221",
 SkeatsJr-1,"Skeats, Jr., Highmore",1784-1835,Eb,Major,Double,"ACP 043, 167",21
 Smart-1,"Smart, Henry",1813-1879,A,Major,Double,ACP 108,50
 Smart-2,"Smart, Henry",1813-1879,D,Major,Double,ACP 144,65
 Smart-3,"Smart, Henry",1813-1879,C,Major,Double,ACP 221,97
+SmartHenry-1,"Smart, Henry Thomas",1813-1879,Ab,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 148",
 Stainer-1,"Stainer, John",1840-1901,Bb,Major,Single,"ACP 076, 227","36, 100"
 Stainer-2,"Stainer, John",1840-1901,E,Minor,Double,ACP 111,51
+Stainer-3,"Stainer, John",1840-1901,Eb,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 266",
 Stanford-1,"Stanford, Charles Villiers",1852-1924,D,Minor,Double,"ACP 083, 131, 215","38, 59, 94"
 Stanford-2,"Stanford, Charles Villiers",1852-1924,D,Major,Double,ACP 146,66
 StewartR-1,"Stewart, Robert Prescott",1825-1894,C,Major,Single,"ACP 184, 216",81
 Stonex-1,"Stonex, Henry",1823-1897,F#,Minor,Double,ACP 054,25
 Tallis-1,"Tallis, Thomas",1505-1585,Bb,Major,Single,ACP 225,99
+Travers-1,"Travers, John",c. 1703-1758,D,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 43",
+Tuckwell-1,"Tuckwell, L. S.",,F,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 110",
 Turle-1,"Turle, James",1802-1882,D,Major,Double,"ACP 013, 162","7, 73"
 Turle-2,"Turle, James",1802-1882,D,Minor,Double,"ACP 028, 165","14, 74, 31"
 Turle-3,"Turle, James",1802-1882,F,Major,Double,"ACP 035, 201","18-1, 89-2"
 Turle-4,"Turle, James",1802-1882,F,Major,Double,ACP 057,27
 Turle-6,"Turle, James",1802-1882,D,Major,Double,ACP 166,74
+Turle-7,"Turle, James",1802-1882,D,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 179",
 Walmisley-1,"Walmisley, Thomas Attwood",1814-1856,F,Major,Double,ACP 010,5
+Weldon-1,"Weldon, John",1676-1736,G,Minor,Single,"New Cathedral Psalter Chants, village edition (1909) no. 146",
 Wesley-1,"Wesley, Samuel Sebastian",1810-1876,D,Major,Double,"ACP 039, 056, 192","19, 26, 85"
 Wesley-2,"Wesley, Samuel Sebastian",1810-1876,G,Minor,Double,ACP 068,"32, 50"
 Wesley-4,"Wesley, Samuel Sebastian",1810-1876,F,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 80",
+Wesley-5,"Wesley, Samuel Sebastian",1810-1876,D,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 228",
+WesleySamuel-1,"Wesley, Samuel",1766-1837,E,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 99",
+West-1,"West, John Ebenezer",1863-1929,A,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 57",
+West-2,"West, John Ebenezer",1863-1929,D,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 151",
+West-3,"West, John Ebenezer",1863-1929,D,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 230",
+West-4,"West, John Ebenezer",1863-1929,C,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 233",
+Williams-1,"Williams, Charles Lee",1853-1935,E,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 58",
+WoodwardG-1,"Woodward, George",,Ab,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 276",
 WoodwardJr-1,"Woodward, Jr., Richard",1743-1777,Ab,Major,Double,ACP 070,33
 WoodwardJr-2,"Woodward, Jr., Richard",1743-1777,D,Major,Double,ACP 168,75
+Worgan-1,"Worgan, John",1724-1790,Eb,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 102",

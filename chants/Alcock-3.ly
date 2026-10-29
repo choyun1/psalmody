@@ -1,0 +1,79 @@
+\version "2.24.1"
+
+\header{
+  composer = \markup{\hspace #-33 \italic "Walter Galpin Alcock (1861-1947)"}
+  tagline=#f
+}
+
+global = {
+  \key ees \major
+  \time 2/4
+}
+
+
+S_notes = \relative c' {
+  es2 | as4 g | g f \bar "||"
+  f2 | c'4 bes | es, f | g2 \bar "||"
+  g2 | es'4 des | des c \bar "||"
+  es,2 | f4 es | es as | g2 \bar "||"
+}
+
+A_notes = \relative c' {
+  es2 | es4 e | e f \bar "||"
+  f2 | d4 es | c d | d2 \bar "||"
+  es2 | es4 f8 g | as2 \bar "||"
+  c,2 | des4 bes | es es | es2 \bar "||"
+}
+
+T_notes = \relative c' {
+  bes2 | c4 des | c2 \bar "||"
+  c2 | as4 bes | es d8 c | b2 \bar "||"
+  c2 | c4 des | es2 \bar "||"
+  as,2 | as4 g | as c | bes2 \bar "||"
+}
+
+B_notes = \relative c' {
+  g2 | c4 bes | as2 \bar "||"
+  as2 | f4 g | as as | g2 \bar "||"
+  c,2 | c'4 bes | as2 \bar "||"
+  as,2 | des4 es | c as | es'2 \bar "||"
+}
+
+% Use markup to center the chant on the page
+\markup {
+  \fill-line {
+    \score {  % centered
+      <<
+        \new ChoirStaff <<
+          \new Staff <<
+            \global
+            \clef "treble"
+            \new Voice = "Soprano" <<
+              \voiceOne \S_notes
+            >>
+            \new Voice = "Alto" <<
+              \voiceTwo \A_notes
+            >>
+          >>
+          \new Staff <<
+            \global
+            \clef "bass"
+            \new Voice = "Tenor" <<
+              \voiceOne \T_notes
+            >>
+            \new Voice = "Bass" <<
+              \voiceTwo \B_notes
+            >>
+          >>
+        >>
+      >>
+
+      \layout {
+        \context {
+          \Staff
+          \remove "Time_signature_engraver"
+        }
+      }
+    }  % End score
+  }
+}  % End markup
