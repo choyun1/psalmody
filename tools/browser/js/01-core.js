@@ -22,8 +22,12 @@ const info = t => `<span class="info" title="${esc(t)}">i</span>`;  // an explan
 const folded = name => { try { return localStorage.getItem("psalter-fold-" + name) === "1"; } catch (e) { return false; } };
 const layoutOpen = name => `<div class="layout ${folded(name) ? "folded" : ""}"><aside><button class="small fold" onclick="foldPane(this, '${name}')" ${foldTitle(folded(name))}>${folded(name) ? "›" : "‹"}</button>`;
 const foldTitle = on => `title="${on ? "Show" : "Hide"} this pane" aria-expanded="${!on}"`;
+// it slides: the pane's contents fade out, then the column narrows (or widens, then they fade back in)
 function foldPane(btn, name) {
-  const lay = btn.closest(".layout"), on = lay.classList.toggle("folded");
+  const lay = btn.closest(".layout"), on = !lay.classList.contains("folded");
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) lay.classList.toggle("folded", on);
+  else if (on) { lay.classList.add("folding"); setTimeout(() => { lay.classList.add("folded"); lay.classList.remove("folding"); }, 120); }
+  else { lay.classList.add("folding"); lay.classList.remove("folded"); setTimeout(() => lay.classList.remove("folding"), 260); }
   btn.textContent = on ? "›" : "‹"; btn.title = (on ? "Show" : "Hide") + " this pane"; btn.setAttribute("aria-expanded", String(!on));
   try { localStorage.setItem("psalter-fold-" + name, on ? "1" : "0"); } catch (e) {}
 }
