@@ -1,3 +1,8 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/brand/banner-dark.png">
+  <img alt="Psalmody: the psalms of the 1979 Prayer Book, set to Anglican chant and plainsong" src="docs/brand/banner-light.png">
+</picture>
+
 # Psalmody
 
 Psalmody sets the psalms of the 1979 Book of Common Prayer for a parish choir, typeset with LilyPond, either to Anglican chant or to the Gregorian psalm tones. Texts and chants are kept apart, so any text can be sung to any chant. One short text file per Sunday becomes the choir's copy (a PDF) and cropped images for the service leaflet. A planner that runs in your web browser opens on the psalm the lectionary appoints, helps choose a chant by mood, key and when it was last sung, and keeps the rest of the service (hymns, anthems, voluntaries, service music) as the parish's record of what was sung.
