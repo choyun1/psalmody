@@ -503,6 +503,28 @@ class Server(unittest.TestCase):
                 serve.safe_name(bad)
 
 
+class ImportedRecord(unittest.TestCase):
+    def test_every_acp_number_of_a_chant(self):
+        """'ACP 001, 107, 181' once gave only ACP 1, so a record of ACP 181 went to whichever chant had it first."""
+        import browser
+        acp = browser.acp_numbers()
+        self.assertEqual(acp[1], ('Battishill-1', '1'))
+        self.assertEqual(acp[181], ('Battishill-1', '80'))
+        self.assertEqual(acp[182], ('Davies-2', '80'))
+        self.assertEqual(acp[132], ('Elgar-1', '59'))
+        rows = [{'Chant': 'X-1', 'Source': 'ACP 008, 081, 193', 'ACP Psalm': '4, 37-1, 37-2, 85'},
+                {'Chant': 'Y-1', 'Source': 'ACP 184, 216', 'ACP Psalm': '81'}]
+        real = paths.catalog
+        paths.catalog = lambda: rows
+        try:
+            acp = browser.acp_numbers()
+        finally:
+            paths.catalog = real
+        self.assertEqual((acp[81], acp[193]), (('X-1', '37-1'), ('X-1', '85')))     # a psalm's parts count once
+        self.assertEqual(acp[184], ('Y-1', '81'))
+        self.assertNotIn(216, acp)                                                # not paired up: not guessed
+
+
 class ImportEndpoint(unittest.TestCase):
     def test_answers(self):
         import base64, serve, musicxml

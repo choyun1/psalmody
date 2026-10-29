@@ -100,13 +100,31 @@ def history():
     return rows
 
 
+def acp_numbers():
+    """{ACP number: (chant, the psalm the ACP sets it to)} from the catalogs: a Source of 'ACP 001, 107, 181'
+    with ACP Psalm '1, 50, 80' gives 1 -> Psalm 1, 107 -> 50, 181 -> 80. The parts of one psalm count once
+    ('37-1, 37-2'); where the numbers and psalms don't then pair up, only the first number is taken (no guessing)."""
+    out = {}
+    for r in paths.catalog() + [dict(r, Chant=r['Alias'], **{'ACP Psalm': ''}) for r in paths.alias_rows()]:
+        m = re.search(r'ACP\s*([\d,\s]+)', r.get('Source', ''))
+        if not m:
+            continue
+        psalms = []
+        for x in (r.get('ACP Psalm') or '').split(','):
+            x = x.strip()
+            if x and not (psalms and x.split('-')[0] == psalms[-1].split('-')[0]):
+                psalms.append(x)
+        numbers = [int(n) for n in re.findall(r'\d+', m.group(1))]
+        pairs = zip(numbers, psalms) if len(numbers) == len(psalms) else zip(numbers[:1], psalms[:1] or [''])
+        for n, psalm in pairs:
+            out.setdefault(n, (r['Chant'], psalm))
+    return out
+
+
 def schedule_history(have):
     """Psalms from the imported record (parish/schedule/schedule.csv) on dates the history doesn't cover."""
     path = os.path.join(paths.HOME, 'schedule', 'schedule.csv')
-    acp = {}
-    for r in paths.catalog() + [dict(r, Chant=r['Alias'], **{'ACP Psalm': ''}) for r in paths.alias_rows()]:
-        for m in re.finditer(r'ACP\s*0*(\d+)', r.get('Source', '')):
-            acp.setdefault(int(m.group(1)), r)
+    acp = acp_numbers()
     out, today = [], dt.date.today().isoformat()
     for r in read_csv(path):
         if r['slot'] != 'Psalm' or r['date'] in have or r['date'] > today:
@@ -115,11 +133,10 @@ def schedule_history(have):
         spec, music = (m.group(1).strip(), m.group(2).strip()) if m else (r['item'].strip(), '')
         chant, note = '', 'from the imported record'
         if music.upper() == 'ACP' and spec.isdigit():           # an ACP number: chant and psalm from the catalog
-            c = acp.get(int(spec))
-            if not c:
+            if int(spec) not in acp:
                 continue
-            chant = c['Chant']
-            pm = re.match(r'(\d+)(?:-(\d+))?', c.get('ACP Psalm', ''))
+            chant, psalm = acp[int(spec)]
+            pm = re.match(r'(\d+)(?:-(\d+))?', psalm)
             spec = (pm.group(1) + (f' Part {pm.group(2)}' if pm.group(2) else '')) if pm else ''
         elif music.lower().startswith('tone'):
             chant = 'tone:' + music[4:].replace('.', '').replace(' ', '')
