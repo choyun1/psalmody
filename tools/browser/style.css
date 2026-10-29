@@ -33,6 +33,11 @@ aside::-webkit-scrollbar { display: none; }      /* scrolls with the wheel or a 
 /* folding a side pane away: ‹ hides it to a narrow strip, › brings it back */
 .layout.folded { grid-template-columns: 30px 1fr; }
 .layout.folded aside > :not(.fold) { display: none; }
+.layout { transition: grid-template-columns .25s ease; }
+aside > :not(.fold) { transition: opacity .12s ease; }
+.layout.folding aside > :not(.fold) { opacity: 0; }
+.layout.folding aside { overflow: hidden; }
+@media (prefers-reduced-motion: reduce) { .layout, aside > :not(.fold) { transition: none; } }
 aside .fold { float: right; margin: 0 0 0 6px; padding: 4px 9px; color: var(--muted); line-height: 1.2; }
 aside .fold:hover { color: var(--accent); border-color: var(--accent); }
 .layout.folded aside .fold { float: none; margin: 0; }
