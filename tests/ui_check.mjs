@@ -54,6 +54,15 @@ try {
     if (!await page.locator("#me-pic img").count()) throw new Error("no picture");
     await page.evaluate(() => dlg.close());
   });
+  await step("Chants: a new chant from a MusicXML score (not saved)", async () => {
+    await page.evaluate(() => newChant());
+    await page.setInputFiles("#nc-file", join(ROOT, "tests", "sample_chant.musicxml")); await wait(1500);
+    if (await page.inputValue("#nc-composer") !== "Other, A. N.") throw new Error("the composer wasn't read: " + await page.textContent("#nc-imp"));
+    await page.click("button:has-text('Next: the music')"); await wait(6000);
+    if (!/b2 \| c4 b/.test(await page.inputValue(".me-voice >> nth=0"))) throw new Error("the soprano wasn't imported");
+    if (!await page.locator("#me-pic img").count()) throw new Error("no picture");
+    await page.evaluate(() => dlg.close());
+  });
   await step("Psalms: a psalm and its text", async () => {
     await page.click("nav button[data-tab=texts]"); await wait(300);
     await page.evaluate(() => goText("Psalm_023")); await wait(300);

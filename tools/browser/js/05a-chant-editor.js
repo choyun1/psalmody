@@ -108,7 +108,10 @@ async function saveMusic() {
 
 // a new chant: its name and facts first, then the music editor
 function newChant() {
+  ME.imported = null;
   $("#dlgbody").innerHTML = `<h3>New chant</h3>
+    <p style="margin:4px 0 8px"><label class="hint">Start from a score (optional): MusicXML from MuseScore, Finale, Sibelius or Dorico<br>
+      <input type="file" id="nc-file" accept=".musicxml,.mxl,.xml" onchange="importScore(this.files[0])"></label> <span class="hint" id="nc-imp"></span></p>
     <label class="hint" style="display:block;margin:4px 0">Composer (Surname, Given names)<br><input type="text" id="nc-composer" style="width:100%" oninput="ncName()"></label>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       <label class="hint">Years<br><input type="text" id="nc-years" placeholder="1802-1882" style="width:110px"></label>
@@ -118,6 +121,26 @@ function newChant() {
       <label class="hint"><input type="radio" name="nc-where" value="private"> still under copyright (goes in parish/chants/, private)</label></p>
     <p><button class="small primary" onclick="startNewChant()">Next: the music</button> <button class="small" onclick="dlg.close()">Cancel</button> <span class="hint" id="nc-msg"></span></p>`;
   dlg.showModal();
+}
+// a score exported as MusicXML: its four voices, key, time and composer, ready for the editor
+async function importScore(file) {
+  const msg = $("#nc-imp");
+  if (!file) return;
+  if (file.size > 5e6) { msg.textContent = "that file is too big for a chant"; return; }
+  msg.textContent = "Reading…";
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let bin = ""; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  const j = await post("/api/chant/import", {filename: file.name, file: btoa(bin)});
+  if (!j.ok) { ME.imported = null; msg.innerHTML = `<span class="warn">${esc(j.error || "could not read it")}</span>`; return; }
+  ME.imported = j.parts;
+  const m = (j.composer || "").match(/^(.*?)\s*(?:\((\d{3,4}\s*[-–]\s*\d{0,4})\))?\s*$/);    // "James Turle (1802-1882)"
+  if (m && m[1] && !$("#nc-composer").value) {
+    const words = m[1].trim().split(/\s+/), sur = words.pop();
+    $("#nc-composer").value = words.length ? `${sur}, ${words.join(" ")}` : sur;
+    ncName();
+  }
+  if (m && m[2] && !$("#nc-years").value) $("#nc-years").value = m[2].replace(/\s/g, "").replace("–", "-");
+  msg.innerHTML = `<span class="ok">✓</span> four voices in ${esc(tonicName(j.parts.key.tonic))} ${esc(j.parts.key.mode)}${j.title ? ", “" + esc(j.title) + "”" : ""}`;
 }
 function ncName() {
   const sur = ($("#nc-composer").value.split(",")[0] || "").replace(/[^A-Za-z]/g, "");
@@ -135,6 +158,7 @@ async function startNewChant() {
                 private: document.querySelector('input[name="nc-where"]:checked').value === "private"};
   const j = await post("/api/chant/open", {name, credit});
   if (!j.ok) { $("#nc-msg").textContent = j.error || "Could not start it"; return; }
-  Object.assign(ME, {name, parts: j.parts, img: "", problems: [], error: "", voices: null, isNew: true, after: null});
+  const parts = ME.imported ? Object.assign(JSON.parse(JSON.stringify(ME.imported)), {credit: j.parts.credit}) : j.parts;
+  Object.assign(ME, {name, parts, img: "", problems: [], error: "", voices: null, isNew: true, after: null});
   drawMusicEditor(); dlg.classList.add("wide"); previewMusic();
 }

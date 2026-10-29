@@ -289,6 +289,23 @@ def api_chant_details(data):
     return {'ok': True}
 
 
+def api_chant_import(data):
+    """A new chant's notes, key, time and composer from a MusicXML file (nothing saved: it opens in the editor)."""
+    import base64, binascii, musicxml
+    if not isinstance(data.get('file'), str):
+        raise ValueError('file: the MusicXML file, base64')
+    try:
+        raw = base64.b64decode(data['file'], validate=True)
+    except binascii.Error:
+        raise ValueError('file: not base64')
+    filename = data.get('filename') if isinstance(data.get('filename'), str) else ''
+    try:
+        parts, info = musicxml.to_parts(raw, filename)
+    except Exception as e:                       # a score it can't read says why, rather than a 500
+        return {'ok': False, 'error': f'could not read {filename or "the file"}: {e}'}
+    return {'ok': True, 'parts': parts, 'composer': info['composer'], 'title': info['title']}
+
+
 def get_chant_img(q):
     import chantedit
     f = os.path.basename(q.get('f', [''])[0])
@@ -299,7 +316,7 @@ def get_chant_img(q):
 
 
 ROUTES = {'/api/chant/open': api_chant_open, '/api/chant/preview': api_chant_preview, '/api/chant/save': api_chant_save,
-          '/api/chant/details': api_chant_details,
+          '/api/chant/details': api_chant_details, '/api/chant/import': api_chant_import,
           '/api/notes': api_notes, '/api/sunday': api_sunday, '/api/sung': api_sung, '/api/commit': api_commit,
           '/api/undo': api_undo, '/api/anthem': api_anthem, '/api/open': api_open, '/api/text': api_text,
           '/api/check': api_check, '/api/build': api_build}

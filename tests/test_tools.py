@@ -133,6 +133,103 @@ class ChantEditing(unittest.TestCase):
             chantedit.apply(text, {'voices': [{'var': 'S_notes', 'start': "c''", 'body': 'c2 { d'}]})
 
 
+def musicxml(voices, closed=False, double_bars=True, fifths=1, chords=False):
+    """A small partwise MusicXML score from {voice: [bars: [(step, alter, octave, quarters)]]}, as an editor exports it:
+    four parts, or (closed) two staves with two voices each, or (chords) two staves of two-note chords."""
+    closed = closed or chords
+    def note(step, alter, octave, q, staff, voice, chord=False):
+        return (f"<note>{'<chord/>' if chord else ''}<pitch><step>{step}</step>{f'<alter>{alter}</alter>' if alter else ''}"
+                f"<octave>{octave}</octave></pitch><duration>{int(q * 2)}</duration><voice>{voice}</voice>"
+                f"{f'<staff>{staff}</staff>' if closed else ''}</note>")
+    names = list(voices)
+    layout = [[(names[0], 1, 1), (names[1], 1, 2)], [(names[2], 2, 3), (names[3], 2, 4)]] if closed else \
+             [[(n, 1, 1)] for n in names]
+    n_bars = len(voices[names[0]])
+    parts, plist = [], []
+    for pi, group in enumerate(layout):
+        pid = f'P{pi + 1}'
+        plist.append(f'<score-part id="{pid}"><part-name>{group[0][0]}</part-name></score-part>')
+        measures = []
+        for b in range(n_bars):
+            body = ''
+            if b == 0:
+                body += (f'<attributes><divisions>2</divisions><key><fifths>{fifths}</fifths><mode>major</mode></key>'
+                         f'<time><beats>2</beats><beat-type>4</beat-type></time>{"<staves>2</staves>" if closed else ""}</attributes>')
+            if chords:                             # the two voices of a staff on one stem: <note/><note><chord/>…
+                (hi, staff, _), (lo, _, _) = group
+                body += ''.join(note(*u, staff, 1) + note(*l, staff, 1, chord=True)
+                                for u, l in zip(voices[hi][b], voices[lo][b]))
+            else:
+                for gi, (name, staff, voice) in enumerate(group):
+                    if gi:
+                        body += '<backup><duration>4</duration></backup>'
+                    body += ''.join(note(*n, staff, voice) for n in voices[name][b])
+            if double_bars and b in (2, n_bars - 1):
+                body += '<barline location="right"><bar-style>light-light</bar-style></barline>'
+            measures.append(f'<measure number="{b + 1}">{body}</measure>')
+        parts.append(f'<part id="{pid}">' + ''.join(measures) + '</part>')
+    return ('<?xml version="1.0"?><score-partwise version="3.1"><identification>'
+            '<creator type="composer">A. N. Other (1850-1920)</creator></identification>'
+            f'<part-list>{"".join(plist)}</part-list>{"".join(parts)}</score-partwise>').encode()
+
+
+H, Q = 2, 1      # a half note and a quarter, in quarters
+SATB = {         # a single chant in G: 3 bars + 4 bars
+    'Soprano': [[('B', 0, 4, H)], [('C', 0, 5, Q), ('B', 0, 4, Q)], [('A', 0, 4, H)],
+                [('D', 0, 5, H)], [('C', 0, 5, Q), ('B', 0, 4, Q)], [('A', 0, 4, Q), ('F', 1, 4, Q)], [('G', 0, 4, H)]],
+    'Alto': [[('G', 0, 4, H)], [('G', 0, 4, Q), ('G', 0, 4, Q)], [('F', 1, 4, H)],
+             [('G', 0, 4, H)], [('E', 0, 4, Q), ('D', 0, 4, Q)], [('E', 0, 4, Q), ('D', 0, 4, Q)], [('D', 0, 4, H)]],
+    'Tenor': [[('D', 0, 4, H)], [('E', 0, 4, Q), ('D', 0, 4, Q)], [('D', 0, 4, H)],
+              [('B', 0, 3, H)], [('C', 0, 4, Q), ('G', 0, 3, Q)], [('C', 0, 4, Q), ('A', 0, 3, Q)], [('B', 0, 3, H)]],
+    'Bass': [[('G', 0, 3, H)], [('C', 0, 3, Q), ('G', 0, 2, Q)], [('D', 0, 3, H)],
+             [('G', 0, 2, H)], [('A', 0, 2, Q), ('B', 0, 2, Q)], [('C', 0, 3, Q), ('D', 0, 3, Q)], [('G', 0, 2, H)]],
+}
+
+
+class MusicXML(unittest.TestCase):
+    def check_import(self, data):
+        import musicxml
+        parts, info = musicxml.to_parts(data, 'x.musicxml')
+        self.assertEqual(info['composer'], 'A. N. Other (1850-1920)')
+        self.assertEqual(parts['key'], {'tonic': 'g', 'mode': 'major'})
+        self.assertEqual(parts['time'], '2/4')
+        text = chantedit.apply(chantedit.template(info['composer']), parts)
+        problems, facts = chantedit.check(text)
+        self.assertEqual(problems, [])
+        self.assertFalse(facts['double'])
+        return parts
+
+    def test_four_parts(self):
+        parts = self.check_import(musicxml(SATB))
+        sop = parts['voices'][0]
+        self.assertEqual(sop['body'].split('\n')[0], 'b2 | c4 b | a2 \\bar "||"')
+        self.assertIn('fis', sop['body'])
+
+    def test_closed_score(self):
+        self.assertEqual(self.check_import(musicxml(SATB, closed=True)), self.check_import(musicxml(SATB)))
+
+    def test_chords_on_one_stem(self):
+        self.assertEqual(self.check_import(musicxml(SATB, chords=True)), self.check_import(musicxml(SATB)))
+
+    def test_phrases_without_double_bars(self):
+        self.assertEqual(self.check_import(musicxml(SATB, double_bars=False)), self.check_import(musicxml(SATB)))
+
+    def test_compressed_mxl(self):
+        import io, zipfile
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, 'w') as z:
+            z.writestr('META-INF/container.xml', '<container><rootfiles><rootfile full-path="score.xml"/></rootfiles></container>')
+            z.writestr('score.xml', musicxml(SATB))
+        self.check_import(buf.getvalue())
+
+    def test_too_few_voices(self):
+        import musicxml as mx
+        with self.assertRaises(ValueError):
+            mx.to_parts(b'<score-partwise><part-list/></score-partwise>')
+        with self.assertRaises(ValueError):
+            mx.to_parts(b'<score-timewise/>')
+
+
 class Moods(unittest.TestCase):
     def test_suggestions_follow_the_mode(self):
         import moodsuggest
