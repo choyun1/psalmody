@@ -1,4 +1,5 @@
 Chant,Composer,Years,Key,Mode,Single/Double,Source,ACP Psalm
+Alford-1,"Alford, Henry",1810-1871,G,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 78",
 Atkins-2,"Atkins, Ivor Algernon",1869-1953,Bb,Major,Double,ACP 058,27
 Atkins-3,"Atkins, Ivor Algernon",1869-1953,Eb,Major,Double,ACP 097,45
 Attwood-1,"Attwood, Thomas",1765-1838,Ab,Major,Double,ACP 074,35
@@ -34,14 +35,12 @@ ElveyS-1,"Elvey, Stephen",1805-1860,F,Major,Double,ACP 009,5
 ElveyS-2,"Elvey, Stephen",1805-1860,Eb,Major,Double,ACP 160,72
 Farrant-1,"Farrant, Richard",1525-1580,G,Minor,Double,ACP 014,7
 Farrant-2,"Farrant, Richard",1525-1580,F,Major,Single,ACP 055,26
+Felton-1,"Felton, William",1715-1769,G,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 76",
 Flintoff-1,"Flintoff, Luke",1680-1727,F,Minor,Double,ACP 127,58
 Foster-1,"Foster, John",1752-1822,E,Major,Double,ACP 195,86
+Foster-2,"Foster, John",1752-1822,D,Major,Single,"New Cathedral Psalter Chants, village edition (1909) no. 77",
 Goodson-1,"Goodson, Richard",1655-1718,C,Major,Single,ACP 130,59
 Goss-1,"Goss, John",1800-1880,F,Minor,Single,"ACP 011, 027","6, 14"
-Goss-10,"Goss, John",1800-1880,C,Minor,Double,ACP 116,53
-Goss-11,"Goss, John",1800-1880,G,Major,Single,ACP 117,54
-Goss-12,"Goss, John",1800-1880,A,Major,Double,"ACP 133, 210","60, 92"
-Goss-13,"Goss, John",1800-1880,D,Major,Double,ACP 197,"87, 89-2"
 Goss-2,"Goss, John",1800-1880,Eb,Major,Double,ACP 012,6
 Goss-3,"Goss, John",1800-1880,F,Major,Double,"ACP 036, ACP 208","18-2, 91, 36, 78-1, 78-2"
 Goss-4,"Goss, John",1800-1880,E,Major,Single,ACP 049,23
@@ -49,11 +48,16 @@ Goss-5,"Goss, John",1800-1880,A,Minor,Double,"ACP 077, 177","36, 78-1, 78-2"
 Goss-7,"Goss, John",1800-1880,F,Minor,Double,ACP 079,37-1
 Goss-8,"Goss, John",1800-1880,Db,Major,Double,ACP 080,37-2
 Goss-9,"Goss, John",1800-1880,G,Major,Double,"ACP 094, 158, 200","44, 71, 89-1"
+Goss-10,"Goss, John",1800-1880,C,Minor,Double,ACP 116,53
+Goss-11,"Goss, John",1800-1880,G,Major,Single,ACP 117,54
+Goss-12,"Goss, John",1800-1880,A,Major,Double,"ACP 133, 210","60, 92"
+Goss-13,"Goss, John",1800-1880,D,Major,Double,ACP 197,"87, 89-2"
 HarrisJ-1,"Harris, Joseph",1743-1814,Eb,Major,Double,"ACP 164, 189","74, 83"
 Hopkins-1,"Hopkins, Edward John",1818-1901,F,Minor,Double,"ACP 045, 204","22, 89-2, 55"
 Hopkins-2,"Hopkins, Edward John",1818-1901,F,Major,Double,"ACP 046, 202","22, 89-1"
 Hopkins-4,"Hopkins, Edward John",1818-1901,Ab,Major,Double,ACP 190,84
 Hopkins-5,"Hopkins, Edward John",1818-1901,F,Major,Double,ACP 209,91
+Hopkins-6,"Hopkins, Edward John",1818-1901,C,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 79",
 JacksonT-1,"Jackson, Thomas",1715-1781,G,Major,Double,"ACP 140, 174","63, 78-1, 78-2"
 Knyvett-1,"Knyvett, William",1779-1856,F,Major,Double,ACP 007,4
 Luther-1,"Luther, Martin",1483-1546,C,Major,Double,ACP 098,46
@@ -100,5 +104,6 @@ Turle-6,"Turle, James",1802-1882,D,Major,Double,ACP 166,74
 Walmisley-1,"Walmisley, Thomas Attwood",1814-1856,F,Major,Double,ACP 010,5
 Wesley-1,"Wesley, Samuel Sebastian",1810-1876,D,Major,Double,"ACP 039, 056, 192","19, 26, 85"
 Wesley-2,"Wesley, Samuel Sebastian",1810-1876,G,Minor,Double,ACP 068,"32, 50"
+Wesley-4,"Wesley, Samuel Sebastian",1810-1876,F,Major,Double,"New Cathedral Psalter Chants, village edition (1909) no. 80",
 WoodwardJr-1,"Woodward, Jr., Richard",1743-1777,Ab,Major,Double,ACP 070,33
 WoodwardJr-2,"Woodward, Jr., Richard",1743-1777,D,Major,Double,ACP 168,75
