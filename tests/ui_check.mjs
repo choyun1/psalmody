@@ -6,7 +6,7 @@
 // removes), opens every tab, and tries the main things on each. Any error in the page fails the check.
 import { createRequire } from "node:module";
 import { spawn } from "node:child_process";
-import { mkdtempSync, rmSync, existsSync } from "node:fs";
+import { mkdtempSync, rmSync, existsSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -66,6 +66,22 @@ try {
     await page.click("button:has-text('Next: the music')"); await wait(6000);
     if (!/b2 \| c4 b/.test(await page.inputValue(".me-voice >> nth=0"))) throw new Error("the soprano wasn't imported");
     if (!await page.locator("#me-pic img").count()) throw new Error("no picture");
+    await page.evaluate(() => dlg.close());
+  });
+  await step("Chants: a score it can't use says why; warnings show; a cancelled choice clears", async () => {
+    await page.evaluate(() => newChant());
+    await page.setInputFiles("#nc-file", {name: "notes.musicxml", mimeType: "application/xml", buffer: Buffer.from("<html>not a score</html>")});
+    await wait(1200);
+    if (!/notes\.musicxml: not a MusicXML score/.test(await page.textContent("#nc-imp"))) throw new Error("no message: " + await page.textContent("#nc-imp"));
+    if (await page.evaluate(() => ME.imported)) throw new Error("a bad file was kept");
+    const organ = readFileSync(join(ROOT, "tests", "sample_chant.musicxml"), "utf8").replace("</part-list>",
+      '<score-part id="P9"><part-name>Organ</part-name></score-part></part-list>').replace("</score-partwise>",
+      '<part id="P9"><measure number="1"><note><pitch><step>G</step><octave>3</octave></pitch><duration>4</duration><voice>1</voice></note></measure></part></score-partwise>');
+    await page.setInputFiles("#nc-file", {name: "with-organ.musicxml", mimeType: "application/xml", buffer: Buffer.from(organ)});
+    await wait(1200);
+    if (!/leaving out Organ/.test(await page.textContent("#nc-imp"))) throw new Error("no warning: " + await page.textContent("#nc-imp"));
+    await page.setInputFiles("#nc-file", []); await wait(300);
+    if (await page.evaluate(() => ME.imported) || (await page.textContent("#nc-imp")).trim()) throw new Error("a cancelled choice wasn't cleared");
     await page.evaluate(() => dlg.close());
   });
   await step("Psalms: a psalm and its text", async () => {

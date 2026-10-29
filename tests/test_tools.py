@@ -230,6 +230,212 @@ class MusicXML(unittest.TestCase):
             mx.to_parts(b'<score-timewise/>')
 
 
+def N(name, q, voice=1, staff=None, chord=False, tie=False, extra='', rest=False, hidden=False):
+    """One MusicXML <note> ("fis4" names: step, alteration, octave as F#4): q in quarters, 2 divisions each."""
+    if rest:
+        pitch = '<rest/>'
+    else:
+        m = re.fullmatch(r'([A-G])(#|b)?(\d)', name)
+        alter = {'#': 1, 'b': -1}.get(m.group(2), 0)
+        pitch = f"<pitch><step>{m.group(1)}</step>{f'<alter>{alter}</alter>' if alter else ''}<octave>{m.group(3)}</octave></pitch>"
+    hide = ' print-object="no"' if hidden else ''
+    tied = '<tie type="start"/>' if tie else ''
+    on = f'<staff>{staff}</staff>' if staff else ''
+    return (f"<note{hide}>{extra}{'<chord/>' if chord else ''}{pitch}<duration>{int(q * 2)}</duration>"
+            f"{tied}<voice>{voice}</voice>{on}</note>")
+
+
+def BACK(q):
+    return f'<backup><duration>{int(q * 2)}</duration></backup>'
+
+
+def score(parts, fifths=1, mode='major', time=('2', '4'), staves=None):
+    """parts: [(name, [measure contents])]: a partwise MusicXML score (bytes)."""
+    plist, body = '', ''
+    for i, (name, ms) in enumerate(parts):
+        plist += f'<score-part id="P{i + 1}"><part-name>{name}</part-name></score-part>'
+        attrs = (f'<attributes><divisions>2</divisions><key><fifths>{fifths}</fifths><mode>{mode}</mode></key>'
+                 f'<time><beats>{time[0]}</beats><beat-type>{time[1]}</beat-type></time>'
+                 f'{f"<staves>{staves}</staves>" if staves else ""}</attributes>')
+        body += f'<part id="P{i + 1}">' + ''.join(
+            f'<measure number="{k + 1}">{attrs if k == 0 else ""}{m}</measure>' for k, m in enumerate(ms)) + '</part>'
+    return (f'<?xml version="1.0"?><score-partwise><part-list>{plist}</part-list>{body}</score-partwise>').encode()
+
+
+DBL = '<barline location="right"><bar-style>light-light</bar-style></barline>'
+# Turle-2's first phrase, as plain bars of absolute notes: soprano, alto, tenor, bass
+PHRASE = {'S': [['A4:2'], ['D4:1', 'E4:1'], ['F4:2']], 'A': [['D4:2'], ['D4:1', 'C#4:1'], ['D4:2']],
+          'T': [['F3:2'], ['A3:1', 'A3:1'], ['A3:2']], 'B': [['D3:2'], ['F3:1', 'A3:1'], ['D3:2']]}
+
+
+def bar(notes, **k):
+    return ''.join(N(*(n.split(':')[0], float(n.split(':')[1])), **k) for n in notes)
+
+
+class MusicXMLScores(unittest.TestCase):
+    """What real scores do, beyond the tidy layouts."""
+    def imp(self, data):
+        import musicxml
+        return musicxml.to_parts(data)
+
+    def notes(self, parts):
+        """{voice: [(midi…, start, length)]} of the imported chant, by the chant files' own reader."""
+        from chantparse import load_chant
+        c = load_chant(chantedit.apply(chantedit.template(), parts), is_text=True)
+        return {v[0]: [tuple(sorted(h.midi for h in (n if isinstance(n, list) else [n]))) + (n[0].start if isinstance(n, list) else n.start,)
+                       for n in ns] for v, (ns, _) in c['voices'].items()}
+
+    def four_parts(self, phrase=PHRASE, names=('Soprano', 'Alto', 'Tenor', 'Bass'), last=DBL):
+        return score([(nm, [bar(b) + (last if i == 2 else '') for i, b in enumerate(phrase[v])])
+                      for nm, v in zip(names, 'SATB')])
+
+    def test_reference(self):
+        parts, info = self.imp(self.four_parts())
+        self.assertEqual(parts['voices'][0]['body'], 'a2 | d,4 e | f2 \\bar "||"')
+        self.assertEqual(info['warnings'], [])
+
+    def test_musescore_closed_score_with_unison(self):
+        """One part, two staves; voices 1-2 on the upper staff and 5-6 on the lower (MuseScore's numbering);
+        in the first bar the alto sings with the soprano (no voice 2), and in the second it has hidden rests."""
+        P = PHRASE
+        ms = [bar(P['S'][0], voice=1, staff=1) + BACK(2) + bar(P['T'][0], voice=5, staff=2) + BACK(2) + bar(P['B'][0], voice=6, staff=2),
+              bar(P['S'][1], voice=1, staff=1) + BACK(2) + N('', 2, voice=2, staff=1, rest=True, hidden=True) + BACK(2)
+              + bar(P['T'][1], voice=5, staff=2) + BACK(2) + bar(P['B'][1], voice=6, staff=2),
+              bar(P['S'][2], voice=1, staff=1) + BACK(2) + bar(P['A'][2], voice=2, staff=1) + BACK(2)
+              + bar(P['T'][2], voice=5, staff=2) + BACK(2) + bar(P['B'][2], voice=6, staff=2) + DBL]
+        parts, _ = self.imp(score([('Choir', ms)], staves=2))
+        got, ref = self.notes(parts), self.notes(self.imp(self.four_parts())[0])
+        self.assertEqual(got['S'], ref['S'])
+        self.assertEqual(got['A'][:3], got['S'][:3])            # unison where the alto had no notes of its own
+        self.assertEqual(got['A'][3:], ref['A'][3:])
+        self.assertEqual((got['T'], got['B']), (ref['T'], ref['B']))
+
+    def test_the_higher_voice_is_the_upper_one(self):
+        """Voice 1 isn't always the top one (Finale may put the alto there): the higher line is taken as the soprano."""
+        P = PHRASE
+        ms = [bar(P['A'][k]) + BACK(2) + bar(P['S'][k], voice=2) for k in range(3)]
+        lo = [bar(P['T'][k]) + BACK(2) + bar(P['B'][k], voice=2) for k in range(3)]
+        parts, _ = self.imp(score([('Upper', ms), ('Lower', lo)]))
+        self.assertEqual(self.notes(parts), self.notes(self.imp(self.four_parts())[0]))
+
+    def test_chords_and_voices_mixed_in_a_staff(self):
+        P = PHRASE
+        def chords(hi, lo):        # two voices on one stem, as chords
+            return ''.join(N(a.split(':')[0], float(a.split(':')[1])) + N(b.split(':')[0], float(b.split(':')[1]), chord=True)
+                           for a, b in zip(hi, lo))
+        upper = [chords(P['S'][0], P['A'][0]), bar(P['S'][1]) + BACK(2) + bar(P['A'][1], voice=2), chords(P['S'][2], P['A'][2]) + DBL]
+        lower = [chords(P['T'][k], P['B'][k]) for k in range(3)]
+        parts, _ = self.imp(score([('Women', upper), ('Men', lower)]))
+        self.assertEqual(self.notes(parts), self.notes(self.imp(self.four_parts())[0]))
+
+    def test_a_divided_voice_stays_divided(self):
+        P = dict(PHRASE, S=[['A4:2'], ['D4:1', 'E4:1'], ['F4:2']])
+        data = self.four_parts(P).replace(b'<pitch><step>F</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice></note>',
+                                          b'<pitch><step>F</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice></note>'
+                                          b'<note><chord/><pitch><step>A</step><octave>4</octave></pitch><duration>4</duration><voice>1</voice></note>', 1)
+        parts, _ = self.imp(data)
+        self.assertIn("<a f>2", parts['voices'][0]['body'])     # top note first, as in the chant files
+
+    def test_an_organ_part_is_left_out(self):
+        organ = [bar(['D4:2']) + BACK(2) + bar(['A3:2'], voice=2)] * 3
+        parts, info = self.imp(score([(n, [bar(b) + (DBL if i == 2 else '') for i, b in enumerate(PHRASE[v])])
+                                      for n, v in zip(('S', 'A', 'T', 'B'), 'SATB')] + [('Organ', organ)]))
+        self.assertTrue(any('leaving out Organ' in w for w in info['warnings']))
+        self.assertEqual(self.notes(parts), self.notes(self.imp(self.four_parts())[0]))
+
+    def test_parts_by_their_names(self):
+        rev = score([(nm, [bar(b) + (DBL if i == 2 else '') for i, b in enumerate(PHRASE[v])])
+                     for nm, v in (('Bass', 'B'), ('Tenor', 'T'), ('Alto', 'A'), ('Soprano', 'S'))])
+        parts, info = self.imp(rev)
+        self.assertEqual(self.notes(parts), self.notes(self.imp(self.four_parts())[0]))
+        self.assertEqual(info['warnings'], [])
+
+    def test_voices_by_name_among_instruments(self):
+        flute = [bar(['D5:2'])] * 3
+        named = score([('Flute', flute)] + [(n, [bar(b) + (DBL if i == 2 else '') for i, b in enumerate(PHRASE[v])])
+                                            for n, v in zip(('Soprano', 'Alto', 'Tenor', 'Bass'), 'SATB')])
+        parts, info = self.imp(named)
+        self.assertEqual(self.notes(parts), self.notes(self.imp(self.four_parts())[0]))
+        self.assertTrue(any('leaving out Flute' in w for w in info['warnings']), info['warnings'])
+        P = PHRASE                                                  # two staves named for two voices each, organ first
+        closed = score([('Organ', flute)] + [(nm, [bar(P[hi][k]) + BACK(2) + bar(P[lo][k], voice=2) for k in range(3)])
+                                            for nm, hi, lo in (('S. A.', 'S', 'A'), ('Tenor/Bass', 'T', 'B'))])
+        self.assertEqual(self.notes(self.imp(closed)[0]), self.notes(self.imp(self.four_parts())[0]))
+
+    def test_a_voice_resting_a_bar(self):
+        rest = score([(n, [bar(b) if not (v == 'A' and i == 1) else N('', 2, rest=True) for i, b in enumerate(PHRASE[v])])
+                      for n, v in zip(('S', 'A', 'T', 'B'), 'SATB')])
+        alto = self.imp(rest)[0]['voices'][1]['body']
+        self.assertEqual(alto, 'd2 | r | d \\bar "||"')
+        silent = score([(n, [bar(b) for b in PHRASE[v]] + [N('', 2, rest=True)] + [bar(b) for b in PHRASE[v]])
+                        for n, v in zip(('S', 'A', 'T', 'B'), 'SATB')])            # all rest: a phrase's end
+        body = self.imp(silent)[0]['voices'][0]['body']
+        self.assertEqual([line.count('|') for line in body.split('\n')], [4, 4], body)
+
+    def test_phrase_ends(self):
+        two = {v: b + b for v, b in PHRASE.items()}                          # 6 bars: two phrases of 3
+        left = score([(n, [bar(b) + ('<barline location="left"><bar-style>light-light</bar-style></barline>' if i == 3 else '')
+                           for i, b in enumerate(two[v])]) for n, v in zip(('S', 'A', 'T', 'B'), 'SATB')])
+        empty = score([(n, [bar(b) for b in two[v][:3]] + [''] + [bar(b) for b in two[v][3:]]) for n, v in zip(('S', 'A', 'T', 'B'), 'SATB')])
+        for data in (left, empty):                                           # a barline on the left; an empty bar
+            body = self.imp(data)[0]['voices'][0]['body']
+            self.assertEqual([line.count('|') for line in body.split('\n')], [4, 4], body)     # 3 bars + the end, twice
+
+    def test_ties_grace_notes_and_lengths(self):
+        P = dict(PHRASE, S=[['A4:2'], ['D4:1', 'E4:1'], ['F4:2']])
+        data = self.four_parts(P).replace(b'<note><pitch><step>A</step><octave>4</octave>',
+                                          b'<note><grace/><pitch><step>B</step><octave>4</octave></pitch><voice>1</voice></note>'
+                                          b'<note><pitch><step>A</step><octave>4</octave>', 1)
+        data = data.replace(b'<note><pitch><step>D</step><octave>4</octave>',                   # and a cue note
+                            b'<note><cue/><pitch><step>G</step><octave>5</octave></pitch><duration>4</duration><voice>1</voice></note>'
+                            + BACK(2).encode() + b'<note><pitch><step>D</step><octave>4</octave>', 1)
+        parts, info = self.imp(data)
+        self.assertTrue(parts['voices'][0]['body'].startswith('a2 | d,4 e |'), parts['voices'][0]['body'])   # left out
+        tied = score([(n, [bar(['A4:2'], tie=(v == 'S')) if i == 0 else bar(b) for i, b in enumerate(PHRASE[v])])
+                      for n, v in zip(('S', 'A', 'T', 'B'), 'SATB')])
+        self.assertTrue(self.imp(tied)[0]['voices'][0]['body'].startswith('a2~ |'))
+        short = score([(n, [bar(b) if not (v == 'A' and i == 1) else bar(['D4:1']) for i, b in enumerate(PHRASE[v])])
+                       for n, v in zip(('S', 'A', 'T', 'B'), 'SATB')])
+        self.assertIn("Alto: bar 2 doesn't add up to 2/4", self.imp(short)[1]['warnings'])
+
+    def test_what_a_chant_cant_have(self):
+        import musicxml
+        triplet = self.four_parts().replace(b'<duration>2</duration>', b'<duration>1</duration>', 1)    # odd lengths
+        triplet = triplet.replace(b'<divisions>2</divisions>', b'<divisions>3</divisions>', 1)
+        three = score([('Choir', [N('A4', 2) + N('F4', 2, chord=True) + N('D4', 2, chord=True)] * 3)])
+        voices3 = score([('Choir', [N('A4', 2) + BACK(2) + N('F4', 2, voice=2) + BACK(2) + N('D4', 2, voice=3)] * 3)])
+        for data, says in ((triplet, 'unusual length'), (three, 'chord of 3 notes'), (voices3, 'a staff with 3 voices'),
+                           (score([('S', [bar(['A4:2'])] * 3)]), 'found 1 voice'), (b'', 'not a MusicXML'),
+                           (b'<html><body>hi</body></html>', 'not a MusicXML score'), (b'PK\x03\x04junk', 'zip'),
+                           (b'<score-timewise/>', 'timewise')):
+            with self.assertRaises(ValueError) as e:
+                musicxml.to_parts(data)
+            self.assertIn(says, str(e.exception))
+
+    def test_encodings_and_wrappers(self):
+        import io, zipfile
+        plain = self.four_parts()
+        ref = self.imp(plain)[0]
+        fancy = plain.replace(b'<?xml version="1.0"?>', b'<?xml version="1.0" encoding="UTF-16"?>\n<!DOCTYPE score-partwise PUBLIC '
+                              b'"-//Recordare//DTD MusicXML 4.0 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">')
+        fancy = fancy.replace(b'<score-partwise>', b'<score-partwise xmlns="http://www.musicxml.org/ns" version="4.0">')
+        self.assertEqual(self.imp(fancy.decode().encode('utf-16'))[0], ref)
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, 'w') as z:                                 # an .mxl without its container file
+            z.writestr('score.musicxml', plain)
+        self.assertEqual(self.imp(buf.getvalue())[0], ref)
+
+    def test_key_and_time(self):
+        parts, info = self.imp(score([(n, [bar(b) for b in PHRASE[v]]) for n, v in zip(('S', 'A', 'T', 'B'), 'SATB')],
+                                     fifths=-1, mode='minor'))
+        self.assertEqual(parts['key'], {'tonic': 'd', 'mode': 'minor'})
+        changed = score([(n, [bar(b) if i != 1 else '<attributes><key><fifths>2</fifths></key><time><beats>3</beats>'
+                              '<beat-type>4</beat-type></time></attributes>' + bar(b) for i, b in enumerate(PHRASE[v])])
+                         for n, v in zip(('S', 'A', 'T', 'B'), 'SATB')])
+        w = self.imp(changed)[1]['warnings']
+        self.assertTrue(any('key changes' in x for x in w) and any('time changes' in x for x in w), w)
+
+
 class Moods(unittest.TestCase):
     def test_suggestions_follow_the_mode(self):
         import moodsuggest
@@ -295,6 +501,34 @@ class Server(unittest.TestCase):
         for bad in ('../../etc/passwd', '/tmp/x', '.hidden', '-rf', None, 5, ''):
             with self.assertRaises(ValueError):
                 serve.safe_name(bad)
+
+
+class ImportEndpoint(unittest.TestCase):
+    def test_answers(self):
+        import base64, serve, musicxml
+        b64 = lambda b: base64.b64encode(b).decode()
+        j = serve.api_chant_import({'filename': 'c.musicxml', 'file': b64(musicxml_score := musicxml_bytes())})
+        self.assertTrue(j['ok'])
+        self.assertEqual([v['var'] for v in j['parts']['voices']], ['S_notes', 'A_notes', 'T_notes', 'B_notes'])
+        self.assertEqual(j['warnings'], [])
+        j = serve.api_chant_import({'filename': '../../etc/x.musicxml', 'file': b64(b'<html/>')})
+        self.assertFalse(j['ok'])
+        self.assertTrue(j['error'].startswith('x.musicxml: '), j['error'])          # the name only, never a path
+        for bad in ({'file': 5}, {'file': 'not base64!'}, {}):
+            with self.assertRaises(ValueError):
+                serve.api_chant_import(bad)
+        real = musicxml.to_parts
+        musicxml.to_parts = lambda *a: {}['a fault in the importer']
+        try:
+            j = serve.api_chant_import({'filename': 'c.musicxml', 'file': b64(musicxml_score)})
+        finally:
+            musicxml.to_parts = real
+        self.assertFalse(j['ok'])
+        self.assertIn('the importer failed (KeyError', j['error'])
+
+
+def musicxml_bytes():
+    return musicxml(SATB)
 
 
 class History(unittest.TestCase):

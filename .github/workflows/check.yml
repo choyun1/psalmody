@@ -8,14 +8,14 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -r requirements.txt
+      - run: pip install -r requirements.txt music21
       - name: Texts match the 1979 BCP
         run: python tools/check_texts.py
       - name: Examples read and plan
         run: for f in examples/*.txt; do python tools/build.py "$f" --check || exit 1; done
       - name: README contents and links
         run: python tools/check_readme.py
-      - name: Tests of the tools' logic
+      - name: Tests of the tools' logic (and the MusicXML import against music21)
         run: python -m unittest discover tests
   browser:
     runs-on: ubuntu-latest

@@ -125,22 +125,29 @@ function newChant() {
 // a score exported as MusicXML: its four voices, key, time and composer, ready for the editor
 async function importScore(file) {
   const msg = $("#nc-imp");
-  if (!file) return;
-  if (file.size > 5e6) { msg.textContent = "that file is too big for a chant"; return; }
+  ME.imported = null;
+  if (!file) { msg.textContent = ""; return; }                 // the choice cancelled
+  if (file.size > 5e6) { msg.innerHTML = '<span class="warn">that file is too big for a chant</span>'; return; }
   msg.textContent = "Reading…";
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  let bin = ""; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-  const j = await post("/api/chant/import", {filename: file.name, file: btoa(bin)});
-  if (!j.ok) { ME.imported = null; msg.innerHTML = `<span class="warn">${esc(j.error || "could not read it")}</span>`; return; }
+  let j;
+  try {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    let bin = ""; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    j = await post("/api/chant/import", {filename: file.name, file: btoa(bin)});
+  } catch (e) { j = {ok: false, error: "the launcher didn't answer"}; }
+  if ($("#nc-file") && $("#nc-file").files[0] !== file) return;   // another file was chosen meanwhile
+  if (!j.ok) { msg.innerHTML = `<span class="warn">${esc(j.error || "could not read it")}</span>`; return; }
   ME.imported = j.parts;
-  const m = (j.composer || "").match(/^(.*?)\s*(?:\((\d{3,4}\s*[-–]\s*\d{0,4})\))?\s*$/);    // "James Turle (1802-1882)"
-  if (m && m[1] && !$("#nc-composer").value) {
-    const words = m[1].trim().split(/\s+/), sur = words.pop();
+  const credit = (j.composer || "").trim(), paren = credit.match(/\(([^)]*)\)\s*$/);   // "James Turle (1802-1882)"
+  const who = credit.replace(/\s*\([^)]*\)\s*$/, "").trim(), years = paren && paren[1].match(/^\s*(\d{3,4})\s*[-–]\s*(\d{3,4})?\s*$/);
+  if (who && !$("#nc-composer").value) {
+    const words = who.split(/\s+/), sur = words.pop();
     $("#nc-composer").value = words.length ? `${sur}, ${words.join(" ")}` : sur;
     ncName();
   }
-  if (m && m[2] && !$("#nc-years").value) $("#nc-years").value = m[2].replace(/\s/g, "").replace("–", "-");
-  msg.innerHTML = `<span class="ok">✓</span> four voices in ${esc(tonicName(j.parts.key.tonic))} ${esc(j.parts.key.mode)}${j.title ? ", “" + esc(j.title) + "”" : ""}`;
+  if (years && !$("#nc-years").value) $("#nc-years").value = years[1] + "-" + (years[2] || "");
+  msg.innerHTML = `<span class="ok">✓</span> four voices in ${esc(tonicName(j.parts.key.tonic))} ${esc(j.parts.key.mode)}${j.title ? ", “" + esc(j.title) + "”" : ""}`
+    + (j.warnings || []).map(w => `<br><span class="warn">⚠ ${esc(w)}</span>`).join("");
 }
 function ncName() {
   const sur = ($("#nc-composer").value.split(",")[0] || "").replace(/[^A-Za-z]/g, "");

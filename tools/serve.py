@@ -299,11 +299,17 @@ def api_chant_import(data):
     except binascii.Error:
         raise ValueError('file: not base64')
     filename = data.get('filename') if isinstance(data.get('filename'), str) else ''
+    name = os.path.basename(filename)[:80] or 'the file'
     try:
         parts, info = musicxml.to_parts(raw, filename)
-    except Exception as e:                       # a score it can't read says why, rather than a 500
-        return {'ok': False, 'error': f'could not read {filename or "the file"}: {e}'}
-    return {'ok': True, 'parts': parts, 'composer': info['composer'], 'title': info['title']}
+    except ValueError as e:                      # a score it can't make a chant of says why
+        return {'ok': False, 'error': f'{name}: {e}'}
+    except Exception as e:                       # a fault in the importer: said so, with the details here
+        import traceback
+        traceback.print_exc()
+        return {'ok': False, 'error': f'{name}: the importer failed ({type(e).__name__}: {e}); '
+                                      'the launcher\'s window has the details'}
+    return {'ok': True, 'parts': parts, 'composer': info['composer'], 'title': info['title'], 'warnings': info['warnings']}
 
 
 def get_chant_img(q):
