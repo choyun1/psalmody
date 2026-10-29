@@ -28,7 +28,7 @@ A_notes = \relative c' {
 T_notes = \relative c' {
   a2 | b4 cis | a2 \bar "||"
   g2 | fis4 g8 a | b4 b | a2 \bar "||"
-  a2 | a4 g | b2 \bar "||"
+  a2 | a4 fis | b2 \bar "||"
   a2 | b4 b | a4 a | a2 \bar "||"
 }
 
@@ -36,7 +36,7 @@ B_notes = \relative c {
   d2 | g4 g | fis2 \bar "||"
   e2 | d4 e8 fis | g4 e | a2 \bar "||"
   fis2 | fis4 b, | g'2 \bar "||"
-  fis2 | e4 d | c4 a | d2 \bar "||"
+  fis2 | e4 d | cis4 a | d2 \bar "||"
 }
 
 % Use markup to center the chant on the page

@@ -20,7 +20,7 @@ S_notes = \relative c'' {
 
 A_notes = \relative c' {
   d2 | d4 d | d2 \bar "||"
-  e2 | d4 fis | g e | d d \bar "||"
+  e2 | d4 fis | g e | d2 \bar "||"
   d2 | g4 fis8 e | d2 \bar "||"
   d2 | c4 e | g fis | g2 \bar "||"
 }
@@ -34,7 +34,7 @@ T_notes = \relative c' {
 
 B_notes = \relative c' {
   g2 | fis4 d | g2 \bar "||"
-  e2 | c4 a | b c | d d \bar "||"
+  e2 | c4 a | b c | d2 \bar "||"
   g2 | e4 a, | d2 \bar "||"
   b2 | c4 a | d d | g,2 \bar "||"
 }

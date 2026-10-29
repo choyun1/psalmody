@@ -27,7 +27,7 @@ A_notes = \relative c' {
 
 T_notes = \relative c' {
   as2 | as4 f | g2 \bar "||"
-  a2 | as4 as | c bes | c2 \bar "||"
+  a2 | bes4 bes | c bes | c2 \bar "||"
   des2 | c4 as | bes2 \bar "||"
   as2 | as4 as | f ges | f2 \bar "||"
 }
@@ -35,7 +35,7 @@ T_notes = \relative c' {
 B_notes = \relative c {
   des4. es8 | f4 des | c2 \bar "||"
   f2 | bes,4 des | es es | as2 \bar "||"
-  ges2 | as4 f | es4 des \bar "||"
+  ges2 | ges4 f | es4 des \bar "||"
   c2 | des4 f | bes, as | des2 \bar "||"
 }
 
