@@ -9,3 +9,5 @@ site/
 output/
 sundays/
 **/.img_*/
+# the browser check's Playwright (npm)
+node_modules/

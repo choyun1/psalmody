@@ -17,3 +17,19 @@ jobs:
         run: python tools/check_readme.py
       - name: Tests of the tools' logic
         run: python -m unittest discover tests
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: pip install -r requirements.txt lilypond
+      - name: Build the chant browser
+        run: python tools/browser.py
+      - run: npm install --no-save playwright@1.48.2 && npx playwright install --with-deps chromium
+      - name: Walk through every tab
+        run: node tests/ui_check.mjs
